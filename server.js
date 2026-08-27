@@ -8,7 +8,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 const RECIPIENT_EMAIL = process.env.EMAIL_TO || 'danyaellap@gmail.com';
-const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || 'admin123').trim();
+const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || 'WhoamiInbox2026!').trim();
 const LEGACY_ADMIN_PASSWORDS = new Set(['admin123', 'change-this-password']);
 const messages = [];
 
