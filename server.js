@@ -1,4 +1,5 @@
 const express = require('express');
+const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
@@ -10,7 +11,27 @@ const PORT = process.env.PORT || 3000;
 const RECIPIENT_EMAIL = process.env.EMAIL_TO || 'danyaellap@gmail.com';
 const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || 'WhoamiInbox2026!').trim();
 const LEGACY_ADMIN_PASSWORDS = new Set(['admin123', 'change-this-password']);
-const messages = [];
+const messagesFile = path.join(__dirname, 'messages.json');
+let messages = [];
+
+try {
+  if (fs.existsSync(messagesFile)) {
+    const savedMessages = JSON.parse(fs.readFileSync(messagesFile, 'utf8'));
+    if (Array.isArray(savedMessages)) {
+      messages = savedMessages;
+    }
+  }
+} catch (error) {
+  console.error('Unable to load saved messages:', error.message);
+}
+
+function saveMessages() {
+  try {
+    fs.writeFileSync(messagesFile, JSON.stringify(messages, null, 2));
+  } catch (error) {
+    console.error('Unable to save messages:', error.message);
+  }
+}
 
 app.use(express.json({ limit: '1mb' }));
 app.use((req, res, next) => {
@@ -75,6 +96,7 @@ app.post('/api/message', async (req, res) => {
   };
 
   messages.unshift(newMessage);
+  saveMessages();
 
   const emailUser = process.env.EMAIL_USER;
   const emailPass = process.env.EMAIL_PASS;
@@ -123,6 +145,7 @@ app.delete('/api/messages/:id', requireAdmin, (req, res) => {
   }
 
   messages.splice(index, 1);
+  saveMessages();
   return res.json({ success: true });
 });
 
