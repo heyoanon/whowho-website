@@ -505,6 +505,621 @@
             try {
                 textarea.value = '';
 
+                const response = await fetch('/api/message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Unable to send message.');
+                }
+            } catch (error) {
+                textarea.value = message;
+                textarea.placeholder = 'Failed to send. Please try again.';
+                console.error(error);
+            }
+        }
+
+        function renderPage(pageName) {
+            if (pageName === 'profile') {
+                rightPanel.innerHTML = `
+                    <div class="panel-content-only profile-menu-panel">
+                        <div class="top-row">
+                            <button class="back-button" aria-label="Go back to main menu">←</button>
+                        </div>
+                        <div class="sub-menu">
+                            <button class="menu-item" data-page="knowMe">GET TO KNOW ME</button>
+                            <button class="menu-item" data-page="knownFacts">KNOWN FACTS</button>
+                            <button class="menu-item" data-page="unknownFacts">UNKNOWN FACTS</button>
+                            <button class="menu-item" data-page="whoIUlt">WHO I ULT</button>
+                        </div>
+                    </div>
+                `;
+
+                document.querySelector('.back-button').addEventListener('click', () => {
+                    playArcadeBeep();
+                    renderMainMenu();
+                });
+                document.querySelectorAll('.sub-menu .menu-item').forEach(button => {
+                    button.addEventListener('click', () => {
+                        playArcadeBeep();
+                        renderDetail(button.dataset.page);
+                    });
+                });
+                return;
+            }
+
+            const content = profileSections[pageName] || profileSections.knowMe;
+            rightPanel.innerHTML = `
+                <div class="panel-content-only">
+                    <div class="top-row">
+                        <button class="back-button" aria-label="Go back to main menu">←</button>
+                    </div>
+                    ${content}
+                </div>
+            `;
+
+            const backButton = document.querySelector('.back-button');
+            if (backButton) {
+                backButton.addEventListener('click', () => {
+                    playArcadeBeep();
+                    renderMainMenu();
+                });
+            }
+
+            if (pageName === 'message') {
+                const submitButton = document.querySelector('.message-submit');
+                if (submitButton) {
+                    submitButton.addEventListener('click', sendMessageToCreator);
+                }
+            }
+
+            if (pageName === 'exit') {
+                loadSpotifyNowPlaying();
+            }
+        }
+
+        function renderDetail(pageName) {
+            const content = profileSections[pageName] || profileSections.knowMe;
+            rightPanel.innerHTML = `
+                <div class="panel-content-only">
+                    <div class="top-row">
+                        <button class="back-button" aria-label="Go back to main menu">←</button>
+                    </div>
+                    ${content}
+                </div>
+            `;
+
+            document.querySelector('.back-button').addEventListener('click', () => {
+                playArcadeBeep();
+                renderPage('profile');
+            });
+        }
+
+        window.onSpotifyWebPlaybackSDKReady = () => {
+            const token = localStorage.getItem('spotifyAccessToken');
+            if (token) {
+                initializeSpotifyPlayer();
+            }
+        };
+
+        renderMainMenu();
+    </script>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html lang="eng">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://sdk.scdn.co/spotify-player.js"></script>
+    <title>Whoami</title>
+</head>
+
+<body>
+    <div class="split-container">
+        <div class="left-half">
+            <img src="pacman-pac.gif" alt="Whoami Image" class="whoami-image">
+        </div>
+
+        <div class="right-half" id="right-panel">
+            <div class="menu-panel">
+                <h1>WHOAMI</h1>
+                <button class="menu-item active" data-page="profile">PROFILE</button>
+                <button class="menu-item" data-page="socials">SOCIALS</button>
+                <button class="menu-item" data-page="sidequests">SIDE QUESTS</button>
+                <button class="menu-item" data-page="now-playing">NOW PLAYING</button>
+                <button class="menu-item" data-page="message">MESSAGE ME</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let SPOTIFY_CLIENT_ID = localStorage.getItem('spotifyClientId') || '8a36e00cf21d4620aa646c7f901b27fa';
+
+        const getSpotifyRedirectUri = () => {
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
+
+            if (protocol === 'https:') {
+                return `${window.location.origin}${window.location.pathname}`;
+            }
+
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                return 'http://localhost:8000/whoami.html';
+            }
+
+            return 'https://your-domain.example/whoami.html';
+        };
+
+        const SPOTIFY_REDIRECT_URI = getSpotifyRedirectUri();
+        const registeredEmail = 'danyaellap@gmail.com';
+
+        const profileSections = {
+            knowMe: `
+                <div class="panel-content">
+                    <h2>GET TO KNOW ME</h2>
+                    <div class="fact-box know-me-box">
+                        <img class="blue-cat-cap-image" src="blue%20cat%20cap.jpg" alt="Blue cat cap">
+                        <div class="know-me-grid">
+                            <p>NAME: DAN</p>
+                            <p>NICKNAME: ANON, DADA</p>
+                            <p>AGE: 19</p>
+                            <p>COUNTRY: PHILIPPINES</p>
+                            <p>TIMEZONE: GMT +8</p>
+                            <p>PRONOUNS: SHE/THEY</p>
+                        </div>
+                    </div>
+                </div>
+            `,
+            knownFacts: `
+                <div class="panel-content known-facts-panel">
+                    <h2>KNOWN FACTS</h2>
+                    <div class="fact-box scrollable-facts-box">
+                        <ul>
+                            <li>Currently, I'm a 2nd Year College Student.</li>
+                            <li>I enjoy making stuff, especially related  to music and interior design</li>
+                            <li>I also like experimenting stuff overall.</li>
+                            <li>English is not my first languange so I have sometimes a hard time talking to.</li>
+                            <li>I rarely open dms so if I don't reply, please don't take it personally.</li>
+                        </ul>
+                    </div>
+                </div>
+            `,
+            unknownFacts: `
+                <div class="panel-content unknown-facts-panel">
+                    <h2>UNKNOWN FACTS</h2>
+                    <div class="fact-box scrollable-facts-box">
+                        <ul>
+                            <li>I like to collect stuff related to games, especially card games, legos, and tech devices</li>
+                            <li>I'm secretely into arcade games and vintage/retro stuff.</li>
+                            <li>One day I want to build a whole game from scratch.</li>
+                            <li>I'm a big fan of the 80s, 90s pop culture and K-pop girl groups.</li>
+                            <li>A Humanities and Social Sciences graduate who took a STEM degree in college so expect that I'm busy for most of the time.</li>
+                        </ul>
+                    </div>
+                </div>
+            `,
+            whoIUlt: `
+                <div class="panel-content who-i-ult-panel">
+                    <h2>WHO I ULT</h2>
+                    <div class="fact-box scrollable-facts-box">
+                        <ul>
+                            <li>Current main bias (K-Pop): Winter, Seulgi, Mina, Haewon, Yoon.</li>
+                            <li>Other main biases: Krystal, Caprice, Freen, Becky, Mikha, Gwen, Colet, Milk, Love, Pangjie, Mable, Aiah</li>
+                            <li>Current main ult groups: aespa, Nmixx, Red Velvet, Stayc, Twice, and Cortis.</li>
+                            <li>Other groups I stan: Blackpink, Itzy, Le Sserafim, NewJeans, Loona, Kep1er, Iz*one, IVE, GFriend, Mamamoo, WJSN, and SNSD.</li>
+                            <li>Other ult groups: ILLIT, NCT and its sub-units, Seventeen, Stray Kids, EXO, and Tomorrow X Together.</li>
+                        </ul>
+                    </div>
+                </div>
+            `,
+            socials: `
+                <div class="panel-content">
+                    <h2>SOCIALS</h2>
+                    <div class="fact-box socials-box">
+                        <div class="social-links">
+                            <a class="social-link" href="mailto:danyaellap@gmail.com" target="_blank" rel="noopener noreferrer">EMAIL</a>
+                            <a class="social-link" href="https://www.instagram.com/dandandalandamn/" target="_blank" rel="noopener noreferrer">INSTAGRAM</a>
+                            <a class="social-link" href="https://github.com/heyoanon/heyoanon" target="_blank" rel="noopener noreferrer">GITHUB</a>
+                            <a class="social-link" href="https://discord.com/users/772073053097033741" target="_blank" rel="noopener noreferrer">DISCORD</a>
+                            <a class="social-link" href="https://open.spotify.com/user/31xlsqnowc5autb22oupuge64fvq" target="_blank" rel="noopener noreferrer">SPOTIFY</a>
+                            <a class="social-link" href="https://www.youtube.com/@anoanondan" target="_blank" rel="noopener noreferrer">YOUTUBE</a>
+                            <a class="social-link" href="https://www.reddit.com/user/AnonymousDan_03/" target="_blank" rel="noopener noreferrer">REDDIT</a>
+                        </div>
+                    </div>
+                </div>
+            `,
+            sidequests: `
+                <div class="panel-content">
+                    <h2>SIDE QUESTS</h2>
+                    <div class="fact-box">
+                        <h3>MISSION LOG</h3>
+                        <ul>
+                            <li>Build an interactive portfolio.</li>
+                            <li>Design a game-inspired landing page.</li>
+                            <li>Keep learning front-end wizardry.</li>
+                        </ul>
+                    </div>
+                </div>
+            `,
+            exit: `
+                <div class="panel-content">
+                    <h2>NOW PLAYING</h2>
+                    <div class="spotify-embed-wrapper">
+                        <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/playlist/1Td7BhVTsUQkYBXHeLh46g?utm_source=generator&si=38658d2860804d3e" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                    </div>
+                </div>
+            `,
+            message: `
+                <div class="panel-content">
+                    <h2>MESSAGE ME</h2>
+                    <div class="fact-box message-box">
+                        <label for="message-input" class="message-label">TYPE YOUR MESSAGE</label>
+                        <textarea id="message-input" class="message-textarea" placeholder="Write something nice..."></textarea>
+                        <button type="button" class="message-submit">SEND</button>
+                    </div>
+                </div>
+            `
+        };
+
+        const rightPanel = document.getElementById('right-panel');
+        let arcadeAudioContext;
+
+        function playArcadeBeep() {
+            arcadeAudioContext ||= new AudioContext();
+            const oscillator = arcadeAudioContext.createOscillator();
+            const gain = arcadeAudioContext.createGain();
+            const startTime = arcadeAudioContext.currentTime;
+
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(620, startTime);
+            oscillator.frequency.exponentialRampToValueAtTime(330, startTime + 0.08);
+            gain.gain.setValueAtTime(0.0001, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.12, startTime + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.09);
+            oscillator.connect(gain);
+            gain.connect(arcadeAudioContext.destination);
+            oscillator.start(startTime);
+            oscillator.stop(startTime + 0.1);
+        }
+
+        function renderMainMenu() {
+            rightPanel.innerHTML = `
+                <div class="menu-panel">
+                    <h1>WHOAMI</h1>
+                    <button class="menu-item" data-page="profile">PROFILE</button>
+                    <button class="menu-item" data-page="socials">SOCIALS</button>
+                    <button class="menu-item" data-page="sidequests">SIDE QUESTS</button>
+                    <button class="menu-item" data-page="now-playing">NOW PLAYING</button>
+                    <button class="menu-item" data-page="message">MESSAGE ME</button>
+                </div>
+            `;
+
+            document.querySelectorAll('.menu-item').forEach(button => {
+                button.addEventListener('click', () => {
+                    playArcadeBeep();
+                    renderPage(button.dataset.page);
+                });
+            });
+        }
+
+        function base64UrlEncode(value) {
+            return btoa(String.fromCharCode(...new Uint8Array(value)))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/g, '');
+        }
+
+        async function generateCodeChallenge(codeVerifier) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(codeVerifier);
+            const digest = await crypto.subtle.digest('SHA-256', data);
+            return base64UrlEncode(digest);
+        }
+
+        function saveSpotifyClientId() {
+            const input = document.getElementById('spotify-client-id-input');
+            const status = document.getElementById('spotify-status');
+
+            if (!input) {
+                return;
+            }
+
+            const value = input.value.trim();
+            if (!value) {
+                if (status) {
+                    status.textContent = 'Enter your Spotify Client ID to continue.';
+                }
+                return;
+            }
+
+            SPOTIFY_CLIENT_ID = value;
+            localStorage.setItem('spotifyClientId', value);
+
+            if (status) {
+                status.textContent = 'Spotify Client ID saved. Click CONNECT SPOTIFY to continue.';
+            }
+        }
+
+        function getSpotifyAuthUrl() {
+            const codeVerifier = crypto.getRandomValues(new Uint8Array(32)).reduce((acc, byte) => acc + byte.toString(16).padStart(2, '0'), '');
+            const params = new URLSearchParams({
+                client_id: SPOTIFY_CLIENT_ID,
+                response_type: 'code',
+                redirect_uri: SPOTIFY_REDIRECT_URI,
+                scope: 'streaming user-read-email user-read-private user-read-playback-state user-modify-playback-state user-read-currently-playing',
+                code_challenge_method: 'S256',
+                code_challenge: 'placeholder'
+            });
+
+            localStorage.setItem('spotifyCodeVerifier', codeVerifier);
+            return `https://accounts.spotify.com/authorize?${params.toString()}`;
+        }
+
+        async function connectSpotify() {
+            const status = document.getElementById('spotify-status');
+
+            if (!SPOTIFY_CLIENT_ID || SPOTIFY_CLIENT_ID === 'YOUR_SPOTIFY_CLIENT_ID') {
+                if (status) {
+                    status.textContent = 'Enter your Spotify Client ID, then click CONNECT SPOTIFY.';
+                }
+                return;
+            }
+
+            if (window.location.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+                if (status) {
+                    status.textContent = 'Spotify requires a secure HTTPS redirect URI in production. Use https://your-domain.example/whoami.html.';
+                }
+                return;
+            }
+
+            const codeVerifier = crypto.getRandomValues(new Uint8Array(32)).reduce((acc, byte) => acc + byte.toString(16).padStart(2, '0'), '');
+            const codeChallenge = await generateCodeChallenge(codeVerifier);
+            localStorage.setItem('spotifyCodeVerifier', codeVerifier);
+
+            const params = new URLSearchParams({
+                client_id: SPOTIFY_CLIENT_ID,
+                response_type: 'code',
+                redirect_uri: SPOTIFY_REDIRECT_URI,
+                scope: 'streaming user-read-email user-read-private user-read-playback-state user-modify-playback-state user-read-currently-playing',
+                code_challenge_method: 'S256',
+                code_challenge: codeChallenge
+            });
+
+            window.location.href = `https://accounts.spotify.com/authorize?${params.toString()}`;
+        }
+
+        async function exchangeSpotifyCode(code) {
+            const verifier = localStorage.getItem('spotifyCodeVerifier');
+            const response = await fetch('https://accounts.spotify.com/api/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    client_id: SPOTIFY_CLIENT_ID,
+                    grant_type: 'authorization_code',
+                    code,
+                    redirect_uri: SPOTIFY_REDIRECT_URI,
+                    code_verifier: verifier
+                }).toString()
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Could not exchange Spotify code');
+            }
+
+            localStorage.setItem('spotifyAccessToken', data.access_token);
+            localStorage.setItem('spotifyRefreshToken', data.refresh_token);
+            history.replaceState({}, '', window.location.pathname);
+            return data.access_token;
+        }
+
+        function updateSpotifyUI(state) {
+            const target = document.getElementById('spotify-now-playing');
+            const status = document.getElementById('spotify-status');
+            const playButton = document.querySelector('.play-button');
+            const progressFill = document.querySelector('.progress-fill');
+
+            if (!target) {
+                return;
+            }
+
+            if (!state) {
+                target.querySelector('.track-title').textContent = 'Spotify not connected';
+                target.querySelector('.track-artist').textContent = 'Connect Spotify to sync';
+                if (playButton) playButton.textContent = '•';
+                if (progressFill) progressFill.style.width = '0%';
+                if (status) {
+                    status.textContent = 'Connect your Spotify account to display what you are currently listening to.';
+                }
+                return;
+            }
+
+            const currentTrack = state.track_window?.current_track;
+            if (!currentTrack) {
+                target.querySelector('.track-title').textContent = 'No track playing';
+                target.querySelector('.track-artist').textContent = 'Open Spotify';
+                if (status) {
+                    status.textContent = 'Spotify is open, but nothing is playing right now.';
+                }
+                return;
+            }
+
+            const title = currentTrack.name || 'Unknown title';
+            const artist = currentTrack.artists?.map(artist => artist.name).join(', ') || 'Unknown artist';
+            const albumArt = currentTrack.album?.images?.[0]?.url || '';
+            const art = target.querySelector('.spotify-art');
+
+            target.querySelector('.track-title').textContent = title;
+            target.querySelector('.track-artist').textContent = artist;
+
+            if (art && albumArt) {
+                art.style.background = `url('${albumArt}') center/cover no-repeat`;
+            }
+
+            if (playButton) {
+                playButton.textContent = state.paused ? '▶' : '❚❚';
+                playButton.onclick = async () => {
+                    if (window.spotifyPlayer) {
+                        await window.spotifyPlayer.togglePlay();
+                    }
+                };
+            }
+
+            if (progressFill && state.duration) {
+                const percent = (state.position / state.duration) * 100;
+                progressFill.style.width = `${Math.min(Math.max(percent, 0), 100)}%`;
+            }
+
+            if (status) {
+                status.textContent = 'Live via Spotify Web Playback SDK.';
+            }
+        }
+
+        async function initializeSpotifyPlayer() {
+            const status = document.getElementById('spotify-status');
+            const token = localStorage.getItem('spotifyAccessToken');
+
+            if (!token) {
+                updateSpotifyUI(null);
+                return;
+            }
+
+            if (!window.Spotify) {
+                if (status) {
+                    status.textContent = 'Spotify Web Playback SDK is loading...';
+                }
+                return;
+            }
+
+            if (window.spotifyPlayer) {
+                return;
+            }
+
+            window.spotifyPlayer = new window.Spotify.Player({
+                name: 'Whoami Web Player',
+                getOAuthToken: callback => callback(token),
+                volume: 0.5
+            });
+
+            window.spotifyPlayer.addListener('ready', ({ device_id }) => {
+                if (status) {
+                    status.textContent = `Spotify ready. Device ID: ${device_id.substring(0, 8)}`;
+                }
+            });
+
+            window.spotifyPlayer.addListener('not_ready', ({ device_id }) => {
+                if (status) {
+                    status.textContent = `Spotify device disconnected: ${device_id.substring(0, 8)}`;
+                }
+            });
+
+            window.spotifyPlayer.addListener('player_state_changed', state => {
+                updateSpotifyUI(state);
+            });
+
+            window.spotifyPlayer.addListener('initialization_error', ({ message }) => {
+                if (status) {
+                    status.textContent = `Spotify SDK initialization failed: ${message}`;
+                }
+            });
+
+            window.spotifyPlayer.addListener('authentication_error', ({ message }) => {
+                if (status) {
+                    status.textContent = `Spotify auth error: ${message}`;
+                }
+            });
+
+            window.spotifyPlayer.addListener('account_error', ({ message }) => {
+                if (status) {
+                    status.textContent = `Spotify account error: ${message}`;
+                }
+            });
+
+            window.spotifyPlayer.connect();
+            window.spotifyPlayer.getCurrentState().then(state => {
+                updateSpotifyUI(state);
+            });
+        }
+
+        async function loadSpotifyNowPlaying() {
+            const target = document.getElementById('spotify-now-playing');
+            const status = document.getElementById('spotify-status');
+            const connectButton = document.getElementById('spotify-connect-btn');
+            const saveIdButton = document.getElementById('spotify-save-clientid-btn');
+
+            if (connectButton) {
+                connectButton.addEventListener('click', connectSpotify);
+            }
+
+            if (saveIdButton) {
+                saveIdButton.addEventListener('click', saveSpotifyClientId);
+            }
+
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+            if (code) {
+                try {
+                    await exchangeSpotifyCode(code);
+                } catch (error) {
+                    if (status) {
+                        status.textContent = 'Spotify login failed. Please try again.';
+                    }
+                }
+            }
+
+            const token = localStorage.getItem('spotifyAccessToken');
+
+            if (!target || !token) {
+                updateSpotifyUI(null);
+                return;
+            }
+
+            try {
+                if (window.Spotify) {
+                    await initializeSpotifyPlayer();
+                } else {
+                    updateSpotifyUI(null);
+                }
+            } catch (error) {
+                if (target) {
+                    target.querySelector('.track-title').textContent = 'Spotify unavailable';
+                    target.querySelector('.track-artist').textContent = 'Check access token';
+                }
+                if (status) {
+                    status.textContent = 'Spotify connection failed. Please reconnect.';
+                }
+            }
+        }
+
+        async function sendMessageToCreator() {
+            const textarea = document.getElementById('message-input');
+            const message = textarea ? textarea.value.trim() : '';
+
+            if (!textarea || !message) {
+                if (textarea) {
+                    textarea.focus();
+                }
+                return;
+            }
+
+            try {
+                textarea.value = '';
+
                 const response = await fetch('http://localhost:3000/api/message', {
                     method: 'POST',
                     headers: {
