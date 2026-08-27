@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <title>Creator Messages</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 28px;
+      background: #000;
+      color: #fff;
+      font-family: 'Press Start 2P', monospace;
+    }
+    .admin-shell {
+      width: min(980px, 100%);
+      margin: 0 auto;
+      padding: 28px 24px;
+      border: 3px solid #004cff;
+      border-radius: 12px;
+      box-shadow: 0 0 12px #004cff, 0 0 24px rgba(0, 76, 255, .5);
+    }
+    .hidden { display: none !important; }
+    .login-panel { max-width: 420px; margin: 20px auto 0; display: flex; flex-direction: column; gap: 14px; }
+    label, .empty, .message-meta { font-size: 10px; line-height: 1.7; }
+    input, button { font: inherit; color: #fff; background: transparent; border: 2px solid #004cff; border-radius: 8px; padding: 12px 14px; }
+    input { background: rgba(0, 0, 0, .6); outline: none; }
+    button { cursor: pointer; font-size: 10px; }
+    button:hover, button:focus { color: #004cff; box-shadow: 0 0 12px rgba(0, 76, 255, .8); }
+    .header, .message-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .header { margin-bottom: 20px; }
+    h1 { margin: 0; font-size: clamp(20px, 3vw, 32px); }
+    .toolbar { display: flex; gap: 12px; }
+    .message-list { display: flex; flex-direction: column; gap: 18px; }
+    .message-card { padding: 16px; border: 2px solid #004cff; border-radius: 10px; box-shadow: inset 0 0 8px rgba(0, 76, 255, .12); }
+    .message-meta { color: #9ab7ff; margin-bottom: 12px; }
+    .message-text { white-space: pre-wrap; font-size: 12px; line-height: 1.9; overflow-wrap: anywhere; }
+    .delete-btn { border-color: #ff4d4d; color: #ffb1b1; }
+    .empty { padding: 20px; border: 2px dashed #004cff; color: #cfe0ff; }
+    @media (max-width: 600px) { body { padding: 18px 12px; } .admin-shell { padding: 18px 14px; } .message-text { font-size: 10px; } }
+  </style>
+</head>
+<body>
+  <main class="admin-shell">
+    <section id="login-panel" class="login-panel">
+      <label for="admin-password">ADMIN PASSWORD</label>
+      <input id="admin-password" type="password" placeholder="Enter password" autocomplete="current-password" />
+      <button id="loginBtn" type="button">Open inbox</button>
+      <div id="login-error" class="empty hidden"></div>
+    </section>
+    <section id="inbox-panel" class="hidden">
+      <div class="header">
+        <h1>Creator Messages</h1>
+        <div class="toolbar"><button id="refreshBtn" type="button">Refresh</button><button id="logoutBtn" type="button">Log out</button></div>
+      </div>
+      <div id="messages" class="message-list"></div>
+    </section>
+  </main>
+  <script>
+    let adminAuth = '';
+    const loginPanel = document.getElementById('login-panel');
+    const inboxPanel = document.getElementById('inbox-panel');
+    const loginError = document.getElementById('login-error');
+    const passwordInput = document.getElementById('admin-password');
+    const messagesList = document.getElementById('messages');
+
+    function showLogin(errorText = '') {
+      loginPanel.classList.remove('hidden');
+      inboxPanel.classList.add('hidden');
+      loginError.textContent = errorText;
+      loginError.classList.toggle('hidden', !errorText);
+    }
+
+    async function fetchMessages() {
+      if (!adminAuth) return showLogin('Access denied.');
+      const response = await fetch(`${window.location.origin}/api/messages`, { headers: { Authorization: adminAuth } });
+      if (!response.ok) {
+        adminAuth = '';
+        passwordInput.value = '';
+        return showLogin('Invalid admin password.');
+      }
+      const messages = await response.json();
+      loginPanel.classList.add('hidden');
+      inboxPanel.classList.remove('hidden');
+      messagesList.innerHTML = messages.length ? messages.map(message => `
+        <article class="message-card">
+          <div class="message-meta"><span>${new Date(message.createdAt).toLocaleString()}</span><button class="delete-btn" type="button" data-id="${message.id}">Delete</button></div>
+          <div class="message-text"></div>
+        </article>`).join('') : '<div class="empty">No messages yet.</div>';
+      messages.forEach((message, index) => { messagesList.children[index].querySelector('.message-text').textContent = message.text; });
+      messagesList.querySelectorAll('.delete-btn').forEach(button => button.addEventListener('click', async () => {
+        const response = await fetch(`${window.location.origin}/api/messages/${button.dataset.id}`, { method: 'DELETE', headers: { Authorization: adminAuth } });
+        if (response.ok) fetchMessages();
+      }));
+    }
+
+    function login() {
+      const password = passwordInput.value.trim();
+      if (!password) return showLogin('Enter the admin password.');
+      adminAuth = `Basic ${btoa(`admin:${password}`)}`;
+      fetchMessages();
+    }
+
+    document.getElementById('loginBtn').addEventListener('click', login);
+    passwordInput.addEventListener('keydown', event => { if (event.key === 'Enter') login(); });
+    document.getElementById('refreshBtn').addEventListener('click', fetchMessages);
+    document.getElementById('logoutBtn').addEventListener('click', () => { adminAuth = ''; passwordInput.value = ''; showLogin(); });
+  </script>
+</body>
+</html>
