@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
@@ -10,8 +11,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 const RECIPIENT_EMAIL = process.env.EMAIL_TO || 'danyaellap@gmail.com';
-const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || 'WhoamiInbox2026!').trim();
-const LEGACY_ADMIN_PASSWORDS = new Set(['admin123', 'change-this-password']);
+const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || '').trim();
 const messagesFile = path.join(__dirname, 'messages.json');
 const database = process.env.DATABASE_URL ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }) : null;
 let messages = [];
@@ -102,18 +102,14 @@ app.use((req, res, next) => {
 
   next();
 });
-app.use(express.static(__dirname));
-
 function isValidAdminPassword(password) {
-  if (!password) {
+  if (!ADMIN_PASSWORD || !password) {
     return false;
   }
 
-  if (password === ADMIN_PASSWORD) {
-    return true;
-  }
-
-  return !process.env.ADMIN_PASSWORD && LEGACY_ADMIN_PASSWORDS.has(password);
+  const expected = Buffer.from(ADMIN_PASSWORD);
+  const provided = Buffer.from(password);
+  return expected.length === provided.length && crypto.timingSafeEqual(expected, provided);
 }
 
 function requireAdmin(req, res, next) {
@@ -126,18 +122,30 @@ function requireAdmin(req, res, next) {
 
   try {
     const decoded = Buffer.from(authHeader.replace('Basic ', ''), 'base64').toString('utf8');
-    const [username, password] = decoded.split(':');
+    const separator = decoded.indexOf(':');
+    const username = separator === -1 ? '' : decoded.slice(0, separator);
+    const password = separator === -1 ? '' : decoded.slice(separator + 1);
 
     if (username === 'admin' && isValidAdminPassword(password)) {
       return next();
     }
-  } catch (error) {
-    // ignore
+  } catch {
+    // Invalid authorization headers are rejected below.
   }
 
   res.setHeader('WWW-Authenticate', 'Basic realm="Creator Messages"');
   return res.status(401).json({ error: 'Invalid admin credentials.' });
 }
+
+if (!ADMIN_PASSWORD) {
+  console.error('ADMIN_PASSWORD is not configured; admin access is disabled.');
+}
+
+app.get(['/admin', '/admin.html', '/admin/*'], requireAdmin, (_req, res) => {
+  res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+app.use(express.static(__dirname));
 
 app.post('/api/message', async (req, res) => {
   const message = (req.body && req.body.message) ? String(req.body.message).trim() : '';
@@ -220,17 +228,9 @@ app.delete('/api/messages/:id', requireAdmin, async (req, res) => {
   }
 });
 
-app.get('/admin', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'admin.html'));
-});
-
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) {
     return next();
-  }
-
-  if (req.path.startsWith('/admin')) {
-    return res.sendFile(path.join(__dirname, 'admin.html'));
   }
 
   res.sendFile(path.join(__dirname, 'whoami.html'));
