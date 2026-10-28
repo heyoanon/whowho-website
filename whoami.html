@@ -305,99 +305,6 @@ h3 {
     background: rgba(0, 76, 255, 0.08);
 }
 
-.spotify-embed-wrapper {
-    border: 3px solid #004cff;
-    background: rgba(0, 0, 0, 0.8);
-    box-shadow: inset 0 0 12px rgba(0, 76, 255, 0.22), 0 0 12px rgba(0, 76, 255, 0.52);
-    border-radius: 8px;
-    overflow: hidden;
-    padding: 6px;
-    transform: translateZ(0);
-}
-
-.spotify-embed-wrapper iframe {
-    display: block;
-    border: 0;
-    border-radius: 6px;
-    background: #000000;
-    box-shadow: 0 0 0 2px rgba(0, 76, 255, 0.28);
-}
-
-.now-playing-box {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    border: 2px solid #004cff;
-    background: rgba(0, 0, 0, 0.55);
-    box-shadow: inset 0 0 8px rgba(0, 76, 255, 0.12);
-    padding: 14px 12px;
-    border-radius: 8px;
-}
-
-.spotify-art {
-    width: 64px;
-    height: 64px;
-    background: linear-gradient(135deg, #1db954, #0f3d2a);
-    border: 2px solid #004cff;
-    border-radius: 8px;
-    box-shadow: 0 0 8px rgba(0, 76, 255, 0.5);
-}
-
-.track-info {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    flex: 1;
-}
-
-.track-title,
-.track-artist {
-    margin: 0;
-    color: #ffffff;
-    font-size: 10px;
-    line-height: 1.5;
-}
-
-.track-artist {
-    color: #a9c5ff;
-}
-
-.player-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 4px;
-}
-
-.play-button {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 2px solid #004cff;
-    background: rgba(0, 76, 255, 0.08);
-    color: #004cff;
-    font-size: 12px;
-    cursor: pointer;
-    box-shadow: 0 0 8px rgba(0, 76, 255, 0.5);
-}
-
-.progress-bar {
-    flex: 1;
-    height: 6px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.12);
-    overflow: hidden;
-    position: relative;
-}
-
-.progress-fill {
-    display: block;
-    width: 62%;
-    height: 100%;
-    background: linear-gradient(90deg, #004cff, #7aa8ff);
-    border-radius: 999px;
-}
-
 .fact-box p,
 .fact-box li {
     color: #ffffff;
@@ -697,13 +604,9 @@ h3 {
         min-height: 140px;
     }
 
-    .spotify-embed-wrapper iframe {
-        height: 300px;
-    }
 }
 
     </style>
-    <script src="https://sdk.scdn.co/spotify-player.js"></script>
     <title>Whoami</title>
 </head>
 
@@ -719,31 +622,12 @@ h3 {
                 <button class="menu-item active" data-page="profile">PROFILE</button>
                 <button class="menu-item" data-page="socials">SOCIALS</button>
                 <button class="menu-item" data-page="sidequests">SIDE QUESTS</button>
-                <button class="menu-item" data-page="now-playing">NOW PLAYING</button>
                 <button class="menu-item" data-page="message">MESSAGE ME</button>
             </div>
         </div>
     </div>
 
     <script>
-        let SPOTIFY_CLIENT_ID = localStorage.getItem('spotifyClientId') || '8a36e00cf21d4620aa646c7f901b27fa';
-
-        const getSpotifyRedirectUri = () => {
-            const hostname = window.location.hostname;
-            const protocol = window.location.protocol;
-
-            if (protocol === 'https:') {
-                return `${window.location.origin}${window.location.pathname}`;
-            }
-
-            if (hostname === 'localhost' || hostname === '127.0.0.1') {
-                return 'http://localhost:8000/whoami.html';
-            }
-
-            return 'https://your-domain.example/whoami.html';
-        };
-
-        const SPOTIFY_REDIRECT_URI = getSpotifyRedirectUri();
         const registeredEmail = 'danyaellap@gmail.com';
 
         const profileSections = {
@@ -834,14 +718,6 @@ h3 {
                     </div>
                 </div>
             `,
-            exit: `
-                <div class="panel-content">
-                    <h2>NOW PLAYING</h2>
-                    <div class="spotify-embed-wrapper">
-                        <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/playlist/1Td7BhVTsUQkYBXHeLh46g?utm_source=generator&si=38658d2860804d3e" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
-                    </div>
-                </div>
-            `,
             message: `
                 <div class="panel-content">
                     <h2>MESSAGE ME</h2>
@@ -882,7 +758,6 @@ h3 {
                     <button class="menu-item" data-page="profile">PROFILE</button>
                     <button class="menu-item" data-page="socials">SOCIALS</button>
                     <button class="menu-item" data-page="sidequests">SIDE QUESTS</button>
-                    <button class="menu-item" data-page="now-playing">NOW PLAYING</button>
                     <button class="menu-item" data-page="message">MESSAGE ME</button>
                 </div>
             `;
@@ -893,297 +768,6 @@ h3 {
                     renderPage(button.dataset.page);
                 });
             });
-        }
-
-        function base64UrlEncode(value) {
-            return btoa(String.fromCharCode(...new Uint8Array(value)))
-                .replace(/\+/g, '-')
-                .replace(/\//g, '_')
-                .replace(/=+$/g, '');
-        }
-
-        async function generateCodeChallenge(codeVerifier) {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(codeVerifier);
-            const digest = await crypto.subtle.digest('SHA-256', data);
-            return base64UrlEncode(digest);
-        }
-
-        function saveSpotifyClientId() {
-            const input = document.getElementById('spotify-client-id-input');
-            const status = document.getElementById('spotify-status');
-
-            if (!input) {
-                return;
-            }
-
-            const value = input.value.trim();
-            if (!value) {
-                if (status) {
-                    status.textContent = 'Enter your Spotify Client ID to continue.';
-                }
-                return;
-            }
-
-            SPOTIFY_CLIENT_ID = value;
-            localStorage.setItem('spotifyClientId', value);
-
-            if (status) {
-                status.textContent = 'Spotify Client ID saved. Click CONNECT SPOTIFY to continue.';
-            }
-        }
-
-        function getSpotifyAuthUrl() {
-            const codeVerifier = crypto.getRandomValues(new Uint8Array(32)).reduce((acc, byte) => acc + byte.toString(16).padStart(2, '0'), '');
-            const params = new URLSearchParams({
-                client_id: SPOTIFY_CLIENT_ID,
-                response_type: 'code',
-                redirect_uri: SPOTIFY_REDIRECT_URI,
-                scope: 'streaming user-read-email user-read-private user-read-playback-state user-modify-playback-state user-read-currently-playing',
-                code_challenge_method: 'S256',
-                code_challenge: 'placeholder'
-            });
-
-            localStorage.setItem('spotifyCodeVerifier', codeVerifier);
-            return `https://accounts.spotify.com/authorize?${params.toString()}`;
-        }
-
-        async function connectSpotify() {
-            const status = document.getElementById('spotify-status');
-
-            if (!SPOTIFY_CLIENT_ID || SPOTIFY_CLIENT_ID === 'YOUR_SPOTIFY_CLIENT_ID') {
-                if (status) {
-                    status.textContent = 'Enter your Spotify Client ID, then click CONNECT SPOTIFY.';
-                }
-                return;
-            }
-
-            if (window.location.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
-                if (status) {
-                    status.textContent = 'Spotify requires a secure HTTPS redirect URI in production. Use https://your-domain.example/whoami.html.';
-                }
-                return;
-            }
-
-            const codeVerifier = crypto.getRandomValues(new Uint8Array(32)).reduce((acc, byte) => acc + byte.toString(16).padStart(2, '0'), '');
-            const codeChallenge = await generateCodeChallenge(codeVerifier);
-            localStorage.setItem('spotifyCodeVerifier', codeVerifier);
-
-            const params = new URLSearchParams({
-                client_id: SPOTIFY_CLIENT_ID,
-                response_type: 'code',
-                redirect_uri: SPOTIFY_REDIRECT_URI,
-                scope: 'streaming user-read-email user-read-private user-read-playback-state user-modify-playback-state user-read-currently-playing',
-                code_challenge_method: 'S256',
-                code_challenge: codeChallenge
-            });
-
-            window.location.href = `https://accounts.spotify.com/authorize?${params.toString()}`;
-        }
-
-        async function exchangeSpotifyCode(code) {
-            const verifier = localStorage.getItem('spotifyCodeVerifier');
-            const response = await fetch('https://accounts.spotify.com/api/token', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams({
-                    client_id: SPOTIFY_CLIENT_ID,
-                    grant_type: 'authorization_code',
-                    code,
-                    redirect_uri: SPOTIFY_REDIRECT_URI,
-                    code_verifier: verifier
-                }).toString()
-            });
-
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.error || 'Could not exchange Spotify code');
-            }
-
-            localStorage.setItem('spotifyAccessToken', data.access_token);
-            localStorage.setItem('spotifyRefreshToken', data.refresh_token);
-            history.replaceState({}, '', window.location.pathname);
-            return data.access_token;
-        }
-
-        function updateSpotifyUI(state) {
-            const target = document.getElementById('spotify-now-playing');
-            const status = document.getElementById('spotify-status');
-            const playButton = document.querySelector('.play-button');
-            const progressFill = document.querySelector('.progress-fill');
-
-            if (!target) {
-                return;
-            }
-
-            if (!state) {
-                target.querySelector('.track-title').textContent = 'Spotify not connected';
-                target.querySelector('.track-artist').textContent = 'Connect Spotify to sync';
-                if (playButton) playButton.textContent = '•';
-                if (progressFill) progressFill.style.width = '0%';
-                if (status) {
-                    status.textContent = 'Connect your Spotify account to display what you are currently listening to.';
-                }
-                return;
-            }
-
-            const currentTrack = state.track_window?.current_track;
-            if (!currentTrack) {
-                target.querySelector('.track-title').textContent = 'No track playing';
-                target.querySelector('.track-artist').textContent = 'Open Spotify';
-                if (status) {
-                    status.textContent = 'Spotify is open, but nothing is playing right now.';
-                }
-                return;
-            }
-
-            const title = currentTrack.name || 'Unknown title';
-            const artist = currentTrack.artists?.map(artist => artist.name).join(', ') || 'Unknown artist';
-            const albumArt = currentTrack.album?.images?.[0]?.url || '';
-            const art = target.querySelector('.spotify-art');
-
-            target.querySelector('.track-title').textContent = title;
-            target.querySelector('.track-artist').textContent = artist;
-
-            if (art && albumArt) {
-                art.style.background = `url('${albumArt}') center/cover no-repeat`;
-            }
-
-            if (playButton) {
-                playButton.textContent = state.paused ? '▶' : '❚❚';
-                playButton.onclick = async () => {
-                    if (window.spotifyPlayer) {
-                        await window.spotifyPlayer.togglePlay();
-                    }
-                };
-            }
-
-            if (progressFill && state.duration) {
-                const percent = (state.position / state.duration) * 100;
-                progressFill.style.width = `${Math.min(Math.max(percent, 0), 100)}%`;
-            }
-
-            if (status) {
-                status.textContent = 'Live via Spotify Web Playback SDK.';
-            }
-        }
-
-        async function initializeSpotifyPlayer() {
-            const status = document.getElementById('spotify-status');
-            const token = localStorage.getItem('spotifyAccessToken');
-
-            if (!token) {
-                updateSpotifyUI(null);
-                return;
-            }
-
-            if (!window.Spotify) {
-                if (status) {
-                    status.textContent = 'Spotify Web Playback SDK is loading...';
-                }
-                return;
-            }
-
-            if (window.spotifyPlayer) {
-                return;
-            }
-
-            window.spotifyPlayer = new window.Spotify.Player({
-                name: 'Whoami Web Player',
-                getOAuthToken: callback => callback(token),
-                volume: 0.5
-            });
-
-            window.spotifyPlayer.addListener('ready', ({ device_id }) => {
-                if (status) {
-                    status.textContent = `Spotify ready. Device ID: ${device_id.substring(0, 8)}`;
-                }
-            });
-
-            window.spotifyPlayer.addListener('not_ready', ({ device_id }) => {
-                if (status) {
-                    status.textContent = `Spotify device disconnected: ${device_id.substring(0, 8)}`;
-                }
-            });
-
-            window.spotifyPlayer.addListener('player_state_changed', state => {
-                updateSpotifyUI(state);
-            });
-
-            window.spotifyPlayer.addListener('initialization_error', ({ message }) => {
-                if (status) {
-                    status.textContent = `Spotify SDK initialization failed: ${message}`;
-                }
-            });
-
-            window.spotifyPlayer.addListener('authentication_error', ({ message }) => {
-                if (status) {
-                    status.textContent = `Spotify auth error: ${message}`;
-                }
-            });
-
-            window.spotifyPlayer.addListener('account_error', ({ message }) => {
-                if (status) {
-                    status.textContent = `Spotify account error: ${message}`;
-                }
-            });
-
-            window.spotifyPlayer.connect();
-            window.spotifyPlayer.getCurrentState().then(state => {
-                updateSpotifyUI(state);
-            });
-        }
-
-        async function loadSpotifyNowPlaying() {
-            const target = document.getElementById('spotify-now-playing');
-            const status = document.getElementById('spotify-status');
-            const connectButton = document.getElementById('spotify-connect-btn');
-            const saveIdButton = document.getElementById('spotify-save-clientid-btn');
-
-            if (connectButton) {
-                connectButton.addEventListener('click', connectSpotify);
-            }
-
-            if (saveIdButton) {
-                saveIdButton.addEventListener('click', saveSpotifyClientId);
-            }
-
-            const params = new URLSearchParams(window.location.search);
-            const code = params.get('code');
-            if (code) {
-                try {
-                    await exchangeSpotifyCode(code);
-                } catch (error) {
-                    if (status) {
-                        status.textContent = 'Spotify login failed. Please try again.';
-                    }
-                }
-            }
-
-            const token = localStorage.getItem('spotifyAccessToken');
-
-            if (!target || !token) {
-                updateSpotifyUI(null);
-                return;
-            }
-
-            try {
-                if (window.Spotify) {
-                    await initializeSpotifyPlayer();
-                } else {
-                    updateSpotifyUI(null);
-                }
-            } catch (error) {
-                if (target) {
-                    target.querySelector('.track-title').textContent = 'Spotify unavailable';
-                    target.querySelector('.track-artist').textContent = 'Check access token';
-                }
-                if (status) {
-                    status.textContent = 'Spotify connection failed. Please reconnect.';
-                }
-            }
         }
 
         async function sendMessageToCreator() {
@@ -1274,9 +858,6 @@ h3 {
                 }
             }
 
-            if (pageName === 'exit') {
-                loadSpotifyNowPlaying();
-            }
         }
 
         function renderDetail(pageName) {
@@ -1296,15 +877,7 @@ h3 {
             });
         }
 
-        window.onSpotifyWebPlaybackSDKReady = () => {
-            const token = localStorage.getItem('spotifyAccessToken');
-            if (token) {
-                initializeSpotifyPlayer();
-            }
-        };
-
         renderMainMenu();
     </script>
 </body>
 </html>
-
