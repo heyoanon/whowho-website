@@ -25,17 +25,15 @@
       border-radius: 12px;
       box-shadow: 0 0 12px #004cff, 0 0 24px rgba(0, 76, 255, .5);
     }
-    .hidden { display: none !important; }
-    .login-panel { max-width: 420px; margin: 20px auto 0; display: flex; flex-direction: column; gap: 14px; }
-    label, .empty, .message-meta { font-size: 10px; line-height: 1.7; }
-    input, button { font: inherit; color: #fff; background: transparent; border: 2px solid #004cff; border-radius: 8px; padding: 12px 14px; }
-    input { background: rgba(0, 0, 0, .6); outline: none; }
-    button { cursor: pointer; font-size: 10px; }
+    .empty, .message-meta { font-size: 10px; line-height: 1.7; }
+    button { font: inherit; color: #fff; background: transparent; border: 2px solid #004cff; border-radius: 8px; padding: 12px 14px; cursor: pointer; font-size: 10px; }
     button:hover, button:focus { color: #004cff; box-shadow: 0 0 12px rgba(0, 76, 255, .8); }
     .header, .message-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
     .header { margin-bottom: 20px; }
     h1 { margin: 0; font-size: clamp(20px, 3vw, 32px); }
     .toolbar { display: flex; gap: 12px; }
+    .toolbar a { color: #9ab7ff; align-self: center; font-size: 10px; }
+    .toolbar a:hover, .toolbar a:focus { color: #004cff; }
     .message-list { display: flex; flex-direction: column; gap: 18px; }
     .sync-status { margin-bottom: 14px; color: #9ab7ff; font-size: 10px; line-height: 1.7; }
     .message-card { padding: 16px; border: 2px solid #004cff; border-radius: 10px; box-shadow: inset 0 0 8px rgba(0, 76, 255, .12); }
@@ -48,54 +46,32 @@
 </head>
 <body>
   <main class="admin-shell">
-    <section id="login-panel" class="login-panel">
-      <label for="admin-password">ADMIN PASSWORD</label>
-      <input id="admin-password" type="password" placeholder="Enter password" autocomplete="current-password" />
-      <button id="loginBtn" type="button">Open inbox</button>
-      <div id="login-error" class="empty hidden"></div>
-    </section>
-    <section id="inbox-panel" class="hidden">
+    <section id="inbox-panel">
       <div class="header">
         <h1>Creator Messages</h1>
-        <div class="toolbar"><button id="refreshBtn" type="button">Refresh</button><button id="logoutBtn" type="button">Log out</button></div>
+        <div class="toolbar"><button id="refreshBtn" type="button">Refresh</button><a href="/">Back to site</a></div>
       </div>
       <div id="sync-status" class="sync-status" role="status" aria-live="polite"></div>
       <div id="messages" class="message-list"></div>
     </section>
   </main>
   <script>
-    let adminAuth = '';
-    const loginPanel = document.getElementById('login-panel');
-    const inboxPanel = document.getElementById('inbox-panel');
-    const loginError = document.getElementById('login-error');
-    const passwordInput = document.getElementById('admin-password');
     const messagesList = document.getElementById('messages');
     const syncStatus = document.getElementById('sync-status');
     let refreshTimer;
     let isLoading = false;
 
-    function showLogin(errorText = '') {
-      loginPanel.classList.remove('hidden');
-      inboxPanel.classList.add('hidden');
-      loginError.textContent = errorText;
-      loginError.classList.toggle('hidden', !errorText);
-    }
-
     async function fetchMessages() {
-      if (!adminAuth) return showLogin('Access denied.');
       if (isLoading) return;
       isLoading = true;
       syncStatus.textContent = 'Syncing messages...';
 
       try {
-        const response = await fetch('/api/messages', { headers: { Authorization: adminAuth } });
+        const response = await fetch('/api/messages', { credentials: 'same-origin' });
         if (response.status === 401 || response.status === 403) {
-          adminAuth = '';
-          passwordInput.value = '';
           clearInterval(refreshTimer);
           refreshTimer = undefined;
-          showLogin('Invalid admin password.');
-          return;
+          throw new Error('Admin authentication failed. Reload the page and sign in with the Vercel admin password.');
         }
         if (!response.ok) {
           throw new Error(`Inbox request failed (${response.status}).`);
@@ -106,8 +82,6 @@
           throw new Error('Inbox returned an invalid response.');
         }
 
-        loginPanel.classList.add('hidden');
-        inboxPanel.classList.remove('hidden');
         messagesList.innerHTML = messages.length ? messages.map(message => `
           <article class="message-card">
             <div class="message-meta"><span>${new Date(message.createdAt).toLocaleString()}</span><button class="delete-btn" type="button" data-id="${message.id}">Delete</button></div>
@@ -117,7 +91,7 @@
         messagesList.querySelectorAll('.delete-btn').forEach(button => button.addEventListener('click', async () => {
           button.disabled = true;
           try {
-            const response = await fetch(`/api/messages/${encodeURIComponent(button.dataset.id)}`, { method: 'DELETE', headers: { Authorization: adminAuth } });
+            const response = await fetch(`/api/messages/${encodeURIComponent(button.dataset.id)}`, { method: 'DELETE', credentials: 'same-origin' });
             if (!response.ok) {
               throw new Error(`Delete failed (${response.status}).`);
             }
@@ -133,34 +107,14 @@
           refreshTimer = setInterval(fetchMessages, 15000);
         }
       } catch (error) {
-        const errorMessage = error.message || 'Unable to sync messages. Please try again.';
-        if (inboxPanel.classList.contains('hidden')) {
-          showLogin(errorMessage);
-        } else {
-          syncStatus.textContent = errorMessage;
-        }
+        syncStatus.textContent = error.message || 'Unable to sync messages. Please try again.';
       } finally {
         isLoading = false;
       }
     }
 
-    function login() {
-      const password = passwordInput.value.trim();
-      if (!password) return showLogin('Enter the admin password.');
-      adminAuth = `Basic ${btoa(`admin:${password}`)}`;
-      fetchMessages();
-    }
-
-    document.getElementById('loginBtn').addEventListener('click', login);
-    passwordInput.addEventListener('keydown', event => { if (event.key === 'Enter') login(); });
     document.getElementById('refreshBtn').addEventListener('click', fetchMessages);
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      adminAuth = '';
-      passwordInput.value = '';
-      clearInterval(refreshTimer);
-      refreshTimer = undefined;
-      showLogin();
-    });
+    fetchMessages();
   </script>
 </body>
 </html>
