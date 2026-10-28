@@ -102,9 +102,9 @@
           }
         }));
 
-        syncStatus.textContent = `Synced ${messages.length} message${messages.length === 1 ? '' : 's'} at ${new Date().toLocaleTimeString()}. Auto-refreshes every 15 seconds.`;
+        syncStatus.textContent = `Synced ${messages.length} message${messages.length === 1 ? '' : 's'} at ${new Date().toLocaleTimeString()}. Auto-refreshes every 5 seconds.`;
         if (!refreshTimer) {
-          refreshTimer = setInterval(fetchMessages, 15000);
+          refreshTimer = setInterval(fetchMessages, 5000);
         }
       } catch (error) {
         syncStatus.textContent = error.message || 'Unable to sync messages. Please try again.';
