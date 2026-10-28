@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const { Pool } = require('pg');
 const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
 
@@ -12,6 +13,7 @@ const RECIPIENT_EMAIL = process.env.EMAIL_TO || 'danyaellap@gmail.com';
 const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || 'WhoamiInbox2026!').trim();
 const LEGACY_ADMIN_PASSWORDS = new Set(['admin123', 'change-this-password']);
 const messagesFile = path.join(__dirname, 'messages.json');
+const database = process.env.DATABASE_URL ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }) : null;
 let messages = [];
 
 try {
@@ -31,6 +33,61 @@ function saveMessages() {
   } catch (error) {
     console.error('Unable to save messages:', error.message);
   }
+}
+
+async function initializeDatabase() {
+  if (!database) {
+    return;
+  }
+
+  await database.query(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id TEXT PRIMARY KEY,
+      text TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL
+    )
+  `);
+}
+
+async function loadMessages() {
+  if (database) {
+    const result = await database.query('SELECT id, text, created_at AS "createdAt" FROM messages ORDER BY created_at DESC');
+    messages = result.rows;
+    return;
+  }
+
+  if (fs.existsSync(messagesFile)) {
+    const savedMessages = JSON.parse(fs.readFileSync(messagesFile, 'utf8'));
+    if (Array.isArray(savedMessages)) {
+      messages = savedMessages;
+    }
+  }
+}
+
+async function addMessage(newMessage) {
+  if (database) {
+    await database.query('INSERT INTO messages (id, text, created_at) VALUES ($1, $2, $3)', [newMessage.id, newMessage.text, newMessage.createdAt]);
+    return;
+  }
+
+  messages.unshift(newMessage);
+  saveMessages();
+}
+
+async function removeMessage(id) {
+  if (database) {
+    const result = await database.query('DELETE FROM messages WHERE id = $1', [id]);
+    return result.rowCount > 0;
+  }
+
+  const index = messages.findIndex(message => message.id === id);
+  if (index === -1) {
+    return false;
+  }
+
+  messages.splice(index, 1);
+  saveMessages();
+  return true;
 }
 
 app.use(express.json({ limit: '1mb' }));
@@ -95,8 +152,12 @@ app.post('/api/message', async (req, res) => {
     createdAt: new Date().toISOString()
   };
 
-  messages.unshift(newMessage);
-  saveMessages();
+  try {
+    await addMessage(newMessage);
+  } catch (error) {
+    console.error('Unable to save message:', error.message);
+    return res.status(500).json({ error: 'Unable to save message.' });
+  }
 
   const emailUser = process.env.EMAIL_USER;
   const emailPass = process.env.EMAIL_PASS;
@@ -132,21 +193,31 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true });
 });
 
-app.get('/api/messages', requireAdmin, (_req, res) => {
-  res.json(messages);
+app.get('/api/messages', requireAdmin, async (_req, res) => {
+  try {
+    if (database) {
+      messages = (await database.query('SELECT id, text, created_at AS "createdAt" FROM messages ORDER BY created_at DESC')).rows;
+    } else {
+      await loadMessages();
+    }
+    return res.json(messages);
+  } catch (error) {
+    console.error('Unable to load messages:', error.message);
+    return res.status(500).json({ error: 'Unable to load messages.' });
+  }
 });
 
-app.delete('/api/messages/:id', requireAdmin, (req, res) => {
-  const id = req.params.id;
-  const index = messages.findIndex(msg => msg.id === id);
-
-  if (index === -1) {
-    return res.status(404).json({ error: 'Message not found.' });
+app.delete('/api/messages/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = req.params.id;
+    if (!await removeMessage(id)) {
+      return res.status(404).json({ error: 'Message not found.' });
+    }
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Unable to delete message:', error.message);
+    return res.status(500).json({ error: 'Unable to delete message.' });
   }
-
-  messages.splice(index, 1);
-  saveMessages();
-  return res.json({ success: true });
 });
 
 app.get('/admin', (_req, res) => {
@@ -165,6 +236,12 @@ app.get('*', (req, res, next) => {
   res.sendFile(path.join(__dirname, 'whoami.html'));
 });
 
-app.listen(PORT, () => {
+initializeDatabase()
+  .then(loadMessages)
+  .then(() => app.listen(PORT, () => {
   console.log(`Whoami backend running at http://localhost:${PORT}`);
-});
+  }))
+  .catch(error => {
+    console.error('Unable to initialize message storage:', error.message);
+    process.exit(1);
+  });
