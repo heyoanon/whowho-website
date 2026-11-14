@@ -899,9 +899,9 @@ h3 {
 
 
         let lanyardRefreshTimer;
-        let spotifyProgressTimer;
-        let spotifyTrackStartedAt = 0;
-        let spotifyTrackEndsAt = 0;
+        let trackProgressTimer;
+        let trackStartedAt = 0;
+        let trackEndsAt = 0;
         let isLoadingLanyard = false;
 
         function stopLanyardRefresh() {
@@ -909,16 +909,16 @@ h3 {
                 clearInterval(lanyardRefreshTimer);
                 lanyardRefreshTimer = undefined;
             }
-            stopSpotifyProgress();
+            stopTrackProgress();
         }
 
-        function stopSpotifyProgress() {
-            if (spotifyProgressTimer) {
-                clearInterval(spotifyProgressTimer);
-                spotifyProgressTimer = undefined;
+        function stopTrackProgress() {
+            if (trackProgressTimer) {
+                clearInterval(trackProgressTimer);
+                trackProgressTimer = undefined;
             }
-            spotifyTrackStartedAt = 0;
-            spotifyTrackEndsAt = 0;
+            trackStartedAt = 0;
+            trackEndsAt = 0;
         }
 
         function formatTrackTime(totalSeconds) {
@@ -927,20 +927,20 @@ h3 {
             return String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
         }
 
-        function updateSpotifyProgress() {
+        function updateTrackProgress() {
             const timing = document.getElementById('lanyard-timestamp');
             const elapsedTime = document.getElementById('lanyard-elapsed-time');
             const totalTime = document.getElementById('lanyard-total-time');
             const progress = timing && timing.querySelector('[role="progressbar"]');
             const progressFill = document.getElementById('lanyard-track-progress-fill');
 
-            if (!timing || !elapsedTime || !totalTime || !progress || !progressFill || !spotifyTrackStartedAt || !spotifyTrackEndsAt) {
-                stopSpotifyProgress();
+            if (!timing || !elapsedTime || !totalTime || !progress || !progressFill || !trackStartedAt || !trackEndsAt) {
+                stopTrackProgress();
                 return;
             }
 
-            const durationSeconds = Math.floor((spotifyTrackEndsAt - spotifyTrackStartedAt) / 1000);
-            const elapsedSeconds = Math.min(durationSeconds, Math.max(0, Math.floor((Date.now() - spotifyTrackStartedAt) / 1000)));
+            const durationSeconds = Math.floor((trackEndsAt - trackStartedAt) / 1000);
+            const elapsedSeconds = Math.min(durationSeconds, Math.max(0, Math.floor((Date.now() - trackStartedAt) / 1000)));
             const progressPercent = durationSeconds > 0 ? (elapsedSeconds / durationSeconds) * 100 : 0;
 
             elapsedTime.textContent = formatTrackTime(elapsedSeconds);
@@ -948,6 +948,19 @@ h3 {
             progress.setAttribute('aria-valuenow', String(Math.round(progressPercent)));
             progressFill.style.width = progressPercent + '%';
             timing.hidden = false;
+        }
+
+        function getActivityArtworkUrl(activity) {
+            const image = activity.assets && activity.assets.large_image;
+            if (!image) return '';
+            if (image.startsWith('http://') || image.startsWith('https://')) return image;
+            if (image.startsWith('mp:external/')) {
+                return 'https://media.discordapp.net/external/' + image.slice('mp:external/'.length);
+            }
+            if (activity.application_id) {
+                return 'https://cdn.discordapp.com/app-assets/' + encodeURIComponent(activity.application_id) + '/' + encodeURIComponent(image) + '.png';
+            }
+            return '';
         }
 
         async function fetchLanyardPresence() {
@@ -979,8 +992,8 @@ h3 {
                     trackLink.hidden = true;
                     clearTrackDetails();
                     timestamp.hidden = true;
-                    stopSpotifyProgress();
-                    activityText.textContent = 'Spotify presence is unavailable. Try again later.';
+                    stopTrackProgress();
+                    activityText.textContent = 'Music presence is unavailable. Try again later.';
                     activityText.hidden = false;
                     return;
                 }
@@ -995,50 +1008,69 @@ h3 {
 
                 const presence = result.data;
                 const spotify = presence.listening_to_spotify ? presence.spotify : null;
+                const bitChordActivity = !spotify && Array.isArray(presence.activities)
+                    ? presence.activities.find(activity => activity.type === 2 && /bitchord/i.test(activity.name || ''))
+                    : null;
+                const musicActivity = spotify || bitChordActivity;
                 activityText.hidden = true;
-                trackInfo.hidden = !spotify;
+                trackInfo.hidden = !musicActivity;
                 trackLink.hidden = true;
                 albumArt.hidden = true;
                 timestamp.hidden = true;
-                stopSpotifyProgress();
+                stopTrackProgress();
                 clearTrackDetails();
 
-                if (spotify) {
-                    trackLink.textContent = spotify.song || 'Listening on Spotify';
-                    trackLink.href = spotify.track_id
-                        ? 'https://open.spotify.com/track/' + encodeURIComponent(spotify.track_id)
-                        : 'https://open.spotify.com/';
-                    trackLink.hidden = false;
-                    trackArtists.textContent = spotify.artist || '';
-                    trackArtists.hidden = !spotify.artist;
-                    trackAlbum.textContent = spotify.album || '';
-                    trackAlbumLine.hidden = !spotify.album;
-                    albumSeparator.hidden = !spotify.artist;
-                    const startedAt = Number(spotify.timestamps && spotify.timestamps.start);
-                    const endsAt = Number(spotify.timestamps && spotify.timestamps.end);
-                    if (Number.isFinite(startedAt) && Number.isFinite(endsAt) && startedAt > 0 && endsAt > startedAt) {
-                        spotifyTrackStartedAt = startedAt;
-                        spotifyTrackEndsAt = endsAt;
-                        updateSpotifyProgress();
-                        spotifyProgressTimer = setInterval(updateSpotifyProgress, 1000);
+                if (musicActivity) {
+                    trackLink.textContent = spotify
+                        ? spotify.song || 'Listening on Spotify'
+                        : bitChordActivity.details || 'Listening on BitChord';
+                    if (spotify) {
+                        trackLink.href = spotify.track_id
+                            ? 'https://open.spotify.com/track/' + encodeURIComponent(spotify.track_id)
+                            : 'https://open.spotify.com/';
+                    } else {
+                        trackLink.removeAttribute('href');
                     }
-                    if (spotify.album_art_url) {
-                        albumArt.src = spotify.album_art_url;
-                        albumArt.hidden = false;
+                    trackLink.hidden = false;
+                    const artist = spotify ? spotify.artist : bitChordActivity.state;
+                    const album = spotify ? spotify.album : bitChordActivity.assets && bitChordActivity.assets.large_text;
+                    trackArtists.textContent = artist || '';
+                    trackArtists.hidden = !artist;
+                    trackAlbum.textContent = album || '';
+                    trackAlbumLine.hidden = !album;
+                    albumSeparator.hidden = !artist;
+                    const artworkUrl = spotify ? spotify.album_art_url : getActivityArtworkUrl(bitChordActivity);
+                    if (artworkUrl) {
+                        albumArt.onerror = () => {
+                            if (albumArt.src === artworkUrl) {
+                                albumArt.hidden = true;
+                                console.error('Unable to load album artwork.');
+                            }
+                        };
+                        if (albumArt.src !== artworkUrl) albumArt.src = artworkUrl;
+                        albumArt.hidden = albumArt.complete && albumArt.naturalWidth === 0;
+                    }
+                    const timestamps = musicActivity.timestamps || {};
+                    const startedAt = Number(timestamps.start);
+                    const endsAt = Number(timestamps.end);
+                    if (Number.isFinite(startedAt) && Number.isFinite(endsAt) && startedAt > 0 && endsAt > startedAt) {
+                        trackStartedAt = startedAt;
+                        trackEndsAt = endsAt;
+                        updateTrackProgress();
+                        trackProgressTimer = setInterval(updateTrackProgress, 1000);
                     }
                     return;
                 }
 
-                activityText.textContent = 'Spotify is not playing anything right now.';
-                activityText.hidden = false;
-            } catch (error) {
+                activityText.textContent = 'Spotify or BitChord is not playing anything right now.';
+                activityText.hidden = false;            } catch (error) {
                 albumArt.hidden = true;
                 trackInfo.hidden = true;
                 trackLink.hidden = true;
                 clearTrackDetails();
                 timestamp.hidden = true;
-                stopSpotifyProgress();
-                activityText.textContent = 'Unable to load the current Spotify track. Retrying soon.';
+                stopTrackProgress();
+                activityText.textContent = 'Unable to load current music. Retrying soon.';
                 activityText.hidden = false;
                 console.error('Unable to load Lanyard presence:', error);
             } finally {
