@@ -1070,6 +1070,9 @@ h3 {
                 const bitChord = Array.isArray(presence.activities)
                     ? presence.activities.find(activity => activity.type === 2 && /bitchord/i.test(activity.name || ''))
                     : null;
+                const youtubeMusic = Array.isArray(presence.activities)
+                    ? presence.activities.find(activity => activity.type === 2 && /youtube\s*music|yt\s*music/i.test(activity.name || ''))
+                    : null;
                 stopTrackProgress();
                 const tracks = [];
                 if (spotify) tracks.push({
@@ -1083,9 +1086,14 @@ h3 {
                     album: bitChord.assets && bitChord.assets.large_text,
                     artworkUrl: getActivityArtworkUrl(bitChord), timestamps: bitChord.timestamps
                 });
+                if (youtubeMusic) tracks.push({
+                    source: 'YouTube Music', title: youtubeMusic.details, artist: youtubeMusic.state,
+                    album: youtubeMusic.assets && youtubeMusic.assets.large_text,
+                    artworkUrl: getActivityArtworkUrl(youtubeMusic), timestamps: youtubeMusic.timestamps
+                });
                 clearMusicCards();
                 if (!tracks.length) {
-                    activityText.textContent = 'Spotify or BitChord is not playing anything right now.';
+                    activityText.textContent = 'Spotify, BitChord, or YouTube Music is not playing anything right now.';
                     activityText.hidden = false;
                     return;
                 }
