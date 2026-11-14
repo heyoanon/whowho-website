@@ -434,12 +434,21 @@ h3 {
 
 .panel-content .lanyard-track-info .lanyard-track-details {
     margin: 0;
+    width: 100%;
     max-width: 100%;
     font-size: 14px;
     line-height: 1.6;
+    text-align: center;
+}
+
+.lanyard-track-artists,
+.lanyard-track-album-line {
+    display: inline-block;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    vertical-align: bottom;
 }
 
 .lanyard-track-link {
@@ -458,6 +467,8 @@ h3 {
 }
 
 .lanyard-album-art[hidden],
+.lanyard-track-artists[hidden],
+.lanyard-track-album-line[hidden],
 .lanyard-track-info[hidden],
 .lanyard-track-link[hidden],
 .lanyard-activity[hidden],
@@ -806,7 +817,7 @@ h3 {
                         <img id="lanyard-album-art" class="lanyard-album-art" alt="Album art" hidden>
                         <div class="lanyard-track-info">
                             <a id="lanyard-track-link" class="lanyard-track-link" target="_blank" rel="noopener noreferrer" hidden></a>
-                            <p id="lanyard-track-details" class="lanyard-track-details"></p>
+                            <p id="lanyard-track-details" class="lanyard-track-details"><span id="lanyard-track-artists" class="lanyard-track-artists"></span><span id="lanyard-track-album-line" class="lanyard-track-album-line"><span id="lanyard-album-separator" aria-hidden="true"> — </span><span id="lanyard-track-album"></span></span></p>
                             <div id="lanyard-timestamp" class="lanyard-track-timing" hidden>
                                 <span id="lanyard-elapsed-time">00:00</span>
                                 <div class="lanyard-track-progress" role="progressbar" aria-label="Track progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
@@ -946,9 +957,19 @@ h3 {
             const albumArt = document.getElementById('lanyard-album-art');
             const trackInfo = document.querySelector('.lanyard-track-info');
             const trackLink = document.getElementById('lanyard-track-link');
-            const trackDetails = document.getElementById('lanyard-track-details');
+            const trackArtists = document.getElementById('lanyard-track-artists');
+            const trackAlbumLine = document.getElementById('lanyard-track-album-line');
+            const trackAlbum = document.getElementById('lanyard-track-album');
+            const albumSeparator = document.getElementById('lanyard-album-separator');
             const timestamp = document.getElementById('lanyard-timestamp');
             const activityText = document.getElementById('lanyard-activity');
+            const clearTrackDetails = () => {
+                trackArtists.textContent = '';
+                trackArtists.hidden = true;
+                trackAlbumLine.hidden = true;
+                trackAlbum.textContent = '';
+                albumSeparator.hidden = true;
+            };
 
             try {
                 const response = await fetch('https://api.lanyard.rest/v1/users/772073053097033741', { cache: 'no-store' });
@@ -956,7 +977,7 @@ h3 {
                     albumArt.hidden = true;
                     trackInfo.hidden = true;
                     trackLink.hidden = true;
-                    trackDetails.textContent = '';
+                    clearTrackDetails();
                     timestamp.hidden = true;
                     stopSpotifyProgress();
                     activityText.textContent = 'Spotify presence is unavailable. Try again later.';
@@ -980,7 +1001,7 @@ h3 {
                 albumArt.hidden = true;
                 timestamp.hidden = true;
                 stopSpotifyProgress();
-                trackDetails.textContent = '';
+                clearTrackDetails();
 
                 if (spotify) {
                     trackLink.textContent = spotify.song || 'Listening on Spotify';
@@ -988,7 +1009,11 @@ h3 {
                         ? 'https://open.spotify.com/track/' + encodeURIComponent(spotify.track_id)
                         : 'https://open.spotify.com/';
                     trackLink.hidden = false;
-                    trackDetails.textContent = [spotify.artist, spotify.album].filter(Boolean).join(' — ');
+                    trackArtists.textContent = spotify.artist || '';
+                    trackArtists.hidden = !spotify.artist;
+                    trackAlbum.textContent = spotify.album || '';
+                    trackAlbumLine.hidden = !spotify.album;
+                    albumSeparator.hidden = !spotify.artist;
                     const startedAt = Number(spotify.timestamps && spotify.timestamps.start);
                     const endsAt = Number(spotify.timestamps && spotify.timestamps.end);
                     if (Number.isFinite(startedAt) && Number.isFinite(endsAt) && startedAt > 0 && endsAt > startedAt) {
@@ -1010,7 +1035,7 @@ h3 {
                 albumArt.hidden = true;
                 trackInfo.hidden = true;
                 trackLink.hidden = true;
-                trackDetails.textContent = '';
+                clearTrackDetails();
                 timestamp.hidden = true;
                 stopSpotifyProgress();
                 activityText.textContent = 'Unable to load the current Spotify track. Retrying soon.';
