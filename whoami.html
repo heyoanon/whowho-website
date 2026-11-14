@@ -406,7 +406,12 @@ h3 {
 .lanyard-box {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 14px;
+}
+
+.now-playing-panel {
+    text-align: center;
 }
 
 .lanyard-album-art {
@@ -446,6 +451,7 @@ h3 {
 }
 
 .lanyard-album-art[hidden],
+.lanyard-track-info[hidden],
 .lanyard-track-link[hidden],
 .lanyard-activity[hidden],
 .lanyard-track-timing[hidden] {
@@ -455,6 +461,7 @@ h3 {
 .lanyard-track-timing {
     display: flex;
     align-items: center;
+    width: 100%;
     gap: 12px;
     color: #ffffff;
     font-size: 12px;
@@ -466,6 +473,11 @@ h3 {
     overflow: hidden;
     border-radius: 999px;
     background: #565960;
+}
+
+.lanyard-activity {
+    width: 100%;
+    text-align: center;
 }
 
 .lanyard-track-progress-fill {
@@ -781,7 +793,7 @@ h3 {
                 </div>
             `,
             nowPlaying: `
-                <div class="panel-content">
+                <div class="panel-content now-playing-panel">
                     <h2>NOW PLAYING</h2>
                     <div class="fact-box lanyard-box">
                         <img id="lanyard-album-art" class="lanyard-album-art" alt="Album art" hidden>
@@ -925,6 +937,7 @@ h3 {
             isLoadingLanyard = true;
 
             const albumArt = document.getElementById('lanyard-album-art');
+            const trackInfo = document.querySelector('.lanyard-track-info');
             const trackLink = document.getElementById('lanyard-track-link');
             const trackDetails = document.getElementById('lanyard-track-details');
             const timestamp = document.getElementById('lanyard-timestamp');
@@ -934,6 +947,7 @@ h3 {
                 const response = await fetch('https://api.lanyard.rest/v1/users/772073053097033741', { cache: 'no-store' });
                 if (response.status === 404) {
                     albumArt.hidden = true;
+                    trackInfo.hidden = true;
                     trackLink.hidden = true;
                     trackDetails.textContent = '';
                     timestamp.hidden = true;
@@ -954,6 +968,7 @@ h3 {
                 const presence = result.data;
                 const spotify = presence.listening_to_spotify ? presence.spotify : null;
                 activityText.hidden = true;
+                trackInfo.hidden = !spotify;
                 trackLink.hidden = true;
                 albumArt.hidden = true;
                 timestamp.hidden = true;
@@ -986,6 +1001,7 @@ h3 {
                 activityText.hidden = false;
             } catch (error) {
                 albumArt.hidden = true;
+                trackInfo.hidden = true;
                 trackLink.hidden = true;
                 trackDetails.textContent = '';
                 timestamp.hidden = true;
