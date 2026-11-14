@@ -432,17 +432,24 @@ h3 {
     gap: 8px;
 }
 
-.lanyard-track-info .lanyard-track-details {
+.panel-content .lanyard-track-info .lanyard-track-details {
     margin: 0;
+    max-width: 100%;
     font-size: 14px;
     line-height: 1.6;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .lanyard-track-link {
+    max-width: 100%;
+    overflow: hidden;
     color: #9ab7ff;
     font-size: 16px;
     line-height: 1.7;
-    overflow-wrap: anywhere;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .lanyard-track-link:hover,
