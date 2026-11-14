@@ -403,6 +403,52 @@ h3 {
     box-shadow: 0 0 10px rgba(0, 76, 255, 0.9);
 }
 
+.lanyard-box {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.lanyard-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.lanyard-avatar {
+    width: 64px;
+    height: 64px;
+    border: 2px solid #004cff;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.lanyard-album-art {
+    width: min(220px, 100%);
+    border: 2px solid #004cff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 76, 255, 0.35);
+}
+
+.lanyard-track-link {
+    color: #9ab7ff;
+    font-size: 16px;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+
+.lanyard-track-link:hover,
+.lanyard-track-link:focus {
+    color: #ffffff;
+}
+
+.lanyard-avatar[hidden],
+.lanyard-album-art[hidden],
+.lanyard-track-link[hidden],
+.lanyard-activity[hidden] {
+    display: none;
+}
+
 .message-box {
     display: flex;
     flex-direction: column;
@@ -621,6 +667,7 @@ h3 {
                 <h1>WHOAMI</h1>
                 <button class="menu-item active" data-page="profile">PROFILE</button>
                 <button class="menu-item" data-page="socials">SOCIALS</button>
+                <button class="menu-item" data-page="nowPlaying">NOW PLAYING</button>
                 <button class="menu-item" data-page="sidequests">SIDE QUESTS</button>
                 <button class="menu-item" data-page="message">MESSAGE ME</button>
             </div>
@@ -705,6 +752,22 @@ h3 {
                     </div>
                 </div>
             `,
+            nowPlaying: `
+                <div class="panel-content">
+                    <h2>NOW PLAYING</h2>
+                    <div class="fact-box lanyard-box">
+                        <div class="lanyard-user">
+                            <img id="lanyard-avatar" class="lanyard-avatar" alt="Discord avatar" hidden>
+                            <p id="lanyard-user-name">Loading Discord presence...</p>
+                        </div>
+                        <p id="lanyard-discord-status" aria-live="polite"></p>
+                        <img id="lanyard-album-art" class="lanyard-album-art" alt="Album art" hidden>
+                        <a id="lanyard-track-link" class="lanyard-track-link" target="_blank" rel="noopener noreferrer" hidden></a>
+                        <p id="lanyard-track-details"></p>
+                        <p id="lanyard-activity" class="lanyard-activity" hidden></p>
+                    </div>
+                </div>
+            `,
             sidequests: `
                 <div class="panel-content">
                     <h2>SIDE QUESTS</h2>
@@ -752,11 +815,13 @@ h3 {
         }
 
         function renderMainMenu() {
+            stopLanyardRefresh();
             rightPanel.innerHTML = `
                 <div class="menu-panel">
                     <h1>WHOAMI</h1>
                     <button class="menu-item" data-page="profile">PROFILE</button>
                     <button class="menu-item" data-page="socials">SOCIALS</button>
+                    <button class="menu-item" data-page="nowPlaying">NOW PLAYING</button>
                     <button class="menu-item" data-page="sidequests">SIDE QUESTS</button>
                     <button class="menu-item" data-page="message">MESSAGE ME</button>
                 </div>
@@ -768,6 +833,106 @@ h3 {
                     renderPage(button.dataset.page);
                 });
             });
+        }
+
+
+        let lanyardRefreshTimer;
+        let isLoadingLanyard = false;
+
+        function stopLanyardRefresh() {
+            if (lanyardRefreshTimer) {
+                clearInterval(lanyardRefreshTimer);
+                lanyardRefreshTimer = undefined;
+            }
+        }
+
+        async function fetchLanyardPresence() {
+            if (isLoadingLanyard) return;
+            isLoadingLanyard = true;
+
+            const userName = document.getElementById('lanyard-user-name');
+            const discordStatus = document.getElementById('lanyard-discord-status');
+            const albumArt = document.getElementById('lanyard-album-art');
+            const trackLink = document.getElementById('lanyard-track-link');
+            const trackDetails = document.getElementById('lanyard-track-details');
+            const activityText = document.getElementById('lanyard-activity');
+            const avatar = document.getElementById('lanyard-avatar');
+
+            try {
+                const response = await fetch('https://api.lanyard.rest/v1/users/772073053097033741', { cache: 'no-store' });
+                if (response.status === 404) {
+                    userName.textContent = 'Lanyard is not monitoring this Discord account yet. Join the Lanyard server to enable presence sharing.';
+                    discordStatus.textContent = '';
+                    albumArt.hidden = true;
+                    trackLink.hidden = true;
+                    trackDetails.textContent = '';
+                    activityText.hidden = true;
+                    avatar.hidden = true;
+                    return;
+                }
+                if (!response.ok) {
+                    throw new Error('Lanyard request failed (' + response.status + ').');
+                }
+
+                const result = await response.json();
+                if (!result.success || !result.data) {
+                    throw new Error('Lanyard did not return presence data.');
+                }
+
+                const presence = result.data;
+                const user = presence.discord_user || {};
+                const spotify = presence.listening_to_spotify ? presence.spotify : null;
+                userName.textContent = user.global_name || user.username || 'Discord user';
+
+                if (user.avatar && user.id) {
+                    const extension = user.avatar.startsWith('a_') ? 'gif' : 'png';
+                    avatar.src = 'https://cdn.discordapp.com/avatars/' + encodeURIComponent(user.id) + '/' + encodeURIComponent(user.avatar) + '.' + extension + '?size=128';
+                    avatar.hidden = false;
+                } else {
+                    avatar.hidden = true;
+                }
+
+                const statusLabels = {
+                    online: 'ONLINE',
+                    idle: 'IDLE',
+                    dnd: 'DO NOT DISTURB',
+                    offline: 'OFFLINE'
+                };
+                discordStatus.textContent = 'Discord status: ' + (statusLabels[presence.discord_status] || 'UNKNOWN');
+                activityText.hidden = true;
+                trackLink.hidden = true;
+                albumArt.hidden = true;
+                trackDetails.textContent = '';
+
+                if (spotify) {
+                    trackLink.textContent = spotify.song || 'Listening on Spotify';
+                    trackLink.href = spotify.track_id
+                        ? 'https://open.spotify.com/track/' + encodeURIComponent(spotify.track_id)
+                        : 'https://open.spotify.com/';
+                    trackLink.hidden = false;
+                    trackDetails.textContent = [spotify.artist, spotify.album].filter(Boolean).join(' — ');
+                    if (spotify.album_art_url) {
+                        albumArt.src = spotify.album_art_url;
+                        albumArt.hidden = false;
+                    }
+                    return;
+                }
+
+                const activities = Array.isArray(presence.activities) ? presence.activities : [];
+                const activity = activities.find(item => item.type !== 4);
+                const customStatus = activities.find(item => item.type === 4 && item.state);
+                const currentActivity = activity
+                    ? [activity.name, activity.details, activity.state].filter(Boolean).join(' — ')
+                    : customStatus?.state;
+                activityText.textContent = currentActivity || 'Not currently listening to Spotify or playing a game.';
+                activityText.hidden = false;
+            } catch (error) {
+                userName.textContent = 'Unable to load Discord presence. Retrying soon.';
+                discordStatus.textContent = '';
+                console.error('Unable to load Lanyard presence:', error);
+            } finally {
+                isLoadingLanyard = false;
+            }
         }
 
         async function sendMessageToCreator() {
@@ -805,6 +970,7 @@ h3 {
         }
 
         function renderPage(pageName) {
+            stopLanyardRefresh();
             if (pageName === 'profile') {
                 rightPanel.innerHTML = `
                     <div class="panel-content-only profile-menu-panel">
@@ -856,6 +1022,11 @@ h3 {
                 if (submitButton) {
                     submitButton.addEventListener('click', sendMessageToCreator);
                 }
+            }
+
+            if (pageName === 'nowPlaying') {
+                fetchLanyardPresence();
+                lanyardRefreshTimer = setInterval(fetchLanyardPresence, 30000);
             }
 
         }
