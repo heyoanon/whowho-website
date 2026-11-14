@@ -405,9 +405,36 @@ h3 {
 
 .lanyard-box {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 14px;
+}
+
+.lanyard-music-list {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 20px;
+}
+
+.lanyard-music-card {
+    display: flex;
+    flex: 1 1 260px;
+    min-width: 0;
+    max-width: 360px;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+}
+
+.lanyard-source-label {
+    color: #9ab7ff;
+    font-size: 12px;
+    line-height: 1.5;
 }
 
 .now-playing-panel {
@@ -426,7 +453,8 @@ h3 {
 
 .lanyard-track-info {
     display: flex;
-    flex: 1;
+    width: 100%;
+    max-width: 360px;
     min-width: 0;
     flex-direction: column;
     gap: 8px;
@@ -452,13 +480,16 @@ h3 {
 }
 
 .lanyard-track-link {
+    display: block;
     max-width: 100%;
+    margin: 0;
     overflow: hidden;
     color: #9ab7ff;
     font-size: 16px;
     line-height: 1.7;
     text-overflow: ellipsis;
     white-space: nowrap;
+    text-align: center;
 }
 
 .lanyard-track-link:hover,
@@ -467,6 +498,7 @@ h3 {
 }
 
 .lanyard-album-art[hidden],
+.lanyard-music-list[hidden],
 .lanyard-track-artists[hidden],
 .lanyard-track-album-line[hidden],
 .lanyard-track-info[hidden],
@@ -814,18 +846,7 @@ h3 {
                 <div class="panel-content now-playing-panel">
                     <h2>NOW PLAYING</h2>
                     <div class="fact-box lanyard-box">
-                        <img id="lanyard-album-art" class="lanyard-album-art" alt="Album art" hidden>
-                        <div class="lanyard-track-info">
-                            <a id="lanyard-track-link" class="lanyard-track-link" target="_blank" rel="noopener noreferrer" hidden></a>
-                            <p id="lanyard-track-details" class="lanyard-track-details"><span id="lanyard-track-artists" class="lanyard-track-artists"></span><span id="lanyard-track-album-line" class="lanyard-track-album-line"><span id="lanyard-album-separator" aria-hidden="true"> — </span><span id="lanyard-track-album"></span></span></p>
-                            <div id="lanyard-timestamp" class="lanyard-track-timing" hidden>
-                                <span id="lanyard-elapsed-time">00:00</span>
-                                <div class="lanyard-track-progress" role="progressbar" aria-label="Track progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                                    <span id="lanyard-track-progress-fill" class="lanyard-track-progress-fill"></span>
-                                </div>
-                                <span id="lanyard-total-time">00:00</span>
-                            </div>
-                        </div>
+                        <div id="lanyard-music-list" class="lanyard-music-list" hidden></div>
                         <p id="lanyard-activity" class="lanyard-activity" hidden></p>
                     </div>
                 </div>
@@ -900,8 +921,6 @@ h3 {
 
         let lanyardRefreshTimer;
         let trackProgressTimer;
-        let trackStartedAt = 0;
-        let trackEndsAt = 0;
         let isLoadingLanyard = false;
 
         function stopLanyardRefresh() {
@@ -917,8 +936,6 @@ h3 {
                 clearInterval(trackProgressTimer);
                 trackProgressTimer = undefined;
             }
-            trackStartedAt = 0;
-            trackEndsAt = 0;
         }
 
         function formatTrackTime(totalSeconds) {
@@ -928,147 +945,160 @@ h3 {
         }
 
         function updateTrackProgress() {
-            const timing = document.getElementById('lanyard-timestamp');
-            const elapsedTime = document.getElementById('lanyard-elapsed-time');
-            const totalTime = document.getElementById('lanyard-total-time');
-            const progress = timing && timing.querySelector('[role="progressbar"]');
-            const progressFill = document.getElementById('lanyard-track-progress-fill');
-
-            if (!timing || !elapsedTime || !totalTime || !progress || !progressFill || !trackStartedAt || !trackEndsAt) {
-                stopTrackProgress();
-                return;
-            }
-
-            const durationSeconds = Math.floor((trackEndsAt - trackStartedAt) / 1000);
-            const elapsedSeconds = Math.min(durationSeconds, Math.max(0, Math.floor((Date.now() - trackStartedAt) / 1000)));
-            const progressPercent = durationSeconds > 0 ? (elapsedSeconds / durationSeconds) * 100 : 0;
-
-            elapsedTime.textContent = formatTrackTime(elapsedSeconds);
-            totalTime.textContent = formatTrackTime(durationSeconds);
-            progress.setAttribute('aria-valuenow', String(Math.round(progressPercent)));
-            progressFill.style.width = progressPercent + '%';
-            timing.hidden = false;
+            document.querySelectorAll('.lanyard-track-timing[data-start][data-end]').forEach(timing => {
+                const start = Number(timing.dataset.start);
+                const end = Number(timing.dataset.end);
+                const duration = Math.floor((end - start) / 1000);
+                if (duration <= 0) return;
+                const elapsed = Math.min(duration, Math.max(0, Math.floor((Date.now() - start) / 1000)));
+                const elapsedNode = timing.querySelector('[data-elapsed-time]');
+                const totalNode = timing.querySelector('[data-total-time]');
+                const progress = timing.querySelector('[role="progressbar"]');
+                const fill = timing.querySelector('.lanyard-track-progress-fill');
+                if (!elapsedNode || !totalNode || !progress || !fill) return;
+                elapsedNode.textContent = formatTrackTime(elapsed);
+                totalNode.textContent = formatTrackTime(duration);
+                progress.setAttribute('aria-valuenow', String(Math.round((elapsed / duration) * 100)));
+                fill.style.width = (elapsed / duration) * 100 + '%';
+            });
         }
 
         function getActivityArtworkUrl(activity) {
             const image = activity.assets && activity.assets.large_image;
             if (!image) return '';
             if (image.startsWith('http://') || image.startsWith('https://')) return image;
-            if (image.startsWith('mp:external/')) {
-                return 'https://media.discordapp.net/external/' + image.slice('mp:external/'.length);
-            }
-            if (activity.application_id) {
-                return 'https://cdn.discordapp.com/app-assets/' + encodeURIComponent(activity.application_id) + '/' + encodeURIComponent(image) + '.png';
-            }
+            if (image.startsWith('mp:external/')) return 'https://media.discordapp.net/external/' + image.slice('mp:external/'.length);
+            if (activity.application_id) return 'https://cdn.discordapp.com/app-assets/' + encodeURIComponent(activity.application_id) + '/' + encodeURIComponent(image) + '.png';
             return '';
+        }
+
+        function createMusicCard(track) {
+            const card = document.createElement('article');
+            card.className = 'lanyard-music-card';
+            const label = document.createElement('span');
+            label.className = 'lanyard-source-label';
+            label.textContent = 'PLAYING IN ' + track.source.toUpperCase();
+            card.appendChild(label);
+            if (track.artworkUrl) {
+                const art = document.createElement('img');
+                art.className = 'lanyard-album-art';
+                art.alt = track.source + ' album art';
+                art.src = track.artworkUrl;
+                art.onerror = () => { art.hidden = true; console.error('Unable to load ' + track.source + ' album artwork.'); };
+                card.appendChild(art);
+            }
+            const info = document.createElement('div');
+            info.className = 'lanyard-track-info';
+            const title = document.createElement(track.url ? 'a' : 'p');
+            title.className = 'lanyard-track-link';
+            title.textContent = track.title || 'Listening on ' + track.source;
+            if (track.url) { title.href = track.url; title.target = '_blank'; title.rel = 'noopener noreferrer'; }
+            info.appendChild(title);
+            const details = document.createElement('p');
+            details.className = 'lanyard-track-details';
+            if (track.artist) {
+                const artist = document.createElement('span');
+                artist.className = 'lanyard-track-artists';
+                artist.textContent = track.artist;
+                details.appendChild(artist);
+            }
+            if (track.album) {
+                const album = document.createElement('span');
+                album.className = 'lanyard-track-album-line';
+                if (track.artist) {
+                    const separator = document.createElement('span');
+                    separator.setAttribute('aria-hidden', 'true');
+                    separator.textContent = ' — ';
+                    album.appendChild(separator);
+                }
+                album.appendChild(document.createTextNode(track.album));
+                details.appendChild(album);
+            }
+            if (track.artist || track.album) info.appendChild(details);
+            const timestamps = track.timestamps || {};
+            const start = Number(timestamps.start);
+            const end = Number(timestamps.end);
+            const hasTiming = Number.isFinite(start) && Number.isFinite(end) && start > 0 && end > start;
+            if (hasTiming) {
+                const timing = document.createElement('div');
+                timing.className = 'lanyard-track-timing';
+                timing.dataset.start = String(start);
+                timing.dataset.end = String(end);
+                const elapsed = document.createElement('span');
+                elapsed.dataset.elapsedTime = '';
+                elapsed.textContent = '00:00';
+                const progress = document.createElement('div');
+                progress.className = 'lanyard-track-progress';
+                progress.setAttribute('role', 'progressbar');
+                progress.setAttribute('aria-label', track.source + ' track progress');
+                progress.setAttribute('aria-valuemin', '0');
+                progress.setAttribute('aria-valuemax', '100');
+                progress.setAttribute('aria-valuenow', '0');
+                const fill = document.createElement('span');
+                fill.className = 'lanyard-track-progress-fill';
+                progress.appendChild(fill);
+                const total = document.createElement('span');
+                total.dataset.totalTime = '';
+                total.textContent = '00:00';
+                timing.append(elapsed, progress, total);
+                info.appendChild(timing);
+            }
+            card.appendChild(info);
+            return { element: card, hasTiming };
         }
 
         async function fetchLanyardPresence() {
             if (isLoadingLanyard) return;
             isLoadingLanyard = true;
-
-            const albumArt = document.getElementById('lanyard-album-art');
-            const trackInfo = document.querySelector('.lanyard-track-info');
-            const trackLink = document.getElementById('lanyard-track-link');
-            const trackArtists = document.getElementById('lanyard-track-artists');
-            const trackAlbumLine = document.getElementById('lanyard-track-album-line');
-            const trackAlbum = document.getElementById('lanyard-track-album');
-            const albumSeparator = document.getElementById('lanyard-album-separator');
-            const timestamp = document.getElementById('lanyard-timestamp');
+            const musicList = document.getElementById('lanyard-music-list');
             const activityText = document.getElementById('lanyard-activity');
-            const clearTrackDetails = () => {
-                trackArtists.textContent = '';
-                trackArtists.hidden = true;
-                trackAlbumLine.hidden = true;
-                trackAlbum.textContent = '';
-                albumSeparator.hidden = true;
-            };
-
+            const clearMusicCards = () => { musicList.replaceChildren(); musicList.hidden = true; };
             try {
                 const response = await fetch('https://api.lanyard.rest/v1/users/772073053097033741', { cache: 'no-store' });
                 if (response.status === 404) {
-                    albumArt.hidden = true;
-                    trackInfo.hidden = true;
-                    trackLink.hidden = true;
-                    clearTrackDetails();
-                    timestamp.hidden = true;
+                    clearMusicCards();
                     stopTrackProgress();
                     activityText.textContent = 'Music presence is unavailable. Try again later.';
                     activityText.hidden = false;
                     return;
                 }
-                if (!response.ok) {
-                    throw new Error('Lanyard request failed (' + response.status + ').');
-                }
-
+                if (!response.ok) throw new Error('Lanyard request failed (' + response.status + ').');
                 const result = await response.json();
-                if (!result.success || !result.data) {
-                    throw new Error('Lanyard did not return presence data.');
-                }
-
+                if (!result.success || !result.data) throw new Error('Lanyard did not return presence data.');
                 const presence = result.data;
                 const spotify = presence.listening_to_spotify ? presence.spotify : null;
-                const bitChordActivity = !spotify && Array.isArray(presence.activities)
+                const bitChord = Array.isArray(presence.activities)
                     ? presence.activities.find(activity => activity.type === 2 && /bitchord/i.test(activity.name || ''))
                     : null;
-                const musicActivity = spotify || bitChordActivity;
-                activityText.hidden = true;
-                trackInfo.hidden = !musicActivity;
-                trackLink.hidden = true;
-                albumArt.hidden = true;
-                timestamp.hidden = true;
                 stopTrackProgress();
-                clearTrackDetails();
-
-                if (musicActivity) {
-                    trackLink.textContent = spotify
-                        ? spotify.song || 'Listening on Spotify'
-                        : bitChordActivity.details || 'Listening on BitChord';
-                    if (spotify) {
-                        trackLink.href = spotify.track_id
-                            ? 'https://open.spotify.com/track/' + encodeURIComponent(spotify.track_id)
-                            : 'https://open.spotify.com/';
-                    } else {
-                        trackLink.removeAttribute('href');
-                    }
-                    trackLink.hidden = false;
-                    const artist = spotify ? spotify.artist : bitChordActivity.state;
-                    const album = spotify ? spotify.album : bitChordActivity.assets && bitChordActivity.assets.large_text;
-                    trackArtists.textContent = artist || '';
-                    trackArtists.hidden = !artist;
-                    trackAlbum.textContent = album || '';
-                    trackAlbumLine.hidden = !album;
-                    albumSeparator.hidden = !artist;
-                    const artworkUrl = spotify ? spotify.album_art_url : getActivityArtworkUrl(bitChordActivity);
-                    if (artworkUrl) {
-                        albumArt.onerror = () => {
-                            if (albumArt.src === artworkUrl) {
-                                albumArt.hidden = true;
-                                console.error('Unable to load album artwork.');
-                            }
-                        };
-                        if (albumArt.src !== artworkUrl) albumArt.src = artworkUrl;
-                        albumArt.hidden = albumArt.complete && albumArt.naturalWidth === 0;
-                    }
-                    const timestamps = musicActivity.timestamps || {};
-                    const startedAt = Number(timestamps.start);
-                    const endsAt = Number(timestamps.end);
-                    if (Number.isFinite(startedAt) && Number.isFinite(endsAt) && startedAt > 0 && endsAt > startedAt) {
-                        trackStartedAt = startedAt;
-                        trackEndsAt = endsAt;
-                        updateTrackProgress();
-                        trackProgressTimer = setInterval(updateTrackProgress, 1000);
-                    }
+                const tracks = [];
+                if (spotify) tracks.push({
+                    source: 'Spotify', title: spotify.song, artist: spotify.artist, album: spotify.album,
+                    artworkUrl: spotify.album_art_url,
+                    url: spotify.track_id ? 'https://open.spotify.com/track/' + encodeURIComponent(spotify.track_id) : 'https://open.spotify.com/',
+                    timestamps: spotify.timestamps
+                });
+                if (bitChord) tracks.push({
+                    source: 'BitChord', title: bitChord.details, artist: bitChord.state,
+                    album: bitChord.assets && bitChord.assets.large_text,
+                    artworkUrl: getActivityArtworkUrl(bitChord), timestamps: bitChord.timestamps
+                });
+                clearMusicCards();
+                if (!tracks.length) {
+                    activityText.textContent = 'Spotify or BitChord is not playing anything right now.';
+                    activityText.hidden = false;
                     return;
                 }
-
-                activityText.textContent = 'Spotify or BitChord is not playing anything right now.';
-                activityText.hidden = false;            } catch (error) {
-                albumArt.hidden = true;
-                trackInfo.hidden = true;
-                trackLink.hidden = true;
-                clearTrackDetails();
-                timestamp.hidden = true;
+                const cards = tracks.map(createMusicCard);
+                musicList.replaceChildren(...cards.map(card => card.element));
+                musicList.hidden = false;
+                activityText.hidden = true;
+                if (cards.some(card => card.hasTiming)) {
+                    updateTrackProgress();
+                    trackProgressTimer = setInterval(updateTrackProgress, 1000);
+                }
+            } catch (error) {
+                clearMusicCards();
                 stopTrackProgress();
                 activityText.textContent = 'Unable to load current music. Retrying soon.';
                 activityText.hidden = false;
