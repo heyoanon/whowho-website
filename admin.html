@@ -58,7 +58,7 @@
   <script>
     const messagesList = document.getElementById('messages');
     const syncStatus = document.getElementById('sync-status');
-    let refreshTimer;
+    const refreshInterval = 5000;
     let isLoading = false;
 
     async function fetchMessages() {
@@ -69,8 +69,6 @@
       try {
         const response = await fetch('/api/messages', { credentials: 'same-origin' });
         if (response.status === 401 || response.status === 403) {
-          clearInterval(refreshTimer);
-          refreshTimer = undefined;
           throw new Error('Admin authentication failed. Reload the page and sign in with the Vercel admin password.');
         }
         if (!response.ok) {
@@ -103,9 +101,6 @@
         }));
 
         syncStatus.textContent = `Synced ${messages.length} message${messages.length === 1 ? '' : 's'} at ${new Date().toLocaleTimeString()}. Auto-refreshes every 5 seconds.`;
-        if (!refreshTimer) {
-          refreshTimer = setInterval(fetchMessages, 5000);
-        }
       } catch (error) {
         syncStatus.textContent = error.message || 'Unable to sync messages. Please try again.';
       } finally {
@@ -114,6 +109,7 @@
     }
 
     document.getElementById('refreshBtn').addEventListener('click', fetchMessages);
+    setInterval(fetchMessages, refreshInterval);
     fetchMessages();
   </script>
 </body>
