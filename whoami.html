@@ -405,15 +405,32 @@ h3 {
 
 .lanyard-box {
     display: flex;
-    flex-direction: column;
+    align-items: center;
     gap: 14px;
 }
 
 .lanyard-album-art {
-    width: min(220px, 100%);
+    width: 128px;
+    height: 128px;
+    flex: 0 0 128px;
     border: 2px solid #004cff;
     border-radius: 8px;
+    object-fit: cover;
     box-shadow: 0 0 10px rgba(0, 76, 255, 0.35);
+}
+
+.lanyard-track-info {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.lanyard-track-info .lanyard-track-details {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
 }
 
 .lanyard-track-link {
@@ -768,14 +785,16 @@ h3 {
                     <h2>NOW PLAYING</h2>
                     <div class="fact-box lanyard-box">
                         <img id="lanyard-album-art" class="lanyard-album-art" alt="Album art" hidden>
-                        <a id="lanyard-track-link" class="lanyard-track-link" target="_blank" rel="noopener noreferrer" hidden></a>
-                        <p id="lanyard-track-details"></p>
-                        <div id="lanyard-timestamp" class="lanyard-track-timing" hidden>
-                            <span id="lanyard-elapsed-time">00:00</span>
-                            <div class="lanyard-track-progress" role="progressbar" aria-label="Track progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                                <span id="lanyard-track-progress-fill" class="lanyard-track-progress-fill"></span>
+                        <div class="lanyard-track-info">
+                            <a id="lanyard-track-link" class="lanyard-track-link" target="_blank" rel="noopener noreferrer" hidden></a>
+                            <p id="lanyard-track-details" class="lanyard-track-details"></p>
+                            <div id="lanyard-timestamp" class="lanyard-track-timing" hidden>
+                                <span id="lanyard-elapsed-time">00:00</span>
+                                <div class="lanyard-track-progress" role="progressbar" aria-label="Track progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                                    <span id="lanyard-track-progress-fill" class="lanyard-track-progress-fill"></span>
+                                </div>
+                                <span id="lanyard-total-time">00:00</span>
                             </div>
-                            <span id="lanyard-total-time">00:00</span>
                         </div>
                         <p id="lanyard-activity" class="lanyard-activity" hidden></p>
                     </div>
@@ -919,7 +938,7 @@ h3 {
                     trackDetails.textContent = '';
                     timestamp.hidden = true;
                     stopSpotifyProgress();
-                    activityText.textContent = 'Lanyard is not monitoring this Discord account yet. Join the Lanyard server to enable presence sharing.';
+                    activityText.textContent = 'Spotify presence is unavailable. Try again later.';
                     activityText.hidden = false;
                     return;
                 }
@@ -963,13 +982,7 @@ h3 {
                     return;
                 }
 
-                const activities = Array.isArray(presence.activities) ? presence.activities : [];
-                const activity = activities.find(item => item.type !== 4);
-                const customStatus = activities.find(item => item.type === 4 && item.state);
-                const currentActivity = activity
-                    ? [activity.name, activity.details, activity.state].filter(Boolean).join(' — ')
-                    : customStatus?.state;
-                activityText.textContent = currentActivity || 'Not currently listening to Spotify or playing a game.';
+                activityText.textContent = 'Spotify is not playing anything right now.';
                 activityText.hidden = false;
             } catch (error) {
                 albumArt.hidden = true;
@@ -977,7 +990,7 @@ h3 {
                 trackDetails.textContent = '';
                 timestamp.hidden = true;
                 stopSpotifyProgress();
-                activityText.textContent = 'Unable to load current music. Retrying soon.';
+                activityText.textContent = 'Unable to load the current Spotify track. Retrying soon.';
                 activityText.hidden = false;
                 console.error('Unable to load Lanyard presence:', error);
             } finally {
@@ -1076,7 +1089,7 @@ h3 {
 
             if (pageName === 'nowPlaying') {
                 fetchLanyardPresence();
-                lanyardRefreshTimer = setInterval(fetchLanyardPresence, 30000);
+                lanyardRefreshTimer = setInterval(fetchLanyardPresence, 5000);
             }
 
         }
