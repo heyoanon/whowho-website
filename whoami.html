@@ -681,14 +681,25 @@ h3 {
     }
 
     .lanyard-music-card {
-        grid-template-columns: 112px minmax(0, 1fr);
-        gap: 10px 14px;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            "source"
+            "art"
+            "info";
+        justify-items: center;
+        gap: 10px;
     }
 
     .lanyard-album-art {
         width: 112px;
         height: 112px;
         flex-basis: 112px;
+        justify-self: center;
+    }
+
+    .lanyard-track-info {
+        align-items: center;
+        text-align: center;
     }
 
     .lanyard-source-label {
@@ -697,10 +708,12 @@ h3 {
 
     .lanyard-track-link {
         font-size: 14px;
+        text-align: center;
     }
 
     .panel-content .lanyard-track-info .lanyard-track-details {
         font-size: 12px;
+        text-align: center;
     }
 
     .lanyard-track-timing {
