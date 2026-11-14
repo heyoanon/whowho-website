@@ -406,39 +406,41 @@ h3 {
 .lanyard-box {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     justify-content: center;
-    gap: 14px;
+    gap: 0;
+    padding: 16px 28px;
 }
 
 .lanyard-music-list {
     display: flex;
     align-items: stretch;
-    justify-content: center;
+    justify-content: stretch;
     flex-wrap: wrap;
     width: 100%;
-    gap: 20px;
+    gap: 0;
 }
 
 .lanyard-music-card {
     display: grid;
-    flex: 1 1 320px;
+    flex: 1 1 100%;
     min-width: 0;
-    max-width: 420px;
-    grid-template-columns: 144px minmax(0, 1fr);
+    max-width: none;
+    grid-template-columns: 180px minmax(0, 1fr);
     grid-template-areas:
         "source source"
         "art info";
     align-items: center;
-    gap: 10px 20px;
-    text-align: center;
+    gap: 12px 24px;
+    text-align: left;
 }
 
 .lanyard-source-label {
     grid-area: source;
     color: #9ab7ff;
-    font-size: 12px;
+    font-size: 14px;
     line-height: 1.5;
+    text-align: center;
 }
 
 .now-playing-panel {
@@ -447,9 +449,9 @@ h3 {
 
 .lanyard-album-art {
     grid-area: art;
-    width: 144px;
-    height: 144px;
-    flex: 0 0 144px;
+    width: 180px;
+    height: 180px;
+    flex: 0 0 180px;
     border: 2px solid #004cff;
     border-radius: 8px;
     object-fit: cover;
@@ -463,18 +465,18 @@ h3 {
     max-width: 100%;
     min-width: 0;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
-    text-align: center;
+    text-align: left;
 }
 
 .panel-content .lanyard-track-info .lanyard-track-details {
     margin: 0;
     width: 100%;
     max-width: 100%;
-    font-size: 14px;
-    line-height: 1.6;
-    text-align: center;
+    font-size: 16px;
+    line-height: 1.5;
+    text-align: left;
 }
 
 .lanyard-track-artists,
@@ -493,11 +495,11 @@ h3 {
     margin: 0;
     overflow: hidden;
     color: #9ab7ff;
-    font-size: 16px;
-    line-height: 1.7;
+    font-size: 18px;
+    line-height: 1.5;
     text-overflow: ellipsis;
     white-space: nowrap;
-    text-align: center;
+    text-align: left;
 }
 
 .lanyard-track-link:hover,
@@ -519,9 +521,9 @@ h3 {
     display: flex;
     align-items: center;
     width: 100%;
-    gap: 12px;
+    gap: 10px;
     color: #ffffff;
-    font-size: 12px;
+    font-size: 14px;
 }
 
 .lanyard-activity {
@@ -536,7 +538,7 @@ h3 {
 
 .lanyard-track-progress {
     flex: 1;
-    height: 2px;
+    height: 4px;
     overflow: hidden;
     border-radius: 999px;
     background: #565960;
@@ -672,6 +674,38 @@ h3 {
 
     .panel-content-only {
         position: relative;
+    }
+
+    .lanyard-box {
+        padding: 12px;
+    }
+
+    .lanyard-music-card {
+        grid-template-columns: 112px minmax(0, 1fr);
+        gap: 10px 14px;
+    }
+
+    .lanyard-album-art {
+        width: 112px;
+        height: 112px;
+        flex-basis: 112px;
+    }
+
+    .lanyard-source-label {
+        font-size: 12px;
+    }
+
+    .lanyard-track-link {
+        font-size: 14px;
+    }
+
+    .panel-content .lanyard-track-info .lanyard-track-details {
+        font-size: 12px;
+    }
+
+    .lanyard-track-timing {
+        gap: 6px;
+        font-size: 10px;
     }
 
     .menu-item,
