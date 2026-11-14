@@ -413,129 +413,142 @@ h3 {
 
 .lanyard-music-list {
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     justify-content: center;
+    flex-wrap: wrap;
     width: 100%;
-    gap: 14px;
+    gap: 20px;
 }
 
-.discord-music-card {
-    width: min(100%, 360px);
-    padding: 14px;
-    color: #f2f3f5;
-    background: #111214;
-    border: 1px solid #2b2d31;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    font-family: 'gg sans', 'Noto Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    letter-spacing: normal;
-    text-align: left;
-}
-
-.card-header {
-    display: flex;
+.lanyard-music-card {
+    display: grid;
+    flex: 1 1 320px;
+    min-width: 0;
+    max-width: 420px;
+    grid-template-columns: 128px minmax(0, 1fr);
+    grid-template-areas:
+        "source source"
+        "art info";
     align-items: center;
-    gap: 6px;
-    margin-bottom: 10px;
-    color: #b5bac1;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    gap: 10px 14px;
+    text-align: center;
 }
 
-.status-dot {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    flex: 0 0 8px;
-    border-radius: 50%;
-    background: #23a55a;
-}
-
-.status-dot.offline {
-    background: #80848e;
-}
-
-.track-body {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+.lanyard-source-label {
+    grid-area: source;
+    color: #9ab7ff;
+    font-size: 12px;
+    line-height: 1.5;
 }
 
 .now-playing-panel {
     text-align: center;
 }
 
-.album-art {
-    width: 64px;
-    height: 64px;
-    flex: 0 0 64px;
-    object-fit: cover;
-    background: #2b2d31;
+.lanyard-album-art {
+    grid-area: art;
+    width: 128px;
+    height: 128px;
+    flex: 0 0 128px;
+    border: 2px solid #004cff;
     border-radius: 8px;
+    object-fit: cover;
+    box-shadow: 0 0 10px rgba(0, 76, 255, 0.35);
 }
 
-.track-info {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-}
-
-.track-title {
-    overflow: hidden;
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.track-artist,
-.track-album {
-    overflow: hidden;
-    margin-top: 2px;
-    color: #b5bac1;
-    font-size: 12px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.progress-container {
-    margin-top: 12px;
-}
-
-.progress-bar-bg {
+.lanyard-track-info {
+    grid-area: info;
+    display: flex;
     width: 100%;
-    height: 4px;
-    overflow: hidden;
-    background: #383a40;
-    border-radius: 2px;
+    max-width: 100%;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
 }
 
-.progress-bar-fill {
+.panel-content .lanyard-track-info .lanyard-track-details {
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    font-size: 14px;
+    line-height: 1.6;
+    text-align: center;
+}
+
+.lanyard-track-artists,
+.lanyard-track-album-line {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+}
+
+.lanyard-track-link {
+    display: block;
+    max-width: 100%;
+    margin: 0;
+    overflow: hidden;
+    color: #9ab7ff;
+    font-size: 16px;
+    line-height: 1.7;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.lanyard-track-link:hover,
+.lanyard-track-link:focus {
+    color: #ffffff;
+}
+
+.lanyard-album-art[hidden],
+.lanyard-music-list[hidden],
+.lanyard-track-artists[hidden],
+.lanyard-track-album-line[hidden],
+.lanyard-track-link[hidden],
+.lanyard-activity[hidden],
+.lanyard-track-timing[hidden] {
+    display: none;
+}
+
+.lanyard-track-timing {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 12px;
+    color: #ffffff;
+    font-size: 12px;
+}
+
+.lanyard-activity {
+    width: 100%;
+    color: #9ab7ff;
+    text-align: center;
+}
+
+.lanyard-track-info[hidden] {
+    display: none;
+}
+
+.lanyard-track-progress {
+    flex: 1;
+    height: 2px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #565960;
+}
+
+.lanyard-track-progress-fill {
     display: block;
     width: 0;
     height: 100%;
+    border-radius: inherit;
     background: #ffffff;
-    border-radius: 2px;
-    transition: width 0.5s linear;
-}
-
-.time-labels {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 4px;
-    color: #b5bac1;
-    font-size: 11px;
-    font-variant-numeric: tabular-nums;
-}
-
-.lanyard-music-list[hidden],
-.track-body[hidden],
-.progress-container[hidden] {
-    display: none;
+    transition: width 0.3s linear;
 }
 
 .message-box {
@@ -942,7 +955,7 @@ h3 {
         }
 
         function updateTrackProgress() {
-            document.querySelectorAll('.progress-container[data-start][data-end]').forEach(timing => {
+            document.querySelectorAll('.lanyard-track-timing[data-start][data-end]').forEach(timing => {
                 const startedAt = Number(timing.dataset.start);
                 const endsAt = Number(timing.dataset.end);
                 const durationSeconds = Math.floor((endsAt - startedAt) / 1000);
@@ -951,7 +964,7 @@ h3 {
                 const elapsedTime = timing.querySelector('[data-elapsed-time]');
                 const totalTime = timing.querySelector('[data-total-time]');
                 const progress = timing.querySelector('[role="progressbar"]');
-                const progressFill = timing.querySelector('.progress-bar-fill');
+                const progressFill = timing.querySelector('.lanyard-track-progress-fill');
 
                 if (!elapsedTime || !totalTime || !progress || !progressFill || durationSeconds <= 0) return;
 
@@ -963,64 +976,63 @@ h3 {
             });
         }
 
-        function getActivityArtworkUrl(activity) {
-            const image = activity.assets && activity.assets.large_image;
-            if (!image) return '';
-            if (image.startsWith('http://') || image.startsWith('https://')) return image;
-            if (image.startsWith('mp:external/')) {
-                return `https://media.discordapp.net/external/${image.slice('mp:external/'.length)}`;
-            }
-            if (activity.application_id) {
-                return `https://cdn.discordapp.com/app-assets/${encodeURIComponent(activity.application_id)}/${encodeURIComponent(image)}.png`;
-            }
-            return '';
-        }
-
         function createMusicCard(track) {
             const card = document.createElement('article');
-            card.className = 'discord-music-card';
+            card.className = 'lanyard-music-card';
 
-            const header = document.createElement('div');
-            header.className = 'card-header';
+            const sourceLabel = document.createElement('span');
+            sourceLabel.className = 'lanyard-source-label';
+            sourceLabel.textContent = `PLAYING IN ${track.source.toUpperCase()}`;
+            card.appendChild(sourceLabel);
 
-            const statusDot = document.createElement('span');
-            statusDot.className = 'status-dot';
-
-            const headerText = document.createElement('span');
-            headerText.textContent = `Listening to ${track.source}`;
-            header.append(statusDot, headerText);
-
-            const trackBody = document.createElement('div');
-            trackBody.className = 'track-body';
-
-            const albumArt = document.createElement('img');
-            albumArt.className = 'album-art';
-            albumArt.alt = 'Album cover';
-            albumArt.src = track.artworkUrl || 'https://music.youtube.com/img/favicon_144.png';
-            albumArt.onerror = () => {
-                albumArt.src = 'https://music.youtube.com/img/favicon_144.png';
-                albumArt.onerror = null;
-            };
+            if (track.artworkUrl) {
+                const albumArt = document.createElement('img');
+                albumArt.className = 'lanyard-album-art';
+                albumArt.alt = `${track.source} album art`;
+                albumArt.src = track.artworkUrl;
+                albumArt.onerror = () => {
+                    albumArt.hidden = true;
+                    console.error(`Unable to load ${track.source} album artwork.`);
+                };
+                card.appendChild(albumArt);
+            }
 
             const trackInfo = document.createElement('div');
-            trackInfo.className = 'track-info';
+            trackInfo.className = 'lanyard-track-info';
 
-            const trackTitle = document.createElement('div');
-            trackTitle.className = 'track-title';
-            trackTitle.textContent = track.title || 'Unknown Track';
+            const trackTitle = document.createElement(track.url ? 'a' : 'p');
+            trackTitle.className = 'lanyard-track-link';
+            trackTitle.textContent = track.title || `Listening on ${track.source}`;
+            if (track.url) {
+                trackTitle.href = track.url;
+                trackTitle.target = '_blank';
+                trackTitle.rel = 'noopener noreferrer';
+            }
+            trackInfo.appendChild(trackTitle);
 
-            const trackArtist = document.createElement('div');
-            trackArtist.className = 'track-artist';
-            trackArtist.textContent = track.artist || 'Unknown Artist';
-
-            const trackAlbum = document.createElement('div');
-            trackAlbum.className = 'track-album';
-            trackAlbum.textContent = track.album || '';
-            trackAlbum.hidden = !track.album;
-
-            trackInfo.append(trackTitle, trackArtist, trackAlbum);
-            trackBody.append(albumArt, trackInfo);
-            card.append(header, trackBody);
+            if (track.artist || track.album) {
+                const trackDetails = document.createElement('p');
+                trackDetails.className = 'lanyard-track-details';
+                if (track.artist) {
+                    const artist = document.createElement('span');
+                    artist.className = 'lanyard-track-artists';
+                    artist.textContent = track.artist;
+                    trackDetails.appendChild(artist);
+                }
+                if (track.album) {
+                    const album = document.createElement('span');
+                    album.className = 'lanyard-track-album-line';
+                    if (track.artist) {
+                        const separator = document.createElement('span');
+                        separator.setAttribute('aria-hidden', 'true');
+                        separator.textContent = ' — ';
+                        album.appendChild(separator);
+                    }
+                    album.appendChild(document.createTextNode(track.album));
+                    trackDetails.appendChild(album);
+                }
+                trackInfo.appendChild(trackDetails);
+            }
 
             const timestamps = track.timestamps || {};
             const startedAt = Number(timestamps.start);
@@ -1028,12 +1040,16 @@ h3 {
             const hasTiming = Number.isFinite(startedAt) && Number.isFinite(endsAt) && startedAt > 0 && endsAt > startedAt;
             if (hasTiming) {
                 const timing = document.createElement('div');
-                timing.className = 'progress-container';
+                timing.className = 'lanyard-track-timing';
                 timing.dataset.start = String(startedAt);
                 timing.dataset.end = String(endsAt);
 
+                const elapsedTime = document.createElement('span');
+                elapsedTime.dataset.elapsedTime = '';
+                elapsedTime.textContent = '00:00';
+
                 const progress = document.createElement('div');
-                progress.className = 'progress-bar-bg';
+                progress.className = 'lanyard-track-progress';
                 progress.setAttribute('role', 'progressbar');
                 progress.setAttribute('aria-label', `${track.source} track progress`);
                 progress.setAttribute('aria-valuemin', '0');
@@ -1041,43 +1057,26 @@ h3 {
                 progress.setAttribute('aria-valuenow', '0');
 
                 const progressFill = document.createElement('span');
-                progressFill.className = 'progress-bar-fill';
+                progressFill.className = 'lanyard-track-progress-fill';
                 progress.appendChild(progressFill);
-
-                const elapsedTime = document.createElement('span');
-                elapsedTime.dataset.elapsedTime = '';
-                elapsedTime.textContent = '00:00';
 
                 const totalTime = document.createElement('span');
                 totalTime.dataset.totalTime = '';
                 totalTime.textContent = '00:00';
 
-                const labels = document.createElement('div');
-                labels.className = 'time-labels';
-                labels.append(elapsedTime, totalTime);
-                timing.append(progress, labels);
-                card.appendChild(timing);
+                timing.append(elapsedTime, progress, totalTime);
+                trackInfo.appendChild(timing);
             }
 
+            card.appendChild(trackInfo);
             return { element: card, hasTiming };
         }
 
         function createStatusCard(message) {
-            const card = document.createElement('article');
-            card.className = 'discord-music-card';
-
-            const header = document.createElement('div');
-            header.className = 'card-header';
-
-            const statusDot = document.createElement('span');
-            statusDot.className = 'status-dot offline';
-
-            const headerText = document.createElement('span');
-            headerText.textContent = message;
-
-            header.append(statusDot, headerText);
-            card.appendChild(header);
-            return card;
+            const status = document.createElement('p');
+            status.className = 'lanyard-activity';
+            status.textContent = message;
+            return status;
         }
 
         async function fetchLanyardPresence() {
@@ -1113,22 +1112,6 @@ h3 {
                         timestamps: spotify.timestamps
                     });
                 }
-                const activities = Array.isArray(presence.activities) ? presence.activities : [];
-                const musicActivities = activities.filter(activity =>
-                    activity.type === 2 || /bitchord|youtube\s*music|yt\s*music/i.test(activity.name || '')
-                );
-                musicActivities.forEach(activity => {
-                    if (spotify && /spotify/i.test(activity.name || '')) return;
-                    tracks.push({
-                        source: activity.name || 'Music',
-                        title: activity.details,
-                        artist: activity.state,
-                        album: activity.assets?.large_text,
-                        artworkUrl: getActivityArtworkUrl(activity),
-                        timestamps: activity.timestamps
-                    });
-                });
-
                 if (tracks.length) {
                     const cards = tracks.map(createMusicCard);
                     musicList.replaceChildren(...cards.map(card => card.element));
