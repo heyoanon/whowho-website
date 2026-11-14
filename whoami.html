@@ -431,13 +431,33 @@ h3 {
 .lanyard-album-art[hidden],
 .lanyard-track-link[hidden],
 .lanyard-activity[hidden],
-.lanyard-timestamp[hidden] {
+.lanyard-track-timing[hidden] {
     display: none;
 }
 
-.lanyard-box .lanyard-timestamp {
-    color: #9ab7ff;
+.lanyard-track-timing {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #ffffff;
     font-size: 12px;
+}
+
+.lanyard-track-progress {
+    flex: 1;
+    height: 2px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #565960;
+}
+
+.lanyard-track-progress-fill {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: #ffffff;
+    transition: width 0.3s linear;
 }
 
 .message-box {
@@ -750,7 +770,13 @@ h3 {
                         <img id="lanyard-album-art" class="lanyard-album-art" alt="Album art" hidden>
                         <a id="lanyard-track-link" class="lanyard-track-link" target="_blank" rel="noopener noreferrer" hidden></a>
                         <p id="lanyard-track-details"></p>
-                        <p id="lanyard-timestamp" class="lanyard-timestamp" hidden></p>
+                        <div id="lanyard-timestamp" class="lanyard-track-timing" hidden>
+                            <span id="lanyard-elapsed-time">00:00</span>
+                            <div class="lanyard-track-progress" role="progressbar" aria-label="Track progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                                <span id="lanyard-track-progress-fill" class="lanyard-track-progress-fill"></span>
+                            </div>
+                            <span id="lanyard-total-time">00:00</span>
+                        </div>
                         <p id="lanyard-activity" class="lanyard-activity" hidden></p>
                     </div>
                 </div>
@@ -824,6 +850,9 @@ h3 {
 
 
         let lanyardRefreshTimer;
+        let spotifyProgressTimer;
+        let spotifyTrackStartedAt = 0;
+        let spotifyTrackEndsAt = 0;
         let isLoadingLanyard = false;
 
         function stopLanyardRefresh() {
@@ -831,6 +860,45 @@ h3 {
                 clearInterval(lanyardRefreshTimer);
                 lanyardRefreshTimer = undefined;
             }
+            stopSpotifyProgress();
+        }
+
+        function stopSpotifyProgress() {
+            if (spotifyProgressTimer) {
+                clearInterval(spotifyProgressTimer);
+                spotifyProgressTimer = undefined;
+            }
+            spotifyTrackStartedAt = 0;
+            spotifyTrackEndsAt = 0;
+        }
+
+        function formatTrackTime(totalSeconds) {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+        }
+
+        function updateSpotifyProgress() {
+            const timing = document.getElementById('lanyard-timestamp');
+            const elapsedTime = document.getElementById('lanyard-elapsed-time');
+            const totalTime = document.getElementById('lanyard-total-time');
+            const progress = timing && timing.querySelector('[role="progressbar"]');
+            const progressFill = document.getElementById('lanyard-track-progress-fill');
+
+            if (!timing || !elapsedTime || !totalTime || !progress || !progressFill || !spotifyTrackStartedAt || !spotifyTrackEndsAt) {
+                stopSpotifyProgress();
+                return;
+            }
+
+            const durationSeconds = Math.floor((spotifyTrackEndsAt - spotifyTrackStartedAt) / 1000);
+            const elapsedSeconds = Math.min(durationSeconds, Math.max(0, Math.floor((Date.now() - spotifyTrackStartedAt) / 1000)));
+            const progressPercent = durationSeconds > 0 ? (elapsedSeconds / durationSeconds) * 100 : 0;
+
+            elapsedTime.textContent = formatTrackTime(elapsedSeconds);
+            totalTime.textContent = formatTrackTime(durationSeconds);
+            progress.setAttribute('aria-valuenow', String(Math.round(progressPercent)));
+            progressFill.style.width = progressPercent + '%';
+            timing.hidden = false;
         }
 
         async function fetchLanyardPresence() {
@@ -850,6 +918,7 @@ h3 {
                     trackLink.hidden = true;
                     trackDetails.textContent = '';
                     timestamp.hidden = true;
+                    stopSpotifyProgress();
                     activityText.textContent = 'Lanyard is not monitoring this Discord account yet. Join the Lanyard server to enable presence sharing.';
                     activityText.hidden = false;
                     return;
@@ -869,6 +938,7 @@ h3 {
                 trackLink.hidden = true;
                 albumArt.hidden = true;
                 timestamp.hidden = true;
+                stopSpotifyProgress();
                 trackDetails.textContent = '';
 
                 if (spotify) {
@@ -879,9 +949,12 @@ h3 {
                     trackLink.hidden = false;
                     trackDetails.textContent = [spotify.artist, spotify.album].filter(Boolean).join(' — ');
                     const startedAt = Number(spotify.timestamps && spotify.timestamps.start);
-                    if (Number.isFinite(startedAt) && startedAt > 0) {
-                        timestamp.textContent = `Started at ${new Date(startedAt).toLocaleString()}`;
-                        timestamp.hidden = false;
+                    const endsAt = Number(spotify.timestamps && spotify.timestamps.end);
+                    if (Number.isFinite(startedAt) && Number.isFinite(endsAt) && startedAt > 0 && endsAt > startedAt) {
+                        spotifyTrackStartedAt = startedAt;
+                        spotifyTrackEndsAt = endsAt;
+                        updateSpotifyProgress();
+                        spotifyProgressTimer = setInterval(updateSpotifyProgress, 1000);
                     }
                     if (spotify.album_art_url) {
                         albumArt.src = spotify.album_art_url;
@@ -903,6 +976,7 @@ h3 {
                 trackLink.hidden = true;
                 trackDetails.textContent = '';
                 timestamp.hidden = true;
+                stopSpotifyProgress();
                 activityText.textContent = 'Unable to load current music. Retrying soon.';
                 activityText.hidden = false;
                 console.error('Unable to load Lanyard presence:', error);
