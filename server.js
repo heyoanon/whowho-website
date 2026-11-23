@@ -319,9 +319,22 @@ app.delete('/api/messages/:id', requireAdmin, async (req, res) => {
 let memoryNowPlaying = null;
 let spotifyAccessToken = null;
 let spotifyTokenExpiresAt = 0;
+const sseNowPlayingClients = new Set();
+
+function broadcastNowPlaying(trackData) {
+  const payload = `data: ${JSON.stringify(trackData || { isPlaying: false })}\n\n`;
+  for (const client of sseNowPlayingClients) {
+    try {
+      client.write(payload);
+    } catch {
+      sseNowPlayingClients.delete(client);
+    }
+  }
+}
 
 async function saveNowPlaying(trackData) {
   memoryNowPlaying = trackData;
+  broadcastNowPlaying(trackData);
   if (!database) return;
 
   try {
@@ -576,6 +589,29 @@ app.delete('/api/now-playing', async (req, res) => {
 
   await saveNowPlaying({ isPlaying: false, title: '', updatedAtMs: Date.now() });
   return res.json({ success: true, message: 'Now playing cleared.' });
+});
+
+app.get('/api/now-playing/stream', async (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+
+  sseNowPlayingClients.add(res);
+
+  const directTrack = await getStoredNowPlaying();
+  res.write(`data: ${JSON.stringify(directTrack || { isPlaying: false })}\n\n`);
+
+  const keepAlive = setInterval(() => {
+    try {
+      res.write(': keep-alive\n\n');
+    } catch {}
+  }, 15000);
+
+  req.on('close', () => {
+    clearInterval(keepAlive);
+    sseNowPlayingClients.delete(res);
+  });
 });
 
 app.get('/api/now-playing', async (req, res) => {

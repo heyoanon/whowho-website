@@ -2645,9 +2645,18 @@ h3 {
                 clearInterval(lanyardRefreshTimer);
                 lanyardRefreshTimer = undefined;
             }
+            if (lanyardReconnectTimer) {
+                clearTimeout(lanyardReconnectTimer);
+                lanyardReconnectTimer = null;
+            }
             disconnectLanyardSocket();
+            disconnectDirectStream();
             stopTrackProgress();
         }
+
+        let isMonitoringNowPlaying = false;
+        let lanyardReconnectTimer = null;
+        let directEventSource = null;
 
         function disconnectLanyardSocket() {
             if (lanyardHeartbeatTimer) {
@@ -2662,6 +2671,61 @@ h3 {
                 } catch {}
                 lanyardSocket = null;
             }
+        }
+
+        function disconnectDirectStream() {
+            if (directEventSource) {
+                try {
+                    directEventSource.close();
+                } catch {}
+                directEventSource = null;
+            }
+        }
+
+        function syncDirectTrackWithLanyard(presence) {
+            if (!presence) return;
+            if (presence.listening_to_spotify && presence.spotify && presence.spotify.song) {
+                if (latestDirectTrack && latestDirectTrack.source && latestDirectTrack.source.toLowerCase() === 'spotify') {
+                    if (latestDirectTrack.title.toLowerCase() !== presence.spotify.song.toLowerCase()) {
+                        latestDirectTrack = null;
+                    }
+                }
+            }
+            if (Array.isArray(presence.activities)) {
+                for (const act of presence.activities) {
+                    const parsed = parseMusicActivity(act);
+                    if (parsed && latestDirectTrack && latestDirectTrack.source &&
+                        latestDirectTrack.source.toLowerCase() === parsed.source.toLowerCase()) {
+                        if (latestDirectTrack.title.toLowerCase() !== parsed.title.toLowerCase()) {
+                            latestDirectTrack = null;
+                        }
+                    }
+                }
+            }
+        }
+
+        function connectDirectStream() {
+            if (typeof EventSource === 'undefined') return;
+            if (directEventSource) return;
+
+            try {
+                directEventSource = new EventSource('/api/now-playing/stream');
+                directEventSource.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        if (data) {
+                            latestDirectTrack = data.isPlaying ? data : null;
+                            renderUnifiedMusic();
+                        }
+                    } catch {}
+                };
+                directEventSource.onerror = () => {
+                    if (directEventSource) {
+                        directEventSource.close();
+                        directEventSource = null;
+                    }
+                };
+            } catch {}
         }
 
         function connectLanyardSocket() {
@@ -2698,6 +2762,7 @@ h3 {
                         } else if (op === 0) { // Event
                             if (t === 'INIT_STATE' || t === 'PRESENCE_UPDATE') {
                                 latestLanyardPresence = d;
+                                syncDirectTrackWithLanyard(d);
                                 renderUnifiedMusic();
                             }
                         }
@@ -2707,7 +2772,10 @@ h3 {
                 };
 
                 lanyardSocket.onopen = () => {
-                    console.log('Lanyard WebSocket connected.');
+                    if (lanyardReconnectTimer) {
+                        clearTimeout(lanyardReconnectTimer);
+                        lanyardReconnectTimer = null;
+                    }
                 };
 
                 lanyardSocket.onerror = (err) => {
@@ -2720,6 +2788,12 @@ h3 {
                         lanyardHeartbeatTimer = null;
                     }
                     lanyardSocket = null;
+                    if (isMonitoringNowPlaying) {
+                        if (lanyardReconnectTimer) clearTimeout(lanyardReconnectTimer);
+                        lanyardReconnectTimer = setTimeout(() => {
+                            if (isMonitoringNowPlaying) connectLanyardSocket();
+                        }, 1500);
+                    }
                 };
             } catch (err) {
                 console.warn('Unable to initialize Lanyard WebSocket:', err);
@@ -2745,12 +2819,13 @@ h3 {
                 };
 
                 const [lanyardData, directData] = await Promise.all([
-                    fetchWithTimeout(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`, 5000),
-                    fetchWithTimeout('/api/now-playing', 5000)
+                    fetchWithTimeout(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`, 4000),
+                    fetchWithTimeout('/api/now-playing', 4000)
                 ]);
 
                 if (lanyardData && lanyardData.success && lanyardData.data) {
                     latestLanyardPresence = lanyardData.data;
+                    syncDirectTrackWithLanyard(lanyardData.data);
                 }
                 if (directData) {
                     latestDirectTrack = directData.isPlaying ? directData : null;
@@ -2769,9 +2844,9 @@ h3 {
 
         function startLanyardMonitoring() {
             stopLanyardRefresh();
+            isMonitoringNowPlaying = true;
             const musicList = document.getElementById('lanyard-music-list');
 
-            // Instantly show what is playing at that exact moment if already available
             if (latestDirectTrack || latestLanyardPresence) {
                 renderUnifiedMusic();
             } else if (musicList) {
@@ -2779,11 +2854,11 @@ h3 {
                 musicList.hidden = false;
             }
 
-            // Immediately query at that moment for any real-time update
             isLoadingLanyard = false;
             fetchLanyardPresence();
             connectLanyardSocket();
-            lanyardRefreshTimer = setInterval(fetchLanyardPresence, 5000);
+            connectDirectStream();
+            lanyardRefreshTimer = setInterval(fetchLanyardPresence, 2000);
         }
 
         function stopTrackProgress() {
@@ -2818,6 +2893,15 @@ h3 {
                 progress.setAttribute('aria-valuenow', String(Math.round(progressPercent)));
                 progressFill.style.width = `${progressPercent}%`;
                 timing.hidden = false;
+
+                // Instant detection when track ends: query next track immediately
+                if (elapsedSeconds >= durationSeconds) {
+                    if (!timing.dataset.trackEnded) {
+                        timing.dataset.trackEnded = 'true';
+                        fetchLanyardPresence();
+                        setTimeout(fetchLanyardPresence, 1200);
+                    }
+                }
             });
         }
 
@@ -3232,12 +3316,13 @@ h3 {
                 };
 
                 const [lanyardData, directData] = await Promise.all([
-                    fetchWithTimeout(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`, 6000),
-                    fetchWithTimeout('/api/now-playing', 6000)
+                    fetchWithTimeout(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`, 4000),
+                    fetchWithTimeout('/api/now-playing', 4000)
                 ]);
 
                 if (lanyardData && lanyardData.success && lanyardData.data) {
                     latestLanyardPresence = lanyardData.data;
+                    syncDirectTrackWithLanyard(lanyardData.data);
                 }
                 if (directData) {
                     latestDirectTrack = directData.isPlaying ? directData : null;
@@ -3513,7 +3598,25 @@ h3 {
             }
         });
         prefetchNowPlaying();
-        setInterval(prefetchNowPlaying, 25000);
+        setInterval(prefetchNowPlaying, 15000);
+
+        function handleAppResume() {
+            const hash = (window.location.hash || '').replace(/^#/, '').trim();
+            if (hash === 'nowPlaying' || isMonitoringNowPlaying) {
+                fetchLanyardPresence();
+                connectLanyardSocket();
+                connectDirectStream();
+            } else {
+                prefetchNowPlaying();
+            }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') handleAppResume();
+        });
+        window.addEventListener('focus', handleAppResume);
+        window.addEventListener('pageshow', handleAppResume);
+        window.addEventListener('online', handleAppResume);
     </script>
 </body>
 </html>
