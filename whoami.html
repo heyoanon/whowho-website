@@ -1206,7 +1206,8 @@ h3 {
                             }, heartbeatInterval);
                         } else if (op === 0) { // Event
                             if (t === 'INIT_STATE' || t === 'PRESENCE_UPDATE') {
-                                renderPresenceData(d);
+                                latestLanyardPresence = d;
+                                renderUnifiedMusic();
                             }
                         }
                     } catch (err) {
@@ -1589,48 +1590,64 @@ h3 {
             musicList.hidden = false;
         }
 
-        function renderPresenceData(presence) {
+        let latestLanyardPresence = null;
+        let latestDirectTrack = null;
+
+        function renderUnifiedMusic() {
             const musicList = document.getElementById('lanyard-music-list');
             if (!musicList) return;
 
             stopTrackProgress();
 
-            if (!presence) {
-                renderNoMusic(musicList, null);
-                return;
-            }
-
             const tracks = [];
 
-            // 1. Native Spotify integration
-            if (presence.spotify && (presence.listening_to_spotify || presence.spotify.song)) {
-                const spotify = presence.spotify;
+            // 1. Direct Cloud API track (/api/now-playing: Spotify, YouTube Music, or BitChord without Discord)
+            if (latestDirectTrack && latestDirectTrack.isPlaying && latestDirectTrack.title) {
                 tracks.push({
-                    source: 'Spotify',
-                    title: spotify.song,
-                    artist: spotify.artist,
-                    album: spotify.album,
-                    artworkUrl: spotify.album_art_url,
+                    source: latestDirectTrack.source || 'Music',
+                    title: latestDirectTrack.title,
+                    artist: latestDirectTrack.artist || '',
+                    album: latestDirectTrack.album || '',
+                    artworkUrl: latestDirectTrack.artworkUrl || null,
                     fallbackArtworkUrl: null,
-                    url: spotify.track_id
-                        ? `https://open.spotify.com/track/${encodeURIComponent(spotify.track_id)}`
-                        : 'https://open.spotify.com/',
-                    timestamps: spotify.timestamps
+                    url: latestDirectTrack.url || '',
+                    timestamps: latestDirectTrack.timestamps || null
                 });
             }
 
-            // 2. Discord Rich Presence activities (BitChord, YouTube Music, etc.)
-            if (Array.isArray(presence.activities)) {
-                for (const activity of presence.activities) {
+            // 2. Native Spotify integration from Discord
+            if (latestLanyardPresence && latestLanyardPresence.spotify && (latestLanyardPresence.listening_to_spotify || latestLanyardPresence.spotify.song)) {
+                const spotify = latestLanyardPresence.spotify;
+                const isDup = tracks.some(t =>
+                    t.source.toLowerCase() === 'spotify' &&
+                    t.title.toLowerCase() === spotify.song.toLowerCase()
+                );
+                if (!isDup) {
+                    tracks.push({
+                        source: 'Spotify',
+                        title: spotify.song,
+                        artist: spotify.artist,
+                        album: spotify.album,
+                        artworkUrl: spotify.album_art_url,
+                        fallbackArtworkUrl: null,
+                        url: spotify.track_id
+                            ? `https://open.spotify.com/track/${encodeURIComponent(spotify.track_id)}`
+                            : 'https://open.spotify.com/',
+                        timestamps: spotify.timestamps
+                    });
+                }
+            }
+
+            // 3. Discord Rich Presence activities (BitChord, YouTube Music, etc.)
+            if (latestLanyardPresence && Array.isArray(latestLanyardPresence.activities)) {
+                for (const activity of latestLanyardPresence.activities) {
                     const parsed = parseMusicActivity(activity);
                     if (!parsed) continue;
 
-                    // Deduplicate if Spotify was already captured from native presence
                     if (parsed.source.toLowerCase() === 'spotify' && tracks.some(t => t.source.toLowerCase() === 'spotify')) {
                         continue;
                     }
 
-                    // Avoid duplicate tracks
                     const isDuplicate = tracks.some(t =>
                         t.source.toLowerCase() === parsed.source.toLowerCase() &&
                         t.title.toLowerCase() === parsed.title.toLowerCase()
@@ -1650,7 +1667,7 @@ h3 {
                     trackProgressTimer = setInterval(updateTrackProgress, 1000);
                 }
             } else {
-                renderNoMusic(musicList, presence);
+                renderNoMusic(musicList, latestLanyardPresence);
             }
         }
 
@@ -1662,27 +1679,38 @@ h3 {
             isLoadingLanyard = true;
 
             try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 7000);
+                const fetchWithTimeout = async (url, timeoutMs) => {
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), timeoutMs);
+                    try {
+                        const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
+                        clearTimeout(timer);
+                        return res.ok ? await res.json() : null;
+                    } catch {
+                        clearTimeout(timer);
+                        return null;
+                    }
+                };
 
-                const response = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`, {
-                    cache: 'no-store',
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
+                const [lanyardData, directData] = await Promise.all([
+                    fetchWithTimeout(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`, 6000),
+                    fetchWithTimeout('/api/now-playing', 6000)
+                ]);
 
-                if (!response.ok) throw new Error(`Lanyard request failed (${response.status})`);
-                const result = await response.json();
-                if (!result.success || !result.data) throw new Error('Lanyard did not return presence data.');
+                if (lanyardData && lanyardData.success && lanyardData.data) {
+                    latestLanyardPresence = lanyardData.data;
+                }
+                if (directData) {
+                    latestDirectTrack = directData.isPlaying ? directData : null;
+                }
 
-                renderPresenceData(result.data);
+                renderUnifiedMusic();
             } catch (error) {
                 stopTrackProgress();
                 if (!musicList.children.length || musicList.querySelector('.lanyard-empty-card') || musicList.querySelector('.lanyard-activity')) {
-                    const msg = error.name === 'AbortError' ? 'Connection timed out. Retrying...' : 'Unable to connect to Discord.';
-                    renderNoMusic(musicList, null, msg);
+                    renderNoMusic(musicList, latestLanyardPresence, 'Unable to connect to music services.');
                 }
-                console.warn('Lanyard presence fetch notice:', error);
+                console.warn('Music presence fetch notice:', error);
             } finally {
                 isLoadingLanyard = false;
             }
