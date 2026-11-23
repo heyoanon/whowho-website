@@ -416,9 +416,9 @@ h3 {
     display: flex;
     align-items: stretch;
     justify-content: stretch;
-    flex-wrap: wrap;
+    flex-direction: column;
     width: 100%;
-    gap: 0;
+    gap: 16px;
 }
 
 .lanyard-music-card {
@@ -433,6 +433,18 @@ h3 {
     align-items: center;
     gap: 12px 24px;
     text-align: left;
+}
+
+.lanyard-music-card.no-art {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+        "source"
+        "info";
+}
+
+.lanyard-music-card + .lanyard-music-card {
+    padding-top: 16px;
+    border-top: 1px dashed rgba(0, 76, 255, 0.4);
 }
 
 .lanyard-source-label {
@@ -1023,9 +1035,122 @@ h3 {
             });
         }
 
+        const DISCORD_USER_ID = '772073053097033741';
+
+        function resolveDiscordAssetUrl(applicationId, assetId) {
+            if (!assetId || typeof assetId !== 'string') {
+                return { url: null, fallback: null };
+            }
+            if (assetId.startsWith('mp:external/')) {
+                const proxyUrl = `https://media.discordapp.net/external/${assetId.slice('mp:external/'.length)}`;
+                let directUrl = null;
+                const match = assetId.match(/^mp:external\/[^/]+\/(https?)\/(.+)$/);
+                if (match) {
+                    try {
+                        directUrl = `${match[1]}://${decodeURIComponent(match[2])}`;
+                    } catch {
+                        directUrl = `${match[1]}://${match[2]}`;
+                    }
+                }
+                return { url: proxyUrl, fallback: directUrl };
+            }
+            if (assetId.startsWith('http://') || assetId.startsWith('https://')) {
+                return { url: assetId, fallback: null };
+            }
+            if (applicationId) {
+                return {
+                    url: `https://cdn.discordapp.com/app-assets/${applicationId}/${assetId}.png`,
+                    fallback: `https://cdn.discordapp.com/app-assets/${applicationId}/${assetId}.webp`
+                };
+            }
+            return { url: null, fallback: null };
+        }
+
+        function parseMusicActivity(activity) {
+            if (!activity) return null;
+
+            const name = (activity.name || '').trim();
+            const nameLower = name.toLowerCase();
+            const details = (activity.details || '').trim();
+            const state = (activity.state || '').trim();
+            const detailsUrl = (activity.details_url || '').trim();
+            const buttons = Array.isArray(activity.buttons) ? activity.buttons : [];
+
+            const isBitChord = nameLower.includes('bitchord') || buttons.some(b => typeof b === 'string' && /bitchord/i.test(b));
+            const isYouTubeMusic = nameLower.includes('youtube music') ||
+                                   nameLower.includes('yt music') ||
+                                   detailsUrl.includes('music.youtube.com') ||
+                                   buttons.some(b => typeof b === 'string' && /youtube music/i.test(b));
+            const isSpotify = nameLower.includes('spotify');
+            const isListeningType = activity.type === 2;
+            const isOtherMusic = /apple music|soundcloud|tidal|deezer|musicbee|foobar2000|cider/i.test(name);
+
+            if (!isBitChord && !isYouTubeMusic && !isSpotify && !isListeningType && !isOtherMusic) {
+                return null;
+            }
+
+            let source = 'Music';
+            if (isBitChord) {
+                source = 'BitChord';
+            } else if (isYouTubeMusic) {
+                source = 'YouTube Music';
+            } else if (isSpotify) {
+                source = 'Spotify';
+            } else if (name) {
+                source = name;
+            }
+
+            const title = details || state || name;
+            let artist = '';
+            if (details && state && details !== state) {
+                artist = state.replace(/^by\s+/i, '');
+            }
+
+            let album = '';
+            const largeText = (activity.assets?.large_text || '').trim();
+            if (largeText &&
+                largeText.toLowerCase() !== nameLower &&
+                !/^(youtube music|bitchord|spotify)$/i.test(largeText) &&
+                largeText !== title &&
+                largeText !== artist) {
+                album = largeText;
+            }
+
+            const { url: artworkUrl, fallback: fallbackArtworkUrl } = resolveDiscordAssetUrl(
+                activity.application_id,
+                activity.assets?.large_image
+            );
+
+            let url = detailsUrl || '';
+            if (!url) {
+                const searchQuery = encodeURIComponent(`${title} ${artist}`.trim());
+                if (isYouTubeMusic || isBitChord) {
+                    url = `https://music.youtube.com/search?q=${searchQuery}`;
+                } else if (isSpotify) {
+                    url = `https://open.spotify.com/search/${searchQuery}`;
+                } else if (title) {
+                    url = `https://www.google.com/search?q=${encodeURIComponent(`${source} ${title} ${artist}`.trim())}`;
+                }
+            }
+
+            return {
+                source,
+                title,
+                artist,
+                album,
+                artworkUrl,
+                fallbackArtworkUrl,
+                url,
+                timestamps: activity.timestamps || null
+            };
+        }
+
         function createMusicCard(track) {
             const card = document.createElement('article');
             card.className = 'lanyard-music-card';
+            if (!track.artworkUrl) {
+                card.classList.add('no-art');
+            }
 
             const sourceLabel = document.createElement('span');
             sourceLabel.className = 'lanyard-source-label';
@@ -1038,7 +1163,12 @@ h3 {
                 albumArt.alt = `${track.source} album art`;
                 albumArt.src = track.artworkUrl;
                 albumArt.onerror = () => {
+                    if (track.fallbackArtworkUrl && albumArt.src !== track.fallbackArtworkUrl) {
+                        albumArt.src = track.fallbackArtworkUrl;
+                        return;
+                    }
                     albumArt.hidden = true;
+                    card.classList.add('no-art');
                     console.error(`Unable to load ${track.source} album artwork.`);
                 };
                 card.appendChild(albumArt);
@@ -1138,27 +1268,54 @@ h3 {
             };
 
             try {
-                const response = await fetch('https://api.lanyard.rest/v1/users/772073053097033741', { cache: 'no-store' });
+                const response = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`, { cache: 'no-store' });
                 if (!response.ok) throw new Error(`Lanyard request failed (${response.status}).`);
                 const result = await response.json();
                 if (!result.success || !result.data) throw new Error('Lanyard did not return presence data.');
                 const presence = result.data;
                 stopTrackProgress();
-                const spotify = presence.listening_to_spotify ? presence.spotify : null;
+
                 const tracks = [];
-                if (spotify) {
+
+                // 1. Native Spotify integration
+                if (presence.listening_to_spotify && presence.spotify) {
+                    const spotify = presence.spotify;
                     tracks.push({
                         source: 'Spotify',
                         title: spotify.song,
                         artist: spotify.artist,
                         album: spotify.album,
                         artworkUrl: spotify.album_art_url,
+                        fallbackArtworkUrl: null,
                         url: spotify.track_id
                             ? `https://open.spotify.com/track/${encodeURIComponent(spotify.track_id)}`
                             : 'https://open.spotify.com/',
                         timestamps: spotify.timestamps
                     });
                 }
+
+                // 2. Discord Rich Presence activities (BitChord, YouTube Music, etc.)
+                if (Array.isArray(presence.activities)) {
+                    for (const activity of presence.activities) {
+                        const parsed = parseMusicActivity(activity);
+                        if (!parsed) continue;
+
+                        // Deduplicate if Spotify was already captured from native presence
+                        if (parsed.source.toLowerCase() === 'spotify' && tracks.some(t => t.source.toLowerCase() === 'spotify')) {
+                            continue;
+                        }
+
+                        // Avoid duplicate tracks
+                        const isDuplicate = tracks.some(t =>
+                            t.source.toLowerCase() === parsed.source.toLowerCase() &&
+                            t.title.toLowerCase() === parsed.title.toLowerCase()
+                        );
+                        if (!isDuplicate) {
+                            tracks.push(parsed);
+                        }
+                    }
+                }
+
                 if (tracks.length) {
                     const cards = tracks.map(createMusicCard);
                     musicList.replaceChildren(...cards.map(card => card.element));
