@@ -559,6 +559,87 @@ h3 {
     text-align: center;
 }
 
+.lanyard-empty-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 0;
+}
+
+.lanyard-activity-title {
+    color: #ffffff;
+    font-size: 18px;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.lanyard-hint {
+    color: #9ab7ff;
+    font-size: 13px;
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+.lanyard-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #ffffff;
+    background: rgba(0, 76, 255, 0.2);
+    border: 1px solid #004cff;
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin-top: 4px;
+}
+
+.lanyard-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #747f8d;
+}
+
+.lanyard-status-dot.online {
+    background: #3ba55d;
+    box-shadow: 0 0 6px #3ba55d;
+}
+
+.lanyard-status-dot.dnd {
+    background: #ed4245;
+    box-shadow: 0 0 6px #ed4245;
+}
+
+.lanyard-status-dot.idle {
+    background: #faa81a;
+    box-shadow: 0 0 6px #faa81a;
+}
+
+.lanyard-refresh-button {
+    font-family: inherit;
+    font-size: 12px;
+    color: #004cff;
+    background: #ffffff;
+    border: 2px solid #004cff;
+    border-radius: 4px;
+    padding: 6px 16px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.2s;
+}
+
+.lanyard-refresh-button:hover,
+.lanyard-refresh-button:focus {
+    background: #004cff;
+    color: #ffffff;
+    box-shadow: 0 0 8px rgba(0, 76, 255, 0.6);
+}
+
 .lanyard-track-info[hidden] {
     display: none;
 }
@@ -773,6 +854,31 @@ h3 {
         font-size: 10px;
     }
 
+    .lanyard-empty-card {
+        padding: 6px 0;
+        gap: 8px;
+    }
+
+    .lanyard-activity-title {
+        font-size: 15px;
+    }
+
+    .lanyard-hint {
+        font-size: 11px;
+        line-height: 1.5;
+        max-width: 100%;
+    }
+
+    .lanyard-status-badge {
+        font-size: 10px;
+        padding: 3px 10px;
+    }
+
+    .lanyard-refresh-button {
+        font-size: 11px;
+        padding: 5px 12px;
+    }
+
     .menu-item,
     .sub-menu .menu-item {
         align-self: flex-start;
@@ -957,7 +1063,9 @@ h3 {
                 <div class="panel-content now-playing-panel">
                     <h2>NOW PLAYING</h2>
                     <div class="fact-box lanyard-box">
-                        <div id="lanyard-music-list" class="lanyard-music-list" hidden></div>
+                        <div id="lanyard-music-list" class="lanyard-music-list">
+                            <p class="lanyard-activity">CONNECTING TO AUDIO STREAM...</p>
+                        </div>
                     </div>
                 </div>
             `,
@@ -1036,6 +1144,8 @@ h3 {
         }
 
         let lanyardRefreshTimer;
+        let lanyardSocket;
+        let lanyardHeartbeatTimer;
         let trackProgressTimer;
         let isLoadingLanyard = false;
 
@@ -1044,7 +1154,96 @@ h3 {
                 clearInterval(lanyardRefreshTimer);
                 lanyardRefreshTimer = undefined;
             }
+            disconnectLanyardSocket();
             stopTrackProgress();
+        }
+
+        function disconnectLanyardSocket() {
+            if (lanyardHeartbeatTimer) {
+                clearInterval(lanyardHeartbeatTimer);
+                lanyardHeartbeatTimer = null;
+            }
+            if (lanyardSocket) {
+                try {
+                    lanyardSocket.onclose = null;
+                    lanyardSocket.onerror = null;
+                    lanyardSocket.close();
+                } catch {}
+                lanyardSocket = null;
+            }
+        }
+
+        function connectLanyardSocket() {
+            if (typeof WebSocket === 'undefined') return;
+            if (lanyardSocket && (lanyardSocket.readyState === WebSocket.OPEN || lanyardSocket.readyState === WebSocket.CONNECTING)) {
+                return;
+            }
+
+            try {
+                lanyardSocket = new WebSocket('wss://api.lanyard.rest/socket');
+
+                lanyardSocket.onmessage = (event) => {
+                    try {
+                        const message = JSON.parse(event.data);
+                        const { op, t, d } = message;
+
+                        if (op === 1) { // Hello
+                            const heartbeatInterval = d.heartbeat_interval || 30000;
+                            if (lanyardSocket && lanyardSocket.readyState === WebSocket.OPEN) {
+                                lanyardSocket.send(JSON.stringify({
+                                    op: 2,
+                                    d: {
+                                        subscribe_to_id: DISCORD_USER_ID
+                                    }
+                                }));
+                            }
+
+                            if (lanyardHeartbeatTimer) clearInterval(lanyardHeartbeatTimer);
+                            lanyardHeartbeatTimer = setInterval(() => {
+                                if (lanyardSocket && lanyardSocket.readyState === WebSocket.OPEN) {
+                                    lanyardSocket.send(JSON.stringify({ op: 3 }));
+                                }
+                            }, heartbeatInterval);
+                        } else if (op === 0) { // Event
+                            if (t === 'INIT_STATE' || t === 'PRESENCE_UPDATE') {
+                                renderPresenceData(d);
+                            }
+                        }
+                    } catch (err) {
+                        console.warn('Lanyard socket message parse warning:', err);
+                    }
+                };
+
+                lanyardSocket.onopen = () => {
+                    console.log('Lanyard WebSocket connected.');
+                };
+
+                lanyardSocket.onerror = (err) => {
+                    console.warn('Lanyard WebSocket notice:', err);
+                };
+
+                lanyardSocket.onclose = () => {
+                    if (lanyardHeartbeatTimer) {
+                        clearInterval(lanyardHeartbeatTimer);
+                        lanyardHeartbeatTimer = null;
+                    }
+                    lanyardSocket = null;
+                };
+            } catch (err) {
+                console.warn('Unable to initialize Lanyard WebSocket:', err);
+            }
+        }
+
+        function startLanyardMonitoring() {
+            stopLanyardRefresh();
+            const musicList = document.getElementById('lanyard-music-list');
+            if (musicList && !musicList.children.length) {
+                musicList.innerHTML = '<p class="lanyard-activity">CONNECTING TO AUDIO STREAM...</p>';
+                musicList.hidden = false;
+            }
+            fetchLanyardPresence();
+            connectLanyardSocket();
+            lanyardRefreshTimer = setInterval(fetchLanyardPresence, 6000);
         }
 
         function stopTrackProgress() {
@@ -1109,6 +1308,12 @@ h3 {
             if (!assetId || typeof assetId !== 'string') {
                 return { url: null, fallback: null };
             }
+            if (assetId.startsWith('spotify:')) {
+                return { url: `https://i.scdn.co/image/${assetId.slice('spotify:'.length)}`, fallback: null };
+            }
+            if (assetId.startsWith('youtube:')) {
+                return { url: `https://i.ytimg.com/vi/${assetId.slice('youtube:'.length)}/hqdefault.jpg`, fallback: null };
+            }
             if (assetId.startsWith('mp:external/')) {
                 const proxyUrl = `https://media.discordapp.net/external/${assetId.slice('mp:external/'.length)}`;
                 let directUrl = null;
@@ -1142,16 +1347,44 @@ h3 {
             const details = (activity.details || '').trim();
             const state = (activity.state || '').trim();
             const detailsUrl = (activity.details_url || '').trim();
-            const buttons = Array.isArray(activity.buttons) ? activity.buttons : [];
+            const appId = String(activity.application_id || '');
+            const actType = activity.type;
+            const statusDisplay = activity.status_display_type;
 
-            const isBitChord = nameLower.includes('bitchord') || buttons.some(b => typeof b === 'string' && /bitchord/i.test(b));
+            const buttons = Array.isArray(activity.buttons) ? activity.buttons : [];
+            const buttonTexts = [];
+            const buttonUrls = [];
+            for (const b of buttons) {
+                if (typeof b === 'string') {
+                    buttonTexts.push(b.toLowerCase());
+                } else if (b && typeof b === 'object') {
+                    if (b.label) buttonTexts.push(String(b.label).toLowerCase());
+                    if (b.url) buttonUrls.push(String(b.url).toLowerCase());
+                }
+            }
+
+            const largeImage = String(activity.assets?.large_image || '');
+            const largeText = (activity.assets?.large_text || '').trim();
+            const smallText = (activity.assets?.small_text || '').trim();
+
+            const isBitChord = appId === '1543679166967193620' ||
+                               nameLower.includes('bitchord') ||
+                               buttonTexts.some(t => t.includes('bitchord')) ||
+                               detailsUrl.toLowerCase().includes('bitchord');
+
             const isYouTubeMusic = nameLower.includes('youtube music') ||
                                    nameLower.includes('yt music') ||
-                                   detailsUrl.includes('music.youtube.com') ||
-                                   buttons.some(b => typeof b === 'string' && /youtube music/i.test(b));
-            const isSpotify = nameLower.includes('spotify');
-            const isListeningType = activity.type === 2;
-            const isOtherMusic = /apple music|soundcloud|tidal|deezer|musicbee|foobar2000|cider/i.test(name);
+                                   detailsUrl.toLowerCase().includes('music.youtube.com') ||
+                                   buttonUrls.some(u => u.includes('music.youtube.com')) ||
+                                   buttonTexts.some(t => t.includes('youtube music'));
+
+            const isSpotify = nameLower.includes('spotify') ||
+                              String(activity.id || '').startsWith('spotify:') ||
+                              largeImage.startsWith('spotify:') ||
+                              detailsUrl.toLowerCase().includes('open.spotify.com');
+
+            const isListeningType = actType === 2 || statusDisplay === 2;
+            const isOtherMusic = /apple music|soundcloud|tidal|deezer|musicbee|foobar2000|cider|aimp|winamp|vlc/i.test(name);
 
             if (!isBitChord && !isYouTubeMusic && !isSpotify && !isListeningType && !isOtherMusic) {
                 return null;
@@ -1168,15 +1401,15 @@ h3 {
                 source = name;
             }
 
-            const title = details || state || name;
+            let title = details || state || name;
+            title = title.replace(/^listening to\s+/i, '').trim();
+
             let artist = '';
             if (details && state && details !== state) {
-                artist = state.replace(/^by\s+/i, '');
+                artist = state.replace(/^by\s+/i, '').trim();
             }
 
             let album = '';
-            const largeText = (activity.assets?.large_text || '').trim();
-            const smallText = (activity.assets?.small_text || '').trim();
             const candidateAlbum = largeText || smallText;
             if (candidateAlbum &&
                 candidateAlbum.toLowerCase() !== nameLower &&
@@ -1192,6 +1425,9 @@ h3 {
             );
 
             let url = detailsUrl || '';
+            if (!url && buttonUrls.length > 0) {
+                url = buttonUrls[0];
+            }
             if (!url) {
                 const searchQuery = encodeURIComponent(`${title} ${artist}`.trim());
                 if (isYouTubeMusic || isBitChord) {
@@ -1323,88 +1559,130 @@ h3 {
             return { element: card, hasTiming };
         }
 
-        function createStatusCard(message) {
-            const status = document.createElement('p');
-            status.className = 'lanyard-activity';
-            status.textContent = message;
-            return status;
+        function renderNoMusic(musicList, presence, customMessage) {
+            if (!musicList) return;
+
+            let discordStatus = 'OFFLINE';
+            let discordDevice = 'DISCONNECTED';
+
+            if (presence) {
+                discordStatus = (presence.discord_status || 'offline').toUpperCase();
+                const devices = [];
+                if (presence.active_on_discord_desktop) devices.push('DESKTOP');
+                if (presence.active_on_discord_mobile) devices.push('MOBILE');
+                if (presence.active_on_discord_web) devices.push('WEB');
+                discordDevice = devices.length ? devices.join(' & ') : 'STANDBY';
+            }
+
+            musicList.innerHTML = `
+                <div class="lanyard-empty-card">
+                    <span class="lanyard-source-label">NOW PLAYING</span>
+                    <p class="lanyard-activity-title">${customMessage || 'NOT CURRENTLY PLAYING'}</p>
+                    <p class="lanyard-hint">Listening to Spotify, YouTube Music, or BitChord? Make sure Discord is active and playback sharing is enabled.</p>
+                    <div class="lanyard-status-badge">
+                        <span class="lanyard-status-dot ${(presence ? presence.discord_status : 'offline') || 'offline'}"></span>
+                        <span>DISCORD: ${discordStatus} (${discordDevice})</span>
+                    </div>
+                    <button type="button" class="lanyard-refresh-button" onclick="fetchLanyardPresence()">REFRESH STATUS</button>
+                </div>
+            `;
+            musicList.hidden = false;
+        }
+
+        function renderPresenceData(presence) {
+            const musicList = document.getElementById('lanyard-music-list');
+            if (!musicList) return;
+
+            stopTrackProgress();
+
+            if (!presence) {
+                renderNoMusic(musicList, null);
+                return;
+            }
+
+            const tracks = [];
+
+            // 1. Native Spotify integration
+            if (presence.spotify && (presence.listening_to_spotify || presence.spotify.song)) {
+                const spotify = presence.spotify;
+                tracks.push({
+                    source: 'Spotify',
+                    title: spotify.song,
+                    artist: spotify.artist,
+                    album: spotify.album,
+                    artworkUrl: spotify.album_art_url,
+                    fallbackArtworkUrl: null,
+                    url: spotify.track_id
+                        ? `https://open.spotify.com/track/${encodeURIComponent(spotify.track_id)}`
+                        : 'https://open.spotify.com/',
+                    timestamps: spotify.timestamps
+                });
+            }
+
+            // 2. Discord Rich Presence activities (BitChord, YouTube Music, etc.)
+            if (Array.isArray(presence.activities)) {
+                for (const activity of presence.activities) {
+                    const parsed = parseMusicActivity(activity);
+                    if (!parsed) continue;
+
+                    // Deduplicate if Spotify was already captured from native presence
+                    if (parsed.source.toLowerCase() === 'spotify' && tracks.some(t => t.source.toLowerCase() === 'spotify')) {
+                        continue;
+                    }
+
+                    // Avoid duplicate tracks
+                    const isDuplicate = tracks.some(t =>
+                        t.source.toLowerCase() === parsed.source.toLowerCase() &&
+                        t.title.toLowerCase() === parsed.title.toLowerCase()
+                    );
+                    if (!isDuplicate) {
+                        tracks.push(parsed);
+                    }
+                }
+            }
+
+            if (tracks.length > 0) {
+                const cards = tracks.map(createMusicCard);
+                musicList.replaceChildren(...cards.map(card => card.element));
+                musicList.hidden = false;
+                if (cards.some(card => card.hasTiming)) {
+                    updateTrackProgress();
+                    trackProgressTimer = setInterval(updateTrackProgress, 1000);
+                }
+            } else {
+                renderNoMusic(musicList, presence);
+            }
         }
 
         async function fetchLanyardPresence() {
+            const musicList = document.getElementById('lanyard-music-list');
+            if (!musicList) return;
+
             if (isLoadingLanyard) return;
             isLoadingLanyard = true;
 
-            const musicList = document.getElementById('lanyard-music-list');
-            const showStatus = message => {
-                musicList.replaceChildren();
-                musicList.appendChild(createStatusCard(message));
-                musicList.hidden = false;
-            };
-
             try {
-                const response = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`, { cache: 'no-store' });
-                if (!response.ok) throw new Error(`Lanyard request failed (${response.status}).`);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 7000);
+
+                const response = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`, {
+                    cache: 'no-store',
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                if (!response.ok) throw new Error(`Lanyard request failed (${response.status})`);
                 const result = await response.json();
                 if (!result.success || !result.data) throw new Error('Lanyard did not return presence data.');
-                const presence = result.data;
-                stopTrackProgress();
 
-                const tracks = [];
-
-                // 1. Native Spotify integration
-                if (presence.listening_to_spotify && presence.spotify) {
-                    const spotify = presence.spotify;
-                    tracks.push({
-                        source: 'Spotify',
-                        title: spotify.song,
-                        artist: spotify.artist,
-                        album: spotify.album,
-                        artworkUrl: spotify.album_art_url,
-                        fallbackArtworkUrl: null,
-                        url: spotify.track_id
-                            ? `https://open.spotify.com/track/${encodeURIComponent(spotify.track_id)}`
-                            : 'https://open.spotify.com/',
-                        timestamps: spotify.timestamps
-                    });
-                }
-
-                // 2. Discord Rich Presence activities (BitChord, YouTube Music, etc.)
-                if (Array.isArray(presence.activities)) {
-                    for (const activity of presence.activities) {
-                        const parsed = parseMusicActivity(activity);
-                        if (!parsed) continue;
-
-                        // Deduplicate if Spotify was already captured from native presence
-                        if (parsed.source.toLowerCase() === 'spotify' && tracks.some(t => t.source.toLowerCase() === 'spotify')) {
-                            continue;
-                        }
-
-                        // Avoid duplicate tracks
-                        const isDuplicate = tracks.some(t =>
-                            t.source.toLowerCase() === parsed.source.toLowerCase() &&
-                            t.title.toLowerCase() === parsed.title.toLowerCase()
-                        );
-                        if (!isDuplicate) {
-                            tracks.push(parsed);
-                        }
-                    }
-                }
-
-                if (tracks.length) {
-                    const cards = tracks.map(createMusicCard);
-                    musicList.replaceChildren(...cards.map(card => card.element));
-                    musicList.hidden = false;
-                    if (cards.some(card => card.hasTiming)) {
-                        updateTrackProgress();
-                        trackProgressTimer = setInterval(updateTrackProgress, 1000);
-                    }
-                } else {
-                    showStatus('Offline / Not Listening');
-                }
+                renderPresenceData(result.data);
             } catch (error) {
                 stopTrackProgress();
-                showStatus('Unable to load music. Retrying soon.');
-                console.error('Unable to load Lanyard presence:', error);
+                if (!musicList.children.length || musicList.querySelector('.lanyard-empty-card') || musicList.querySelector('.lanyard-activity')) {
+                    const msg = error.name === 'AbortError' ? 'Connection timed out. Retrying...' : 'Unable to connect to Discord.';
+                    renderNoMusic(musicList, null, msg);
+                }
+                console.warn('Lanyard presence fetch notice:', error);
             } finally {
                 isLoadingLanyard = false;
             }
@@ -1516,8 +1794,7 @@ h3 {
             }
 
             if (pageName === 'nowPlaying') {
-                fetchLanyardPresence();
-                lanyardRefreshTimer = setInterval(fetchLanyardPresence, 5000);
+                startLanyardMonitoring();
             }
 
         }
