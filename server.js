@@ -178,7 +178,7 @@ function getProvidedAdminToken(req) {
       const separator = decoded.indexOf(':');
       const password = separator === -1 ? decoded : decoded.slice(separator + 1);
       return password.trim();
-    } catch {}
+    } catch { }
   }
   if (req.headers['x-admin-password']) {
     return String(req.headers['x-admin-password']).trim();
@@ -608,7 +608,7 @@ app.get('/api/now-playing/stream', async (req, res) => {
   const keepAlive = setInterval(() => {
     try {
       res.write(': keep-alive\n\n');
-    } catch {}
+    } catch { }
   }, 15000);
 
   req.on('close', () => {
@@ -749,7 +749,7 @@ async function loadStoredProfile() {
   if (!profile && fs.existsSync(profileFile)) {
     try {
       profile = JSON.parse(fs.readFileSync(profileFile, 'utf8'));
-    } catch {}
+    } catch { }
   }
 
   if (!profile) {
@@ -784,7 +784,7 @@ async function saveStoredProfile(data) {
 
   try {
     fs.writeFileSync(profileFile, JSON.stringify(data, null, 2));
-  } catch {}
+  } catch { }
 }
 
 app.get('/api/admin/status', (req, res) => {

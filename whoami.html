@@ -1056,9 +1056,29 @@ h3 {
     transform: translateY(-1px);
 }
 
+.quest-item.view-only {
+    cursor: default;
+}
+
+.quest-item.view-only:hover,
+.quest-item.view-only:focus {
+    background: rgba(0, 76, 255, 0.08);
+    border-color: rgba(0, 76, 255, 0.45);
+    box-shadow: none;
+    transform: none;
+}
+
 .quest-item.completed {
     border-color: rgba(0, 76, 255, 0.25);
     background: rgba(0, 0, 0, 0.35);
+}
+
+.quest-item.view-only.completed:hover,
+.quest-item.view-only.completed:focus {
+    border-color: rgba(0, 76, 255, 0.25);
+    background: rgba(0, 0, 0, 0.35);
+    box-shadow: none;
+    transform: none;
 }
 
 .quest-checkbox {
@@ -1652,6 +1672,18 @@ h3 {
     .quest-item {
         padding: 8px 10px;
         gap: 10px;
+    }
+
+    .quest-item.view-only {
+        cursor: default;
+    }
+
+    .quest-item.view-only:hover,
+    .quest-item.view-only:focus {
+        background: rgba(0, 76, 255, 0.08);
+        border-color: rgba(0, 76, 255, 0.45);
+        box-shadow: none;
+        transform: none;
     }
 
     .quest-checkbox {
@@ -2476,20 +2508,8 @@ h3 {
         }
 
         function toggleQuestDone(index) {
+            if (!isAdminLoggedIn) return;
             playArcadeBeep();
-            if (!isAdminLoggedIn) {
-                showAdminPasswordModal('Only the owner of the website can update quest completion status.', () => {
-                    if (currentProfileData.sidequests && currentProfileData.sidequests[index]) {
-                        currentProfileData.sidequests[index].done = !currentProfileData.sidequests[index].done;
-                        try {
-                            localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
-                        } catch {}
-                        saveProfileToServer(currentProfileData);
-                        renderPage('sidequests', false);
-                    }
-                });
-                return;
-            }
             if (!currentProfileData.sidequests || !currentProfileData.sidequests[index]) return;
             currentProfileData.sidequests[index].done = !currentProfileData.sidequests[index].done;
             try {
@@ -2631,8 +2651,8 @@ h3 {
                             ${quests.length === 0 ? `
                                 <p class="quest-empty-msg">NO ACTIVE QUESTS.<br>CLICK "✎ EDIT" TO ADD YOUR FIRST QUEST!</p>
                             ` : quests.map((q, idx) => `
-                                <div class="quest-item ${q.done ? 'completed' : ''}" onclick="toggleQuestDone(${idx})" role="checkbox" aria-checked="${q.done}" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleQuestDone(${idx});}">
-                                    <div class="quest-checkbox">${q.done ? '✔' : ''}</div>
+                                <div class="quest-item ${q.done ? 'completed' : ''} ${isAdminLoggedIn ? '' : 'view-only'}" ${isAdminLoggedIn ? `onclick="toggleQuestDone(${idx})" role="checkbox" aria-checked="${q.done}" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleQuestDone(${idx});}"` : `role="listitem"`} title="${isAdminLoggedIn ? 'Click to toggle quest status' : (q.done ? 'Quest completed' : 'Quest in progress')}">
+                                    <div class="quest-checkbox ${isAdminLoggedIn ? '' : 'view-only'}">${q.done ? '✔' : ''}</div>
                                     <span class="quest-text">${escapeHtml(q.text)}</span>
                                 </div>
                             `).join('')}
@@ -2685,21 +2705,28 @@ h3 {
         let arcadeAudioContext;
 
         function playArcadeBeep() {
-            arcadeAudioContext ||= new AudioContext();
-            const oscillator = arcadeAudioContext.createOscillator();
-            const gain = arcadeAudioContext.createGain();
-            const startTime = arcadeAudioContext.currentTime;
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                arcadeAudioContext ||= new AudioCtx();
+                if (arcadeAudioContext.state === 'suspended') {
+                    arcadeAudioContext.resume().catch(() => {});
+                }
+                const oscillator = arcadeAudioContext.createOscillator();
+                const gain = arcadeAudioContext.createGain();
+                const startTime = arcadeAudioContext.currentTime;
 
-            oscillator.type = 'square';
-            oscillator.frequency.setValueAtTime(620, startTime);
-            oscillator.frequency.exponentialRampToValueAtTime(330, startTime + 0.08);
-            gain.gain.setValueAtTime(0.0001, startTime);
-            gain.gain.exponentialRampToValueAtTime(0.12, startTime + 0.01);
-            gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.09);
-            oscillator.connect(gain);
-            gain.connect(arcadeAudioContext.destination);
-            oscillator.start(startTime);
-            oscillator.stop(startTime + 0.1);
+                oscillator.type = 'square';
+                oscillator.frequency.setValueAtTime(620, startTime);
+                oscillator.frequency.exponentialRampToValueAtTime(330, startTime + 0.08);
+                gain.gain.setValueAtTime(0.0001, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.12, startTime + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.09);
+                oscillator.connect(gain);
+                gain.connect(arcadeAudioContext.destination);
+                oscillator.start(startTime);
+                oscillator.stop(startTime + 0.1);
+            } catch {}
         }
 
         function renderMainMenu(updateHistory = true) {
