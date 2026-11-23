@@ -1338,20 +1338,291 @@ h3 {
     transform: translateY(-1px);
 }
 
-.arcade-btn.play {
+.arcade-btn.play,
+.arcade-btn.play-external {
     background: rgba(255, 0, 100, 0.15);
     border: 2px solid #ff0064;
     color: #ff94c4;
     box-shadow: 0 0 8px rgba(255, 0, 100, 0.4);
-    flex: 1 1 180px;
+    flex: 1 1 140px;
 }
 
 .arcade-btn.play:hover,
-.arcade-btn.play:focus {
+.arcade-btn.play:focus,
+.arcade-btn.play-external:hover,
+.arcade-btn.play-external:focus {
     background: #ff0064;
     color: #ffffff;
     box-shadow: 0 0 16px #ff0064;
     transform: translateY(-1px);
+}
+
+.arcade-btn.play-arcade {
+    background: rgba(0, 255, 128, 0.2);
+    border: 2px solid #00ff88;
+    color: #a3ffcf;
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+    flex: 1 1 140px;
+}
+
+.arcade-btn.play-arcade:hover,
+.arcade-btn.play-arcade:focus {
+    background: #00ff88;
+    color: #000000;
+    box-shadow: 0 0 16px #00ff88;
+    transform: translateY(-1px);
+}
+
+.arcade-player-panel {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+}
+
+.arcade-player-topbar {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 6px;
+    border-bottom: 2px dashed rgba(0, 76, 255, 0.35);
+}
+
+.arcade-player-title-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.arcade-player-game-name {
+    font-size: 13px;
+    color: #ffffff;
+    letter-spacing: 1px;
+    text-shadow: 0 0 8px #004cff;
+}
+
+.arcade-mini-btn {
+    font-family: inherit;
+    font-size: 15px;
+    background: rgba(0, 76, 255, 0.2);
+    border: 2px solid #004cff;
+    color: #ffffff;
+    border-radius: 6px;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.arcade-mini-btn:hover {
+    background: #004cff;
+    box-shadow: 0 0 10px #004cff;
+}
+
+.arcade-game-tabs {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.arcade-tab-btn {
+    font-family: inherit;
+    font-size: 9px;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(0, 76, 255, 0.4);
+    color: #8bb6ff;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.arcade-tab-btn:hover,
+.arcade-tab-btn.active {
+    background: #004cff;
+    color: #ffffff;
+    border-color: #004cff;
+    box-shadow: 0 0 10px rgba(0, 76, 255, 0.6);
+}
+
+.arcade-screen-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #000000;
+    border: 3px solid #004cff;
+    border-radius: 10px;
+    box-shadow: 0 0 18px rgba(0, 76, 255, 0.4), inset 0 0 14px rgba(0, 76, 255, 0.2);
+    overflow: hidden;
+    max-width: 300px;
+    max-height: 300px;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+}
+
+#arcade-canvas {
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    background: #000000;
+    display: block;
+}
+
+.arcade-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    z-index: 10;
+    text-align: center;
+    padding: 16px;
+}
+
+.arcade-overlay p {
+    font-size: 13px;
+    color: #ff0055;
+    text-shadow: 0 0 10px #ff0055;
+    letter-spacing: 1px;
+    margin: 0;
+}
+
+.arcade-controls-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+    max-width: 320px;
+    gap: 16px;
+    margin-top: 2px;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.arcade-dpad {
+    display: grid;
+    grid-template-columns: 42px 42px 42px;
+    grid-template-rows: 42px 42px 42px;
+    gap: 3px;
+    touch-action: none;
+}
+
+.dpad-btn {
+    background: #111a33;
+    border: 2px solid #004cff;
+    color: #9ab7ff;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.1s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
+
+.dpad-btn:active,
+.dpad-btn.pressed {
+    background: #004cff;
+    color: #ffffff;
+    box-shadow: 0 0 10px #004cff;
+    transform: scale(0.92);
+}
+
+.dpad-btn.up {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.dpad-btn.left {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.dpad-center {
+    grid-column: 2;
+    grid-row: 2;
+    background: #080d1a;
+    border: 1px solid rgba(0, 76, 255, 0.3);
+    border-radius: 4px;
+}
+
+.dpad-btn.right {
+    grid-column: 3;
+    grid-row: 2;
+}
+
+.dpad-btn.down {
+    grid-column: 2;
+    grid-row: 3;
+}
+
+.arcade-action-cluster {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    touch-action: none;
+}
+
+.action-btn.fire {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ff0055 20%, #88002b 100%);
+    border: 3px solid #ff4d88;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 0 14px rgba(255, 0, 85, 0.6);
+    transition: all 0.1s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
+
+.action-btn.fire:active,
+.action-btn.fire.pressed {
+    background: #ff0055;
+    box-shadow: 0 0 22px #ff0055;
+    transform: scale(0.92);
+}
+
+.arcade-btn-label {
+    font-size: 8px;
+    color: #ff99bb;
+    letter-spacing: 0.5px;
+}
+
+.arcade-desktop-hint {
+    font-size: 8px;
+    color: #6482b8;
+    text-align: center;
+    letter-spacing: 0.5px;
+    line-height: 1.4;
+    max-width: 320px;
 }
 
 .btn-roll-game {
@@ -1949,6 +2220,35 @@ h3 {
     .btn-roll-game {
         font-size: 10px;
         padding: 5px 10px;
+    }
+
+    .arcade-screen-container {
+        max-width: 260px;
+        max-height: 260px;
+    }
+
+    .arcade-dpad {
+        grid-template-columns: 36px 36px 36px;
+        grid-template-rows: 36px 36px 36px;
+    }
+
+    .dpad-btn {
+        font-size: 12px;
+    }
+
+    .action-btn.fire {
+        width: 50px;
+        height: 50px;
+        font-size: 14px;
+    }
+
+    .arcade-tab-btn {
+        font-size: 8px;
+        padding: 5px 8px;
+    }
+
+    .arcade-desktop-hint {
+        display: none;
     }
 
     .admin-logout-btn {
@@ -2947,7 +3247,7 @@ h3 {
         const rightPanel = document.getElementById('right-panel');
         let arcadeAudioContext;
 
-        function playArcadeBeep() {
+        function playArcadeBeep(frequency = 620, endFreq = 330, duration = 0.09, type = 'square') {
             try {
                 const AudioCtx = window.AudioContext || window.webkitAudioContext;
                 if (!AudioCtx) return;
@@ -2959,21 +3259,22 @@ h3 {
                 const gain = arcadeAudioContext.createGain();
                 const startTime = arcadeAudioContext.currentTime;
 
-                oscillator.type = 'square';
-                oscillator.frequency.setValueAtTime(620, startTime);
-                oscillator.frequency.exponentialRampToValueAtTime(330, startTime + 0.08);
+                oscillator.type = type;
+                oscillator.frequency.setValueAtTime(frequency, startTime);
+                oscillator.frequency.exponentialRampToValueAtTime(Math.max(10, endFreq), startTime + duration * 0.85);
                 gain.gain.setValueAtTime(0.0001, startTime);
                 gain.gain.exponentialRampToValueAtTime(0.12, startTime + 0.01);
-                gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.09);
+                gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
                 oscillator.connect(gain);
                 gain.connect(arcadeAudioContext.destination);
                 oscillator.start(startTime);
-                oscillator.stop(startTime + 0.1);
+                oscillator.stop(startTime + duration + 0.01);
             } catch {}
         }
 
         function renderMainMenu(updateHistory = true) {
             stopLanyardRefresh();
+            stopArcadeGame();
             editingSection = null;
             isEditingSideQuests = false;
             if (updateHistory) {
@@ -3753,6 +4054,8 @@ h3 {
                 year: '1980',
                 developer: 'NAMCO',
                 genre: 'MAZE / ARCADE',
+                builtinGame: 'pacman',
+                playUrl: 'https://pacman.live/play.html',
                 vibeMatch: 'Matches the site\'s glowing Pac-Man background animation and 8-bit maze runner aesthetic!',
                 description: 'The golden age champion! Guide Pac-Man through neon blue mazes, munching power pellets and dodging Blinky, Pinky, Inky, and Clyde.'
             },
@@ -3761,6 +4064,8 @@ h3 {
                 year: '1978',
                 developer: 'TAITO',
                 genre: 'SHOOT \'EM UP',
+                builtinGame: 'invaders',
+                playUrl: 'https://freeinvaders.org/',
                 vibeMatch: 'The grandfather of pixel arcade action with thunderous 8-bit tempo and neon alien armadas!',
                 description: 'Defend Earth from marching alien waves that accelerate with every casualty. A legendary masterwork that defined arcade history.'
             },
@@ -3769,6 +4074,8 @@ h3 {
                 year: '1981',
                 developer: 'NAMCO',
                 genre: 'FIXED SHOOTER',
+                builtinGame: 'invaders',
+                playUrl: 'https://freegalaga.com/',
                 vibeMatch: 'Crisp synthesized laser beeps and cosmic starfield vibes matching our glowing chiptune atmosphere!',
                 description: 'Pilot your starfighter against swooping insectoid fleets. Rescue captured ships to unleash devastating dual-fighter firepower.'
             },
@@ -3777,6 +4084,8 @@ h3 {
                 year: '1981',
                 developer: 'NINTENDO',
                 genre: 'PLATFORMER',
+                builtinGame: 'pacman',
+                playUrl: 'https://playclassic.games/games/platform-arcade-games-online/play-donkey-kong-online/',
                 vibeMatch: 'Retro girder construction, bouncing barrels, and classic 8-bit jump sound effects!',
                 description: 'Guide Jumpman up hazardous construction girders, leaping rolling barrels and fireballs to rescue Lady Pauline from Donkey Kong.'
             },
@@ -3785,6 +4094,8 @@ h3 {
                 year: '1991',
                 developer: 'CAPCOM',
                 genre: 'FIGHTING',
+                builtinGame: 'invaders',
+                playUrl: 'https://playclassic.games/games/fighting-arcade-games-online/play-street-fighter-ii-the-world-warrior-online/',
                 vibeMatch: 'The pinnacle of 90s arcade cabinet competition with punchy pixel art and legendary chiptune soundtracks!',
                 description: 'Choose from 8 World Warriors and master Hadoukens, Sonic Booms, and Spinning Bird Kicks in the greatest competitive fighting game ever built.'
             },
@@ -3793,6 +4104,8 @@ h3 {
                 year: '1984',
                 developer: 'ALEXEY PAJITNOV',
                 genre: 'PUZZLE',
+                builtinGame: 'tetris',
+                playUrl: 'https://tetris.com/play-tetris',
                 vibeMatch: 'Hypnotic geometric precision and the timeless Korobeiniki chiptune melody that never gets old!',
                 description: 'Stack falling geometric tetrominoes to clear full lines. Elegant, endlessly replayable, and pure pixel perfection.'
             },
@@ -3801,6 +4114,8 @@ h3 {
                 year: '1986',
                 developer: 'SEGA',
                 genre: 'SYNTH RACER',
+                builtinGame: 'tetris',
+                playUrl: 'https://playminigames.ru/en/game/out-run',
                 vibeMatch: 'Pure retro synthwave aesthetic, pixel palms, and cruising through neon sunsets with chiptune radio!',
                 description: 'Hop into the Ferrari Testarossa Spider, select your favorite synth-pop radio station (Magical Sound Shower!), and race toward branching destinations.'
             },
@@ -3809,6 +4124,8 @@ h3 {
                 year: '1996',
                 developer: 'SNK (NEO GEO)',
                 genre: 'RUN AND GUN',
+                builtinGame: 'invaders',
+                playUrl: 'https://kbhgames.com/game/metal-slug',
                 vibeMatch: 'Peak 90s Neo-Geo arcade cabinet action, gorgeous hand-drawn pixel animations, and heavy machine guns!',
                 description: 'Blast through relentless enemy fortifications, rescue bearded POWs, pilot armored combat slugs, and face giant mechanical bosses.'
             },
@@ -3817,6 +4134,8 @@ h3 {
                 year: '1986',
                 developer: 'TAITO',
                 genre: 'ARCADE PLATFORMER',
+                builtinGame: 'pacman',
+                playUrl: 'https://playclassic.games/games/platform-arcade-games-online/play-bubble-bobble-online/',
                 vibeMatch: 'Charming pixel sprites and one of the catchiest 8-bit melodies in arcade history!',
                 description: 'Control twin bubble dragons Bub and Bob. Trap quirky monsters inside floating bubbles and pop them for bonus fruit points across 100 levels.'
             },
@@ -3825,6 +4144,8 @@ h3 {
                 year: '1982',
                 developer: 'NAMCO',
                 genre: 'MAZE / ACTION',
+                builtinGame: 'pacman',
+                playUrl: 'https://playclassic.games/games/maze-arcade-games-online/play-dig-dug-online/',
                 vibeMatch: 'Chiptune audio that only plays when moving, paired with underground neon pixel tunnels!',
                 description: 'Dig subterranean tunnels through soil, inflate Pookas and Fygars with your air pump, and drop falling boulders for huge combo points.'
             },
@@ -3833,6 +4154,8 @@ h3 {
                 year: '1981',
                 developer: 'KONAMI',
                 genre: 'ACTION / ARCADE',
+                builtinGame: 'invaders',
+                playUrl: 'https://froggerclassic.appspot.com/',
                 vibeMatch: 'Vintage arcade timing, pixel precision, and classic retro audio cues!',
                 description: 'Dodge speeding cars and trucks on a chaotic freeway, then leap across floating logs, turtles, and alligators to reach your lily pads.'
             },
@@ -3841,6 +4164,8 @@ h3 {
                 year: '1988',
                 developer: 'CAPCOM',
                 genre: 'ACTION PLATFORMER',
+                builtinGame: 'invaders',
+                playUrl: 'https://playclassic.games/games/action-nes-games-online/mega-man-2/',
                 vibeMatch: 'The greatest 8-bit soundtrack of all time with blistering chiptune riffs and tight blue bomber combat!',
                 description: 'Battle Dr. Wily\'s eight Robot Masters, acquire their unique weapons, and conquer Wily\'s castle backed by the legendary Wily Stage 1 theme.'
             },
@@ -3849,6 +4174,8 @@ h3 {
                 year: '1992',
                 developer: 'SEGA',
                 genre: 'PLATFORMER',
+                builtinGame: 'pacman',
+                playUrl: 'https://playclassic.games/games/platform-sega-genesis-games-online/play-sonic-the-hedgehog-2-online/',
                 vibeMatch: 'Neon-soaked Casino Night Zone aesthetics with glowing pinball bumpers and chiptune funk!',
                 description: 'Team up as Sonic and Tails to spin-dash through high-speed loops, corkscrews, and mechanical fortresses to stop Dr. Robotnik\'s Death Egg.'
             },
@@ -3857,6 +4184,8 @@ h3 {
                 year: '1997',
                 developer: 'KONAMI',
                 genre: 'METROIDVANIA',
+                builtinGame: 'invaders',
+                playUrl: 'https://playclassic.games/games/role-playing-playstation-games-online/play-castlevania-symphony-of-the-night-online/',
                 vibeMatch: 'Dark gothic pixel artistry, intricate castle maps, and haunting retro synth audio!',
                 description: 'Awaken as Alucard and explore the sprawling inverted labyrinth of Dracula\'s castle in one of the most celebrated action RPGs ever crafted.'
             },
@@ -3865,6 +4194,8 @@ h3 {
                 year: '1998',
                 developer: 'KONAMI',
                 genre: 'RHYTHM / ARCADE',
+                builtinGame: 'tetris',
+                playUrl: 'https://bemuse.ninja/',
                 vibeMatch: 'Matches the creator\'s love for K-Pop beats, music rhythm, and high-energy arcade cabinet crowds!',
                 description: 'Step on the arrows in time with pulsating eurobeat and electronic dance tracks on the iconic flashing arcade stage.'
             },
@@ -3873,6 +4204,8 @@ h3 {
                 year: '2001',
                 developer: 'NAMCO',
                 genre: 'RHYTHM / ARCADE',
+                builtinGame: 'tetris',
+                playUrl: 'https://taiko.bui.pm/',
                 vibeMatch: 'Arcade rhythm perfection combining Japanese drum beats, bright pixel celebrations, and infectious energy!',
                 description: 'Grab your wooden drum bachi and strike the Don and Ka drum rims in time with iconic anime, pop, and game themes.'
             }
@@ -3890,7 +4223,6 @@ h3 {
         }
 
         function renderGameCardMarkup(game) {
-            const searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(game.title + ' retro arcade game');
             return `
                 <div class="game-card-content" id="game-card-content">
                     <div class="game-title-row">
@@ -3907,8 +4239,9 @@ h3 {
                     </div>
                     <p class="game-description">${escapeHtml(game.description)}</p>
                     <div class="game-actions-row">
+                        <button type="button" class="arcade-btn play-arcade" id="btn-play-game" data-game="${escapeHtml(game.builtinGame || 'pacman')}">🕹 PLAY IN ARCADE</button>
+                        <a href="${escapeHtml(game.playUrl)}" target="_blank" rel="noopener noreferrer" class="arcade-btn play-external" title="Play full version in a new tab">🌐 PLAY ORIGINAL ↗</a>
                         <button type="button" class="arcade-btn roll" id="btn-roll-game">🎲 ROLL ANOTHER GAME</button>
-                        <a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="arcade-btn play">🕹 PLAY / SEARCH</a>
                     </div>
                 </div>
             `;
@@ -3976,10 +4309,865 @@ h3 {
                     rollNewRandomGame();
                 });
             }
+            const playBtn = document.getElementById('btn-play-game');
+            if (playBtn) {
+                playBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    playArcadeBeep(520, 880, 0.12);
+                    openArcadePlayer(playBtn.dataset.game || 'pacman');
+                });
+            }
+        }
+
+        // ==========================================
+        // BUILT-IN RETRO ARCADE PLAYER & MINI-GAMES
+        // ==========================================
+        let currentArcadeGameType = 'pacman';
+        let arcadeAnimFrame = null;
+        let arcadeInterval = null;
+        let arcadeKeydownHandler = null;
+        let arcadeKeyupHandler = null;
+        let arcadeActiveInputs = { up: false, down: false, left: false, right: false, action: false };
+        let arcadeDiscreteActionTriggered = false;
+
+        function stopArcadeGame() {
+            if (arcadeAnimFrame) {
+                cancelAnimationFrame(arcadeAnimFrame);
+                arcadeAnimFrame = null;
+            }
+            if (arcadeInterval) {
+                clearInterval(arcadeInterval);
+                arcadeInterval = null;
+            }
+            if (arcadeKeydownHandler) {
+                window.removeEventListener('keydown', arcadeKeydownHandler);
+                arcadeKeydownHandler = null;
+            }
+            if (arcadeKeyupHandler) {
+                window.removeEventListener('keyup', arcadeKeyupHandler);
+                arcadeKeyupHandler = null;
+            }
+            arcadeActiveInputs = { up: false, down: false, left: false, right: false, action: false };
+            arcadeDiscreteActionTriggered = false;
+        }
+
+        function updateArcadeScoreDisplay(score) {
+            const scoreEl = document.getElementById('arcade-game-score');
+            if (scoreEl) {
+                scoreEl.textContent = 'SCORE: ' + score;
+            }
+        }
+
+        function showArcadeOverlay(message, buttonText = 'PLAY AGAIN') {
+            const overlay = document.getElementById('arcade-overlay');
+            const msgEl = document.getElementById('arcade-overlay-msg');
+            const btnEl = document.getElementById('arcade-overlay-btn');
+            if (overlay && msgEl && btnEl) {
+                msgEl.textContent = message;
+                btnEl.textContent = buttonText;
+                overlay.style.display = 'flex';
+                btnEl.onclick = () => {
+                    playArcadeBeep(440, 880, 0.1);
+                    overlay.style.display = 'none';
+                    startSelectedArcadeGame(currentArcadeGameType);
+                };
+            }
+        }
+
+        function openArcadePlayer(gameType = 'pacman') {
+            stopArcadeGame();
+            currentArcadeGameType = gameType;
+
+            const titleMap = {
+                pacman: 'PAC-MAN',
+                invaders: 'SPACE INVADERS',
+                tetris: 'TETRIS'
+            };
+            const displayTitle = titleMap[gameType] || 'PAC-MAN';
+
+            rightPanel.innerHTML = `
+                <div class="panel-content-only arcade-player-panel">
+                    <div class="arcade-player-topbar">
+                        <button class="back-button" id="arcade-back-btn" aria-label="Back to Game Vault">←</button>
+                        <div class="arcade-player-title-wrap">
+                            <span class="arcade-player-game-name" id="arcade-game-name">${escapeHtml(displayTitle)}</span>
+                            <span class="arcade-badge highlight" id="arcade-game-score">SCORE: 0</span>
+                        </div>
+                        <button class="arcade-mini-btn" id="arcade-restart-btn" title="Restart Game">⟲</button>
+                    </div>
+
+                    <div class="arcade-game-tabs">
+                        <button type="button" class="arcade-tab-btn ${gameType === 'pacman' ? 'active' : ''}" data-type="pacman">PAC-MAN</button>
+                        <button type="button" class="arcade-tab-btn ${gameType === 'invaders' ? 'active' : ''}" data-type="invaders">SPACE INVADERS</button>
+                        <button type="button" class="arcade-tab-btn ${gameType === 'tetris' ? 'active' : ''}" data-type="tetris">TETRIS</button>
+                    </div>
+
+                    <div class="arcade-screen-container">
+                        <canvas id="arcade-canvas" width="300" height="300"></canvas>
+                        <div id="arcade-overlay" class="arcade-overlay" style="display: none;">
+                            <p id="arcade-overlay-msg">GAME OVER</p>
+                            <button type="button" class="arcade-btn roll" id="arcade-overlay-btn">PRESS START</button>
+                        </div>
+                    </div>
+
+                    <div class="arcade-controls-container">
+                        <div class="arcade-dpad">
+                            <button type="button" class="dpad-btn up" data-dir="up" aria-label="Up">▲</button>
+                            <button type="button" class="dpad-btn left" data-dir="left" aria-label="Left">◀</button>
+                            <div class="dpad-center"></div>
+                            <button type="button" class="dpad-btn right" data-dir="right" aria-label="Right">▶</button>
+                            <button type="button" class="dpad-btn down" data-dir="down" aria-label="Down">▼</button>
+                        </div>
+                        <div class="arcade-action-cluster">
+                            <button type="button" class="action-btn fire" id="arcade-action-btn" aria-label="Action / Fire">A</button>
+                            <span class="arcade-btn-label">ACTION / FIRE</span>
+                        </div>
+                    </div>
+
+                    <div class="arcade-desktop-hint">
+                        KEYBOARD: [ARROWS] / [W,A,S,D] = MOVE • [SPACE] / [Z] = FIRE / ROTATE
+                    </div>
+                </div>
+            `;
+
+            const backBtn = document.getElementById('arcade-back-btn');
+            if (backBtn) {
+                backBtn.addEventListener('click', () => {
+                    playArcadeBeep();
+                    stopArcadeGame();
+                    renderPage('randomGame', false);
+                });
+            }
+
+            const restartBtn = document.getElementById('arcade-restart-btn');
+            if (restartBtn) {
+                restartBtn.addEventListener('click', () => {
+                    playArcadeBeep();
+                    startSelectedArcadeGame(currentArcadeGameType);
+                });
+            }
+
+            document.querySelectorAll('.arcade-tab-btn').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    playArcadeBeep();
+                    const newType = tab.dataset.type;
+                    document.querySelectorAll('.arcade-tab-btn').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    startSelectedArcadeGame(newType);
+                });
+            });
+
+            bindArcadeControls();
+            startSelectedArcadeGame(currentArcadeGameType);
+        }
+
+        function bindArcadeControls() {
+            function setupBtn(el, dir) {
+                if (!el) return;
+                const press = (e) => {
+                    if (e.cancelable) e.preventDefault();
+                    arcadeActiveInputs[dir] = true;
+                    el.classList.add('pressed');
+                    if (dir === 'action') arcadeDiscreteActionTriggered = true;
+                };
+                const release = (e) => {
+                    if (e.cancelable) e.preventDefault();
+                    arcadeActiveInputs[dir] = false;
+                    el.classList.remove('pressed');
+                };
+
+                el.addEventListener('pointerdown', press);
+                el.addEventListener('pointerup', release);
+                el.addEventListener('pointercancel', release);
+                el.addEventListener('pointerleave', release);
+                el.addEventListener('touchstart', press, { passive: false });
+                el.addEventListener('touchend', release, { passive: false });
+            }
+
+            document.querySelectorAll('.dpad-btn').forEach(btn => {
+                setupBtn(btn, btn.dataset.dir);
+            });
+            setupBtn(document.getElementById('arcade-action-btn'), 'action');
+
+            arcadeKeydownHandler = (e) => {
+                const key = e.key;
+                if (['ArrowUp', 'KeyW', 'w', 'W'].includes(key)) {
+                    arcadeActiveInputs.up = true;
+                    e.preventDefault();
+                } else if (['ArrowDown', 'KeyS', 's', 'S'].includes(key)) {
+                    arcadeActiveInputs.down = true;
+                    e.preventDefault();
+                } else if (['ArrowLeft', 'KeyA', 'a', 'A'].includes(key)) {
+                    arcadeActiveInputs.left = true;
+                    e.preventDefault();
+                } else if (['ArrowRight', 'KeyD', 'd', 'D'].includes(key)) {
+                    arcadeActiveInputs.right = true;
+                    e.preventDefault();
+                } else if ([' ', 'Space', 'Spacebar', 'KeyZ', 'z', 'Z', 'Enter'].includes(key)) {
+                    arcadeActiveInputs.action = true;
+                    arcadeDiscreteActionTriggered = true;
+                    e.preventDefault();
+                }
+            };
+
+            arcadeKeyupHandler = (e) => {
+                const key = e.key;
+                if (['ArrowUp', 'KeyW', 'w', 'W'].includes(key)) {
+                    arcadeActiveInputs.up = false;
+                } else if (['ArrowDown', 'KeyS', 's', 'S'].includes(key)) {
+                    arcadeActiveInputs.down = false;
+                } else if (['ArrowLeft', 'KeyA', 'a', 'A'].includes(key)) {
+                    arcadeActiveInputs.left = false;
+                } else if (['ArrowRight', 'KeyD', 'd', 'D'].includes(key)) {
+                    arcadeActiveInputs.right = false;
+                } else if ([' ', 'Space', 'Spacebar', 'KeyZ', 'z', 'Z', 'Enter'].includes(key)) {
+                    arcadeActiveInputs.action = false;
+                }
+            };
+
+            window.addEventListener('keydown', arcadeKeydownHandler);
+            window.addEventListener('keyup', arcadeKeyupHandler);
+        }
+
+        function startSelectedArcadeGame(gameType) {
+            stopArcadeGame();
+            bindArcadeControls();
+            currentArcadeGameType = gameType;
+
+            const nameEl = document.getElementById('arcade-game-name');
+            const overlay = document.getElementById('arcade-overlay');
+            if (overlay) overlay.style.display = 'none';
+
+            const titleMap = {
+                pacman: 'PAC-MAN',
+                invaders: 'SPACE INVADERS',
+                tetris: 'TETRIS'
+            };
+            if (nameEl) nameEl.textContent = titleMap[gameType] || 'PAC-MAN';
+
+            const canvas = document.getElementById('arcade-canvas');
+            if (!canvas) return;
+
+            updateArcadeScoreDisplay(0);
+
+            if (gameType === 'pacman') {
+                runPacmanGame(canvas);
+            } else if (gameType === 'invaders') {
+                runInvadersGame(canvas);
+            } else if (gameType === 'tetris') {
+                runTetrisGame(canvas);
+            }
+        }
+
+        function runPacmanGame(canvas) {
+            const ctx = canvas.getContext('2d');
+            const initialMap = [
+                [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                [1,3,0,0,0,0,0,1,0,0,0,0,0,3,1],
+                [1,0,1,1,0,1,0,1,0,1,0,1,1,0,1],
+                [1,0,0,0,0,1,0,0,0,1,0,0,0,0,1],
+                [1,0,1,1,0,0,0,0,0,0,0,1,1,0,1],
+                [1,0,0,1,0,1,1,2,1,1,0,1,0,0,1],
+                [1,1,0,1,0,1,2,2,2,1,0,1,0,1,1],
+                [2,0,0,0,0,1,2,2,2,1,0,0,0,0,2],
+                [1,1,0,1,0,1,1,1,1,1,0,1,0,1,1],
+                [1,0,0,1,0,0,0,0,0,0,0,1,0,0,1],
+                [1,0,1,1,0,1,1,0,1,1,0,1,1,0,1],
+                [1,0,0,0,0,0,1,0,1,0,0,0,0,0,1],
+                [1,0,1,1,1,0,0,0,0,0,1,1,1,0,1],
+                [1,3,0,0,0,0,1,1,1,0,0,0,0,3,1],
+                [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+            ];
+
+            let map = initialMap.map(row => [...row]);
+            let pelletsLeft = 0;
+            map.forEach(row => row.forEach(c => { if (c === 0 || c === 3) pelletsLeft++; }));
+
+            let score = 0;
+            let lives = 3;
+            let powerTimer = 0;
+            let tick = 0;
+
+            let player = {
+                x: 7 * 20 + 10,
+                y: 11 * 20 + 10,
+                dirX: 0,
+                dirY: 0,
+                nextDirX: 0,
+                nextDirY: 0,
+                speed: 2.5
+            };
+
+            const ghosts = [
+                { x: 7 * 20 + 10, y: 5 * 20 + 10, dirX: 1, dirY: 0, color: '#ff1133' },
+                { x: 6 * 20 + 10, y: 7 * 20 + 10, dirX: 0, dirY: -1, color: '#ff99cc' },
+                { x: 7 * 20 + 10, y: 7 * 20 + 10, dirX: -1, dirY: 0, color: '#00ffff' },
+                { x: 8 * 20 + 10, y: 7 * 20 + 10, dirX: 1, dirY: 0, color: '#ff9900' }
+            ];
+
+            function isWall(gx, gy) {
+                if (gy === 7 && (gx < 0 || gx >= 15)) return false;
+                if (gx < 0 || gx >= 15 || gy < 0 || gy >= 15) return true;
+                return map[gy][gx] === 1;
+            }
+
+            function loop() {
+                tick++;
+
+                if (arcadeActiveInputs.up) { player.nextDirX = 0; player.nextDirY = -1; }
+                else if (arcadeActiveInputs.down) { player.nextDirX = 0; player.nextDirY = 1; }
+                else if (arcadeActiveInputs.left) { player.nextDirX = -1; player.nextDirY = 0; }
+                else if (arcadeActiveInputs.right) { player.nextDirX = 1; player.nextDirY = 0; }
+
+                const gx = Math.floor(player.x / 20);
+                const gy = Math.floor(player.y / 20);
+                const offsetX = player.x % 20;
+                const offsetY = player.y % 20;
+
+                if (Math.abs(offsetX - 10) < player.speed && Math.abs(offsetY - 10) < player.speed) {
+                    if (player.nextDirX !== 0 || player.nextDirY !== 0) {
+                        if (!isWall(gx + player.nextDirX, gy + player.nextDirY)) {
+                            player.dirX = player.nextDirX;
+                            player.dirY = player.nextDirY;
+                            player.x = gx * 20 + 10;
+                            player.y = gy * 20 + 10;
+                        }
+                    }
+                    if (isWall(gx + player.dirX, gy + player.dirY)) {
+                        player.dirX = 0;
+                        player.dirY = 0;
+                        player.x = gx * 20 + 10;
+                        player.y = gy * 20 + 10;
+                    }
+                }
+
+                player.x += player.dirX * player.speed;
+                player.y += player.dirY * player.speed;
+
+                if (player.x < -10) player.x = 310;
+                else if (player.x > 310) player.x = -10;
+
+                const curGx = Math.floor(player.x / 20);
+                const curGy = Math.floor(player.y / 20);
+                if (curGx >= 0 && curGx < 15 && curGy >= 0 && curGy < 15) {
+                    if (map[curGy][curGx] === 0) {
+                        map[curGy][curGx] = 2;
+                        score += 10;
+                        pelletsLeft--;
+                        updateArcadeScoreDisplay(score);
+                        if (tick % 4 === 0) playArcadeBeep(850, 700, 0.03);
+                    } else if (map[curGy][curGx] === 3) {
+                        map[curGy][curGx] = 2;
+                        score += 50;
+                        pelletsLeft--;
+                        powerTimer = 350;
+                        updateArcadeScoreDisplay(score);
+                        playArcadeBeep(520, 880, 0.12);
+                    }
+                }
+
+                if (powerTimer > 0) powerTimer--;
+
+                ghosts.forEach(g => {
+                    const gGx = Math.floor(g.x / 20);
+                    const gGy = Math.floor(g.y / 20);
+                    const gOffX = g.x % 20;
+                    const gOffY = g.y % 20;
+
+                    if (Math.abs(gOffX - 10) < 1.5 && Math.abs(gOffY - 10) < 1.5) {
+                        g.x = gGx * 20 + 10;
+                        g.y = gGy * 20 + 10;
+                        const dirs = [
+                            { x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }
+                        ].filter(d => !isWall(gGx + d.x, gGy + d.y) && !(d.x === -g.dirX && d.y === -g.dirY));
+
+                        if (dirs.length > 0) {
+                            const chosen = dirs[Math.floor(Math.random() * dirs.length)];
+                            g.dirX = chosen.x;
+                            g.dirY = chosen.y;
+                        }
+                    }
+                    g.x += g.dirX * (powerTimer > 0 ? 1.0 : 1.6);
+                    g.y += g.dirY * (powerTimer > 0 ? 1.0 : 1.6);
+                });
+
+                ghosts.forEach(g => {
+                    const dist = Math.hypot(g.x - player.x, g.y - player.y);
+                    if (dist < 14) {
+                        if (powerTimer > 0) {
+                            score += 200;
+                            updateArcadeScoreDisplay(score);
+                            g.x = 7 * 20 + 10;
+                            g.y = 7 * 20 + 10;
+                            playArcadeBeep(440, 880, 0.1);
+                        } else {
+                            lives--;
+                            playArcadeBeep(260, 80, 0.25, 'sawtooth');
+                            player.x = 7 * 20 + 10;
+                            player.y = 11 * 20 + 10;
+                            player.dirX = 0; player.dirY = 0;
+                            player.nextDirX = 0; player.nextDirY = 0;
+                            if (lives <= 0) {
+                                showArcadeOverlay('GAME OVER • FINAL SCORE: ' + score);
+                                return;
+                            }
+                        }
+                    }
+                });
+
+                if (pelletsLeft <= 0) {
+                    score += 500;
+                    updateArcadeScoreDisplay(score);
+                    playArcadeBeep(520, 1040, 0.3);
+                    map = initialMap.map(row => [...row]);
+                    pelletsLeft = 0;
+                    map.forEach(row => row.forEach(c => { if (c === 0 || c === 3) pelletsLeft++; }));
+                    player.x = 7 * 20 + 10; player.y = 11 * 20 + 10;
+                }
+
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, 300, 300);
+
+                for (let r = 0; r < 15; r++) {
+                    for (let c = 0; c < 15; c++) {
+                        const cell = map[r][c];
+                        if (cell === 1) {
+                            ctx.fillStyle = '#0a173d';
+                            ctx.fillRect(c * 20, r * 20, 20, 20);
+                            ctx.strokeStyle = '#004cff';
+                            ctx.lineWidth = 1.5;
+                            ctx.strokeRect(c * 20 + 1, r * 20 + 1, 18, 18);
+                        } else if (cell === 0) {
+                            ctx.fillStyle = '#ffffff';
+                            ctx.beginPath();
+                            ctx.arc(c * 20 + 10, r * 20 + 10, 2, 0, Math.PI * 2);
+                            ctx.fill();
+                        } else if (cell === 3) {
+                            ctx.fillStyle = '#ffff00';
+                            const rad = 4.5 + Math.sin(tick * 0.25) * 1.5;
+                            ctx.beginPath();
+                            ctx.arc(c * 20 + 10, r * 20 + 10, Math.max(2, rad), 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
+
+                ctx.fillStyle = '#ffff00';
+                ctx.beginPath();
+                let angle = 0;
+                if (player.dirX === 1) angle = 0;
+                else if (player.dirX === -1) angle = Math.PI;
+                else if (player.dirY === 1) angle = Math.PI / 2;
+                else if (player.dirY === -1) angle = -Math.PI / 2;
+
+                const mouth = Math.abs(Math.sin(tick * 0.35)) * 0.25 + 0.05;
+                ctx.arc(player.x, player.y, 8, angle + mouth * Math.PI, angle + (2 - mouth) * Math.PI);
+                ctx.lineTo(player.x, player.y);
+                ctx.fill();
+
+                ghosts.forEach(g => {
+                    ctx.fillStyle = powerTimer > 0 ? (powerTimer < 60 && tick % 10 < 5 ? '#ffffff' : '#00aaff') : g.color;
+                    ctx.beginPath();
+                    ctx.arc(g.x, g.y - 1, 7, Math.PI, 0, false);
+                    ctx.lineTo(g.x + 7, g.y + 7);
+                    ctx.lineTo(g.x + 3.5, g.y + 4);
+                    ctx.lineTo(g.x, g.y + 7);
+                    ctx.lineTo(g.x - 3.5, g.y + 4);
+                    ctx.lineTo(g.x - 7, g.y + 7);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(g.x - 4, g.y - 4, 3, 4);
+                    ctx.fillRect(g.x + 1, g.y - 4, 3, 4);
+                    ctx.fillStyle = '#0000ff';
+                    ctx.fillRect(g.x - 3, g.y - 3, 2, 2);
+                    ctx.fillRect(g.x + 2, g.y - 3, 2, 2);
+                });
+
+                ctx.fillStyle = '#ffff00';
+                for (let i = 0; i < lives; i++) {
+                    ctx.beginPath();
+                    ctx.arc(14 + i * 16, 292, 5, 0.2 * Math.PI, 1.8 * Math.PI);
+                    ctx.lineTo(14 + i * 16, 292);
+                    ctx.fill();
+                }
+
+                if (lives > 0) {
+                    arcadeAnimFrame = requestAnimationFrame(loop);
+                }
+            }
+
+            arcadeAnimFrame = requestAnimationFrame(loop);
+        }
+
+        function runInvadersGame(canvas) {
+            const ctx = canvas.getContext('2d');
+            let playerX = 137;
+            let playerY = 265;
+            let pSpeed = 4;
+            let pBullets = [];
+            let alienBombs = [];
+            let lives = 3;
+            let score = 0;
+            let tick = 0;
+
+            const rows = 3;
+            const cols = 6;
+            let invaders = [];
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    invaders.push({
+                        x: 35 + c * 40,
+                        y: 35 + r * 28,
+                        w: 20,
+                        h: 14,
+                        row: r,
+                        alive: true
+                    });
+                }
+            }
+
+            let invDir = 1;
+            let invSpeed = 0.9;
+            let shootCooldown = 0;
+
+            const bunkers = [
+                { x: 45, y: 225, w: 32, h: 16, hp: 4 },
+                { x: 134, y: 225, w: 32, h: 16, hp: 4 },
+                { x: 223, y: 225, w: 32, h: 16, hp: 4 }
+            ];
+
+            function loop() {
+                tick++;
+
+                if (arcadeActiveInputs.left) playerX = Math.max(10, playerX - pSpeed);
+                if (arcadeActiveInputs.right) playerX = Math.min(264, playerX + pSpeed);
+
+                if (shootCooldown > 0) shootCooldown--;
+                if ((arcadeActiveInputs.action || arcadeDiscreteActionTriggered) && shootCooldown === 0 && pBullets.length < 2) {
+                    arcadeDiscreteActionTriggered = false;
+                    pBullets.push({ x: playerX + 12, y: playerY - 4 });
+                    shootCooldown = 15;
+                    playArcadeBeep(880, 300, 0.06);
+                }
+
+                pBullets.forEach(b => b.y -= 7);
+                pBullets = pBullets.filter(b => b.y > 0);
+
+                let remaining = invaders.filter(inv => inv.alive);
+                if (remaining.length === 0) {
+                    score += 300;
+                    updateArcadeScoreDisplay(score);
+                    playArcadeBeep(520, 1040, 0.3);
+                    invaders.forEach(inv => inv.alive = true);
+                    invSpeed += 0.3;
+                    remaining = invaders;
+                }
+
+                let stepDown = false;
+                remaining.forEach(inv => {
+                    inv.x += invDir * (invSpeed + (18 - remaining.length) * 0.1);
+                    if (inv.x > 270 && invDir > 0) stepDown = true;
+                    if (inv.x < 10 && invDir < 0) stepDown = true;
+                });
+
+                if (stepDown) {
+                    invDir = -invDir;
+                    remaining.forEach(inv => {
+                        inv.y += 12;
+                        if (inv.y >= 245) {
+                            showArcadeOverlay('INVADED! SCORE: ' + score);
+                            lives = 0;
+                        }
+                    });
+                }
+
+                if (tick % 45 === 0 && remaining.length > 0) {
+                    const shooter = remaining[Math.floor(Math.random() * remaining.length)];
+                    if (alienBombs.length < 3) {
+                        alienBombs.push({ x: shooter.x + 10, y: shooter.y + 14 });
+                    }
+                }
+
+                alienBombs.forEach(b => b.y += 3.2);
+                alienBombs = alienBombs.filter(b => b.y < 300);
+
+                pBullets.forEach((b, bIdx) => {
+                    remaining.forEach(inv => {
+                        if (inv.alive && b.x >= inv.x && b.x <= inv.x + inv.w && b.y >= inv.y && b.y <= inv.y + inv.h) {
+                            inv.alive = false;
+                            pBullets.splice(bIdx, 1);
+                            const pts = inv.row === 0 ? 30 : inv.row === 1 ? 20 : 10;
+                            score += pts;
+                            updateArcadeScoreDisplay(score);
+                            playArcadeBeep(550, 180, 0.08);
+                        }
+                    });
+                });
+
+                bunkers.forEach(bunk => {
+                    if (bunk.hp <= 0) return;
+                    pBullets.forEach((b, idx) => {
+                        if (b.x >= bunk.x && b.x <= bunk.x + bunk.w && b.y >= bunk.y && b.y <= bunk.y + bunk.h) {
+                            pBullets.splice(idx, 1);
+                            bunk.hp--;
+                        }
+                    });
+                    alienBombs.forEach((ab, idx) => {
+                        if (ab.x >= bunk.x && ab.x <= bunk.x + bunk.w && ab.y >= bunk.y && ab.y <= bunk.y + bunk.h) {
+                            alienBombs.splice(idx, 1);
+                            bunk.hp--;
+                            playArcadeBeep(200, 80, 0.05);
+                        }
+                    });
+                });
+
+                alienBombs.forEach((ab, idx) => {
+                    if (ab.x >= playerX && ab.x <= playerX + 26 && ab.y >= playerY && ab.y <= playerY + 12) {
+                        alienBombs.splice(idx, 1);
+                        lives--;
+                        playArcadeBeep(180, 60, 0.25, 'sawtooth');
+                        if (lives <= 0) {
+                            showArcadeOverlay('GAME OVER • FINAL SCORE: ' + score);
+                            return;
+                        }
+                    }
+                });
+
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, 300, 300);
+
+                remaining.forEach(inv => {
+                    ctx.fillStyle = inv.row === 0 ? '#ff00ff' : inv.row === 1 ? '#00ffff' : '#00ff88';
+                    const frame = Math.floor(tick / 20) % 2;
+                    ctx.fillRect(inv.x + 2, inv.y + 2, inv.w - 4, inv.h - 4);
+                    if (frame === 0) {
+                        ctx.fillRect(inv.x, inv.y, 4, 3);
+                        ctx.fillRect(inv.x + inv.w - 4, inv.y, 4, 3);
+                    } else {
+                        ctx.fillRect(inv.x, inv.y + inv.h - 3, 4, 3);
+                        ctx.fillRect(inv.x + inv.w - 4, inv.y + inv.h - 3, 4, 3);
+                    }
+                });
+
+                bunkers.forEach(b => {
+                    if (b.hp > 0) {
+                        ctx.fillStyle = `rgba(0, 255, 120, ${b.hp / 4})`;
+                        ctx.fillRect(b.x, b.y, b.w, b.h);
+                    }
+                });
+
+                ctx.fillStyle = '#00ffcc';
+                ctx.fillRect(playerX + 2, playerY + 4, 22, 8);
+                ctx.fillRect(playerX + 10, playerY, 6, 6);
+
+                ctx.fillStyle = '#ffff00';
+                pBullets.forEach(b => ctx.fillRect(b.x - 1, b.y, 2, 7));
+
+                ctx.fillStyle = '#ff2244';
+                alienBombs.forEach(b => ctx.fillRect(b.x - 1, b.y, 3, 6));
+
+                ctx.fillStyle = '#00ffcc';
+                for (let i = 0; i < lives; i++) {
+                    ctx.fillRect(10 + i * 14, 290, 10, 5);
+                    ctx.fillRect(13 + i * 14, 287, 4, 3);
+                }
+
+                if (lives > 0) {
+                    arcadeAnimFrame = requestAnimationFrame(loop);
+                }
+            }
+
+            arcadeAnimFrame = requestAnimationFrame(loop);
+        }
+
+        function runTetrisGame(canvas) {
+            const ctx = canvas.getContext('2d');
+            const cols = 10;
+            const rows = 18;
+            const cell = 14;
+            const offsetX = (300 - cols * cell) / 2;
+            const offsetY = (300 - rows * cell) / 2;
+
+            let board = Array.from({ length: rows }, () => Array(cols).fill(0));
+            let score = 0;
+            let isGameOver = false;
+
+            const TETROMINOES = [
+                { shape: [[1,1,1,1]], color: '#00ffff' },
+                { shape: [[1,1],[1,1]], color: '#ffff00' },
+                { shape: [[0,1,0],[1,1,1]], color: '#aa00ff' },
+                { shape: [[0,1,1],[1,1,0]], color: '#00ff44' },
+                { shape: [[1,1,0],[0,1,1]], color: '#ff2233' },
+                { shape: [[1,0,0],[1,1,1]], color: '#0055ff' },
+                { shape: [[0,0,1],[1,1,1]], color: '#ff8800' }
+            ];
+
+            let piece = null;
+            let px = 3;
+            let py = 0;
+
+            function spawnPiece() {
+                const choice = TETROMINOES[Math.floor(Math.random() * TETROMINOES.length)];
+                piece = { shape: choice.shape.map(r => [...r]), color: choice.color };
+                px = Math.floor((cols - piece.shape[0].length) / 2);
+                py = 0;
+
+                if (collides(piece.shape, px, py)) {
+                    isGameOver = true;
+                    showArcadeOverlay('TETRIS OVER • SCORE: ' + score);
+                }
+            }
+
+            function collides(shape, cx, cy) {
+                for (let r = 0; r < shape.length; r++) {
+                    for (let c = 0; c < shape[r].length; c++) {
+                        if (shape[r][c]) {
+                            const nx = cx + c;
+                            const ny = cy + r;
+                            if (nx < 0 || nx >= cols || ny >= rows) return true;
+                            if (ny >= 0 && board[ny][nx]) return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            function rotate(shape) {
+                const h = shape.length;
+                const w = shape[0].length;
+                const rotated = Array.from({ length: w }, () => Array(h).fill(0));
+                for (let r = 0; r < h; r++) {
+                    for (let c = 0; c < w; c++) {
+                        rotated[c][h - 1 - r] = shape[r][c];
+                    }
+                }
+                return rotated;
+            }
+
+            function lockPiece() {
+                for (let r = 0; r < piece.shape.length; r++) {
+                    for (let c = 0; c < piece.shape[r].length; c++) {
+                        if (piece.shape[r][c]) {
+                            const ny = py + r;
+                            const nx = px + c;
+                            if (ny >= 0 && ny < rows && nx >= 0 && nx < cols) {
+                                board[ny][nx] = piece.color;
+                            }
+                        }
+                    }
+                }
+
+                let cleared = 0;
+                for (let r = rows - 1; r >= 0; r--) {
+                    if (board[r].every(c => c !== 0)) {
+                        board.splice(r, 1);
+                        board.unshift(Array(cols).fill(0));
+                        cleared++;
+                        r++;
+                    }
+                }
+
+                if (cleared > 0) {
+                    const bonus = [0, 100, 300, 500, 800][cleared] || 100;
+                    score += bonus;
+                    updateArcadeScoreDisplay(score);
+                    playArcadeBeep(523, 784, 0.15);
+                } else {
+                    playArcadeBeep(350, 150, 0.04);
+                }
+
+                spawnPiece();
+            }
+
+            spawnPiece();
+
+            let moveCooldown = 0;
+            function draw() {
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, 300, 300);
+
+                ctx.strokeStyle = '#004cff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(offsetX - 2, offsetY - 2, cols * cell + 4, rows * cell + 4);
+
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        if (board[r][c]) {
+                            ctx.fillStyle = board[r][c];
+                            ctx.fillRect(offsetX + c * cell + 1, offsetY + r * cell + 1, cell - 2, cell - 2);
+                        } else {
+                            ctx.fillStyle = '#060d24';
+                            ctx.fillRect(offsetX + c * cell + 1, offsetY + r * cell + 1, cell - 2, cell - 2);
+                        }
+                    }
+                }
+
+                if (piece && !isGameOver) {
+                    ctx.fillStyle = piece.color;
+                    for (let r = 0; r < piece.shape.length; r++) {
+                        for (let c = 0; c < piece.shape[r].length; c++) {
+                            if (piece.shape[r][c]) {
+                                ctx.fillRect(offsetX + (px + c) * cell + 1, offsetY + (py + r) * cell + 1, cell - 2, cell - 2);
+                            }
+                        }
+                    }
+                }
+
+                if (moveCooldown > 0) moveCooldown--;
+                if (moveCooldown === 0 && !isGameOver) {
+                    if (arcadeActiveInputs.left && !collides(piece.shape, px - 1, py)) {
+                        px--; moveCooldown = 8;
+                        playArcadeBeep(450, 400, 0.03);
+                    } else if (arcadeActiveInputs.right && !collides(piece.shape, px + 1, py)) {
+                        px++; moveCooldown = 8;
+                        playArcadeBeep(450, 400, 0.03);
+                    } else if (arcadeActiveInputs.down) {
+                        if (!collides(piece.shape, px, py + 1)) {
+                            py++; moveCooldown = 4;
+                        } else {
+                            lockPiece();
+                            moveCooldown = 8;
+                        }
+                    }
+                }
+
+                if ((arcadeActiveInputs.action || arcadeDiscreteActionTriggered) && !isGameOver) {
+                    arcadeDiscreteActionTriggered = false;
+                    const nextShape = rotate(piece.shape);
+                    if (!collides(nextShape, px, py)) {
+                        piece.shape = nextShape;
+                        playArcadeBeep(600, 750, 0.05);
+                    } else if (!collides(nextShape, px - 1, py)) {
+                        px--; piece.shape = nextShape;
+                        playArcadeBeep(600, 750, 0.05);
+                    } else if (!collides(nextShape, px + 1, py)) {
+                        px++; piece.shape = nextShape;
+                        playArcadeBeep(600, 750, 0.05);
+                    }
+                }
+
+                if (!isGameOver) {
+                    arcadeAnimFrame = requestAnimationFrame(draw);
+                }
+            }
+
+            arcadeInterval = setInterval(() => {
+                if (isGameOver || !piece) return;
+                if (!collides(piece.shape, px, py + 1)) {
+                    py++;
+                } else {
+                    lockPiece();
+                }
+            }, 420);
+
+            arcadeAnimFrame = requestAnimationFrame(draw);
         }
 
         function renderPage(pageName, updateHistory = true) {
             stopLanyardRefresh();
+            stopArcadeGame();
             if (updateHistory) {
                 history.pushState({ screen: 'page', page: pageName }, '', `#${pageName}`);
             }
