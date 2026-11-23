@@ -775,9 +775,9 @@ h3 {
         transform: translate(-50%, -50%);
     }
 
-    .top-row {
-        align-self: stretch;
-        justify-content: flex-start;
+    .top-row,
+    .back-button {
+        display: none !important;
     }
 
     h1 {
@@ -989,8 +989,13 @@ h3 {
             oscillator.stop(startTime + 0.1);
         }
 
-        function renderMainMenu() {
+        function renderMainMenu(updateHistory = true) {
             stopLanyardRefresh();
+            if (updateHistory) {
+                if (!history.state || history.state.screen !== 'menu') {
+                    history.pushState({ screen: 'menu' }, '');
+                }
+            }
             rightPanel.innerHTML = `
                 <div class="menu-panel">
                     <h1>WHOAMI</h1>
@@ -1005,7 +1010,7 @@ h3 {
             document.querySelectorAll('.menu-item').forEach(button => {
                 button.addEventListener('click', () => {
                     playArcadeBeep();
-                    renderPage(button.dataset.page);
+                    renderPage(button.dataset.page, true);
                 });
             });
         }
@@ -1388,8 +1393,12 @@ h3 {
             }
         }
 
-        function renderPage(pageName) {
+        function renderPage(pageName, updateHistory = true) {
             stopLanyardRefresh();
+            if (updateHistory) {
+                history.pushState({ screen: 'page', page: pageName }, '');
+            }
+
             if (pageName === 'profile') {
                 rightPanel.innerHTML = `
                     <div class="panel-content-only profile-menu-panel">
@@ -1405,14 +1414,22 @@ h3 {
                     </div>
                 `;
 
-                document.querySelector('.back-button').addEventListener('click', () => {
-                    playArcadeBeep();
-                    renderMainMenu();
-                });
+                const backBtn = document.querySelector('.back-button');
+                if (backBtn) {
+                    backBtn.addEventListener('click', () => {
+                        playArcadeBeep();
+                        if (window.history.length > 1) {
+                            history.back();
+                        } else {
+                            renderMainMenu(true);
+                        }
+                    });
+                }
+
                 document.querySelectorAll('.sub-menu .menu-item').forEach(button => {
                     button.addEventListener('click', () => {
                         playArcadeBeep();
-                        renderDetail(button.dataset.page);
+                        renderDetail(button.dataset.page, true);
                     });
                 });
                 return;
@@ -1432,7 +1449,11 @@ h3 {
             if (backButton) {
                 backButton.addEventListener('click', () => {
                     playArcadeBeep();
-                    renderMainMenu();
+                    if (window.history.length > 1) {
+                        history.back();
+                    } else {
+                        renderMainMenu(true);
+                    }
                 });
             }
 
@@ -1450,7 +1471,12 @@ h3 {
 
         }
 
-        function renderDetail(pageName) {
+        function renderDetail(pageName, updateHistory = true) {
+            stopLanyardRefresh();
+            if (updateHistory) {
+                history.pushState({ screen: 'detail', detail: pageName }, '');
+            }
+
             const content = profileSections[pageName] || profileSections.knowMe;
             rightPanel.innerHTML = `
                 <div class="panel-content-only">
@@ -1461,13 +1487,33 @@ h3 {
                 </div>
             `;
 
-            document.querySelector('.back-button').addEventListener('click', () => {
-                playArcadeBeep();
-                renderPage('profile');
-            });
+            const backButton = document.querySelector('.back-button');
+            if (backButton) {
+                backButton.addEventListener('click', () => {
+                    playArcadeBeep();
+                    if (window.history.length > 1) {
+                        history.back();
+                    } else {
+                        renderPage('profile', true);
+                    }
+                });
+            }
         }
 
-        renderMainMenu();
+        window.addEventListener('popstate', (event) => {
+            playArcadeBeep();
+            const state = event.state;
+            if (!state || state.screen === 'menu') {
+                renderMainMenu(false);
+            } else if (state.screen === 'page') {
+                renderPage(state.page, false);
+            } else if (state.screen === 'detail') {
+                renderDetail(state.detail, false);
+            }
+        });
+
+        history.replaceState({ screen: 'menu' }, '');
+        renderMainMenu(false);
     </script>
 </body>
 </html>
