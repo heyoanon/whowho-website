@@ -1140,6 +1140,10 @@ h3 {
                     playArcadeBeep();
                     renderPage(button.dataset.page, true);
                 });
+                if (button.dataset.page === 'nowPlaying') {
+                    button.addEventListener('mouseenter', prefetchNowPlaying, { passive: true });
+                    button.addEventListener('touchstart', prefetchNowPlaying, { passive: true });
+                }
             });
         }
 
@@ -1235,16 +1239,64 @@ h3 {
             }
         }
 
+        let isPrefetching = false;
+        async function prefetchNowPlaying() {
+            if (isPrefetching) return;
+            isPrefetching = true;
+            try {
+                const fetchWithTimeout = async (url, timeoutMs) => {
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), timeoutMs);
+                    try {
+                        const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
+                        clearTimeout(timer);
+                        return res.ok ? await res.json() : null;
+                    } catch {
+                        clearTimeout(timer);
+                        return null;
+                    }
+                };
+
+                const [lanyardData, directData] = await Promise.all([
+                    fetchWithTimeout(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`, 5000),
+                    fetchWithTimeout('/api/now-playing', 5000)
+                ]);
+
+                if (lanyardData && lanyardData.success && lanyardData.data) {
+                    latestLanyardPresence = lanyardData.data;
+                }
+                if (directData) {
+                    latestDirectTrack = directData.isPlaying ? directData : null;
+                }
+
+                const musicList = document.getElementById('lanyard-music-list');
+                if (musicList && (latestDirectTrack || latestLanyardPresence)) {
+                    renderUnifiedMusic();
+                }
+            } catch (err) {
+                console.warn('Prefetch notice:', err);
+            } finally {
+                isPrefetching = false;
+            }
+        }
+
         function startLanyardMonitoring() {
             stopLanyardRefresh();
             const musicList = document.getElementById('lanyard-music-list');
-            if (musicList && !musicList.children.length) {
+
+            // Instantly show what is playing at that exact moment if already available
+            if (latestDirectTrack || latestLanyardPresence) {
+                renderUnifiedMusic();
+            } else if (musicList) {
                 musicList.innerHTML = '<p class="lanyard-activity">CONNECTING TO AUDIO STREAM...</p>';
                 musicList.hidden = false;
             }
+
+            // Immediately query at that moment for any real-time update
+            isLoadingLanyard = false;
             fetchLanyardPresence();
             connectLanyardSocket();
-            lanyardRefreshTimer = setInterval(fetchLanyardPresence, 6000);
+            lanyardRefreshTimer = setInterval(fetchLanyardPresence, 5000);
         }
 
         function stopTrackProgress() {
@@ -1894,6 +1946,8 @@ h3 {
         });
 
         restoreNavigation();
+        prefetchNowPlaying();
+        setInterval(prefetchNowPlaying, 25000);
     </script>
 </body>
 </html>
