@@ -122,6 +122,9 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
 
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204);
@@ -722,25 +725,44 @@ app.get('/api/now-playing', async (req, res) => {
   });
 });
 
+const defaultProfileHobbies = [
+  "Gaming (retro arcade & rhythm games)",
+  "Building Lego sets and collecting tech devices",
+  "Coding and web development experiments",
+  "Listening to music and curating playlists",
+  "Interior aesthetic design and creative crafts"
+];
+
 async function loadStoredProfile() {
+  let profile = null;
   if (database) {
     try {
       const res = await database.query('SELECT data FROM profile_data WHERE id = $1', ['current']);
       if (res.rows.length > 0) {
-        return res.rows[0].data;
+        profile = res.rows[0].data;
       }
     } catch (err) {
       console.error('Unable to load profile from database:', err.message);
     }
   }
 
-  if (fs.existsSync(profileFile)) {
+  if (!profile && fs.existsSync(profileFile)) {
     try {
-      return JSON.parse(fs.readFileSync(profileFile, 'utf8'));
+      profile = JSON.parse(fs.readFileSync(profileFile, 'utf8'));
     } catch {}
   }
 
-  return memoryProfileData;
+  if (!profile) {
+    profile = memoryProfileData;
+  }
+
+  if (profile && typeof profile === 'object') {
+    if (!Array.isArray(profile.hobbies) || profile.hobbies.length === 0) {
+      profile.hobbies = defaultProfileHobbies;
+    }
+  }
+
+  return profile;
 }
 
 async function saveStoredProfile(data) {

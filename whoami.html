@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -1416,16 +1419,36 @@ h3 {
         padding-left: 0;
     }
 
-    .panel-content-only > .sub-menu,
+    .profile-menu-panel,
+    .who-i-ult-menu-panel {
+        width: 100% !important;
+        min-height: 100% !important;
+        height: 100% !important;
+        flex: 1 1 auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: flex-start !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+        position: relative !important;
+    }
+
     .profile-menu-panel > .sub-menu,
-    .who-i-ult-menu-panel > .sub-menu {
-        position: absolute;
-        top: 50%;
-        left: 0;
-        width: 100%;
-        margin-top: 0;
-        transform: translateY(-50%);
-        padding-left: 2px;
+    .who-i-ult-menu-panel > .sub-menu,
+    .panel-content-only > .sub-menu {
+        position: static !important;
+        top: auto !important;
+        left: auto !important;
+        transform: none !important;
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 14px !important;
+        align-items: flex-start !important;
+        padding: 10px 0 !important;
+        margin: 0 !important;
     }
 
     .top-row,
@@ -1927,7 +1950,7 @@ h3 {
                         if (Array.isArray(parsed.knownFacts)) currentProfileData.knownFacts = parsed.knownFacts;
                         if (Array.isArray(parsed.unknownFacts)) currentProfileData.unknownFacts = parsed.unknownFacts;
                         if (Array.isArray(parsed.hobbies)) currentProfileData.hobbies = parsed.hobbies;
-                        if (!Array.isArray(currentProfileData.hobbies)) currentProfileData.hobbies = [...defaultProfileData.hobbies];
+                        if (!Array.isArray(currentProfileData.hobbies) || currentProfileData.hobbies.length === 0) currentProfileData.hobbies = [...defaultProfileData.hobbies];
                         if (Array.isArray(parsed.sidequests)) currentProfileData.sidequests = normalizeQuests(parsed.sidequests);
                     }
                 }
@@ -1946,7 +1969,7 @@ h3 {
                         if (Array.isArray(s.knownFacts)) currentProfileData.knownFacts = s.knownFacts;
                         if (Array.isArray(s.unknownFacts)) currentProfileData.unknownFacts = s.unknownFacts;
                         if (Array.isArray(s.hobbies)) currentProfileData.hobbies = s.hobbies;
-                        if (!Array.isArray(currentProfileData.hobbies)) currentProfileData.hobbies = [...defaultProfileData.hobbies];
+                        if (!Array.isArray(currentProfileData.hobbies) || currentProfileData.hobbies.length === 0) currentProfileData.hobbies = [...defaultProfileData.hobbies];
                         if (Array.isArray(s.sidequests)) currentProfileData.sidequests = normalizeQuests(s.sidequests);
                         try {
                             localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
@@ -2282,6 +2305,10 @@ h3 {
             }
 
             if (sectionKey === 'hobbies') {
+                const hobbiesList = (Array.isArray(currentProfileData.hobbies) && currentProfileData.hobbies.length > 0)
+                    ? currentProfileData.hobbies
+                    : defaultProfileData.hobbies;
+
                 if (isEditing) {
                     return `
                         <div class="panel-content hobbies-panel">
@@ -2292,7 +2319,7 @@ h3 {
                                 <form class="profile-edit-form" id="form-hobbies" onsubmit="event.preventDefault(); promptSaveProfile('hobbies');">
                                     <div class="profile-form-group">
                                         <label class="profile-form-label">HOBBIES (ONE HOBBY PER LINE)</label>
-                                        <textarea class="profile-textarea-field" name="facts" rows="7" required>${escapeHtml((currentProfileData.hobbies || []).join('\n'))}</textarea>
+                                        <textarea class="profile-textarea-field" name="facts" rows="7" required>${escapeHtml(hobbiesList.join('\n'))}</textarea>
                                     </div>
                                     <div class="profile-edit-actions">
                                         <button type="submit" class="btn-save-profile">SAVE CHANGES</button>
@@ -2312,7 +2339,7 @@ h3 {
                         </div>
                         <div class="fact-box scrollable-facts-box">
                             <ul>
-                                ${(currentProfileData.hobbies || []).map(item => `<li>${escapeHtml(item)}</li>`).join('')}
+                                ${hobbiesList.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
                             </ul>
                         </div>
                     </div>
