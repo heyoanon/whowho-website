@@ -491,14 +491,25 @@ h3 {
     text-align: left;
 }
 
-.lanyard-track-artists,
-.lanyard-track-album-line {
-    display: inline-block;
+.lanyard-track-artists {
+    display: block;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    vertical-align: bottom;
+    color: #ffffff;
+    font-size: 15px;
+}
+
+.lanyard-track-album-line {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #9ab7ff;
+    font-size: 13px;
+    margin-top: 3px;
 }
 
 .lanyard-track-link {
@@ -726,6 +737,17 @@ h3 {
     .panel-content .lanyard-track-info .lanyard-track-details {
         font-size: 12px;
         text-align: center;
+    }
+
+    .lanyard-track-artists {
+        font-size: 13px;
+        text-align: center;
+    }
+
+    .lanyard-track-album-line {
+        font-size: 11px;
+        text-align: center;
+        margin-top: 2px;
     }
 
     .lanyard-track-timing {
@@ -1108,12 +1130,14 @@ h3 {
 
             let album = '';
             const largeText = (activity.assets?.large_text || '').trim();
-            if (largeText &&
-                largeText.toLowerCase() !== nameLower &&
-                !/^(youtube music|bitchord|spotify)$/i.test(largeText) &&
-                largeText !== title &&
-                largeText !== artist) {
-                album = largeText;
+            const smallText = (activity.assets?.small_text || '').trim();
+            const candidateAlbum = largeText || smallText;
+            if (candidateAlbum &&
+                candidateAlbum.toLowerCase() !== nameLower &&
+                !/^(youtube music|bitchord|spotify)$/i.test(candidateAlbum) &&
+                candidateAlbum !== title &&
+                candidateAlbum !== artist) {
+                album = candidateAlbum;
             }
 
             const { url: artworkUrl, fallback: fallbackArtworkUrl } = resolveDiscordAssetUrl(
@@ -1188,7 +1212,7 @@ h3 {
             trackInfo.appendChild(trackTitle);
 
             if (track.artist || track.album) {
-                const trackDetails = document.createElement('p');
+                const trackDetails = document.createElement('div');
                 trackDetails.className = 'lanyard-track-details';
                 if (track.artist) {
                     const artist = document.createElement('span');
@@ -1199,13 +1223,7 @@ h3 {
                 if (track.album) {
                     const album = document.createElement('span');
                     album.className = 'lanyard-track-album-line';
-                    if (track.artist) {
-                        const separator = document.createElement('span');
-                        separator.setAttribute('aria-hidden', 'true');
-                        separator.textContent = ' — ';
-                        album.appendChild(separator);
-                    }
-                    album.appendChild(document.createTextNode(track.album));
+                    album.textContent = track.album;
                     trackDetails.appendChild(album);
                 }
                 trackInfo.appendChild(trackDetails);
