@@ -482,12 +482,15 @@ h3 {
     text-align: left;
 }
 
-.panel-content .lanyard-track-info .lanyard-track-details {
+.panel-content .lanyard-track-info .lanyard-track-details,
+.lanyard-track-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     margin: 0;
     width: 100%;
     max-width: 100%;
-    font-size: 16px;
-    line-height: 1.5;
+    gap: 3px;
     text-align: left;
 }
 
@@ -499,6 +502,7 @@ h3 {
     white-space: nowrap;
     color: #ffffff;
     font-size: 15px;
+    line-height: 1.4;
 }
 
 .lanyard-track-album-line {
@@ -509,7 +513,7 @@ h3 {
     white-space: nowrap;
     color: #9ab7ff;
     font-size: 13px;
-    margin-top: 3px;
+    line-height: 1.4;
 }
 
 .lanyard-track-link {
@@ -734,20 +738,34 @@ h3 {
         text-align: center;
     }
 
-    .panel-content .lanyard-track-info .lanyard-track-details {
-        font-size: 12px;
-        text-align: center;
+    .panel-content .lanyard-track-info .lanyard-track-details,
+    .lanyard-track-details {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100% !important;
+        text-align: center !important;
+        gap: 3px !important;
     }
 
     .lanyard-track-artists {
-        font-size: 13px;
-        text-align: center;
+        display: block !important;
+        width: 100% !important;
+        font-size: 13px !important;
+        line-height: 1.4 !important;
+        text-align: center !important;
+        color: #ffffff !important;
     }
 
     .lanyard-track-album-line {
-        font-size: 11px;
-        text-align: center;
-        margin-top: 2px;
+        display: block !important;
+        width: 100% !important;
+        font-size: 11px !important;
+        line-height: 1.4 !important;
+        text-align: center !important;
+        color: #9ab7ff !important;
+        margin-top: 2px !important;
     }
 
     .lanyard-track-timing {
@@ -992,8 +1010,10 @@ h3 {
         function renderMainMenu(updateHistory = true) {
             stopLanyardRefresh();
             if (updateHistory) {
-                if (!history.state || history.state.screen !== 'menu') {
-                    history.pushState({ screen: 'menu' }, '');
+                if (window.location.hash !== '' && window.location.hash !== '#menu') {
+                    history.pushState({ screen: 'menu' }, '', '#menu');
+                } else if (!history.state || history.state.screen !== 'menu') {
+                    history.replaceState({ screen: 'menu' }, '', '#menu');
                 }
             }
             rightPanel.innerHTML = `
@@ -1063,6 +1083,27 @@ h3 {
         }
 
         const DISCORD_USER_ID = '772073053097033741';
+        const albumCache = new Map();
+
+        async function fetchAlbumForTrack(artist, title) {
+            const cleanArtist = (artist || '').trim();
+            const cleanTitle = (title || '').trim();
+            if (!cleanArtist || !cleanTitle) return null;
+            const key = `${cleanArtist.toLowerCase()} - ${cleanTitle.toLowerCase()}`;
+            if (albumCache.has(key)) return albumCache.get(key);
+
+            try {
+                const query = encodeURIComponent(`${cleanArtist} ${cleanTitle}`);
+                const response = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`);
+                if (!response.ok) return null;
+                const result = await response.json();
+                const albumName = result.results?.[0]?.collectionName || null;
+                albumCache.set(key, albumName);
+                return albumName;
+            } catch {
+                return null;
+            }
+        }
 
         function resolveDiscordAssetUrl(applicationId, assetId) {
             if (!assetId || typeof assetId !== 'string') {
@@ -1230,6 +1271,16 @@ h3 {
                     album.className = 'lanyard-track-album-line';
                     album.textContent = track.album;
                     trackDetails.appendChild(album);
+                } else if (track.artist && track.title) {
+                    fetchAlbumForTrack(track.artist, track.title).then(albumName => {
+                        if (albumName && !trackDetails.querySelector('.lanyard-track-album-line')) {
+                            track.album = albumName;
+                            const album = document.createElement('span');
+                            album.className = 'lanyard-track-album-line';
+                            album.textContent = albumName;
+                            trackDetails.appendChild(album);
+                        }
+                    });
                 }
                 trackInfo.appendChild(trackDetails);
             }
@@ -1396,7 +1447,7 @@ h3 {
         function renderPage(pageName, updateHistory = true) {
             stopLanyardRefresh();
             if (updateHistory) {
-                history.pushState({ screen: 'page', page: pageName }, '');
+                history.pushState({ screen: 'page', page: pageName }, '', `#${pageName}`);
             }
 
             if (pageName === 'profile') {
@@ -1474,7 +1525,7 @@ h3 {
         function renderDetail(pageName, updateHistory = true) {
             stopLanyardRefresh();
             if (updateHistory) {
-                history.pushState({ screen: 'detail', detail: pageName }, '');
+                history.pushState({ screen: 'detail', detail: pageName }, '', `#${pageName}`);
             }
 
             const content = profileSections[pageName] || profileSections.knowMe;
@@ -1500,20 +1551,44 @@ h3 {
             }
         }
 
+        const DETAIL_PAGES = ['knowMe', 'knownFacts', 'unknownFacts', 'whoIUlt'];
+        const TOP_PAGES = ['profile', 'socials', 'nowPlaying', 'sidequests', 'message'];
+
+        function restoreNavigation() {
+            const hash = (window.location.hash || '').replace(/^#/, '').trim();
+            if (DETAIL_PAGES.includes(hash)) {
+                history.replaceState({ screen: 'detail', detail: hash }, '', `#${hash}`);
+                renderDetail(hash, false);
+            } else if (TOP_PAGES.includes(hash)) {
+                history.replaceState({ screen: 'page', page: hash }, '', `#${hash}`);
+                renderPage(hash, false);
+            } else {
+                history.replaceState({ screen: 'menu' }, '', '#menu');
+                renderMainMenu(false);
+            }
+        }
+
         window.addEventListener('popstate', (event) => {
             playArcadeBeep();
             const state = event.state;
-            if (!state || state.screen === 'menu') {
-                renderMainMenu(false);
-            } else if (state.screen === 'page') {
-                renderPage(state.page, false);
-            } else if (state.screen === 'detail') {
+            const hash = (window.location.hash || '').replace(/^#/, '').trim();
+
+            if (state && state.screen === 'detail') {
                 renderDetail(state.detail, false);
+            } else if (state && state.screen === 'page') {
+                renderPage(state.page, false);
+            } else if (state && state.screen === 'menu') {
+                renderMainMenu(false);
+            } else if (DETAIL_PAGES.includes(hash)) {
+                renderDetail(hash, false);
+            } else if (TOP_PAGES.includes(hash)) {
+                renderPage(hash, false);
+            } else {
+                renderMainMenu(false);
             }
         });
 
-        history.replaceState({ screen: 'menu' }, '');
-        renderMainMenu(false);
+        restoreNavigation();
     </script>
 </body>
 </html>
