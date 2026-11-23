@@ -338,7 +338,8 @@ h3 {
 }
 
 .known-facts-panel,
-.unknown-facts-panel {
+.unknown-facts-panel,
+.hobbies-panel {
     flex: 1;
     min-height: 0;
     overflow: hidden;
@@ -1685,6 +1686,13 @@ h3 {
                 "I'm a big fan of the 80s, 90s pop culture and K-pop girl groups.",
                 "A Humanities and Social Sciences graduate who took a STEM degree in college so expect that I'm busy for most of the time."
             ],
+            hobbies: [
+                "Gaming (retro arcade & rhythm games)",
+                "Building Lego sets and collecting tech devices",
+                "Coding and web development experiments",
+                "Listening to music and curating playlists",
+                "Interior aesthetic design and creative crafts"
+            ],
             ultBias: {
                 kpop: 'Winter, Seulgi, Mina, Yoon, Minji, Kazuha, Chaewon, Minju, Haewon, Lily',
                 thaiGl: 'Freen, Becky, Milk, Love, Caprice, Pangjie',
@@ -1895,6 +1903,8 @@ h3 {
                         currentProfileData.ultGroups = Object.assign({}, defaultProfileData.ultGroups, parsed.ultGroups || {});
                         if (Array.isArray(parsed.knownFacts)) currentProfileData.knownFacts = parsed.knownFacts;
                         if (Array.isArray(parsed.unknownFacts)) currentProfileData.unknownFacts = parsed.unknownFacts;
+                        if (Array.isArray(parsed.hobbies)) currentProfileData.hobbies = parsed.hobbies;
+                        if (!Array.isArray(currentProfileData.hobbies)) currentProfileData.hobbies = [...defaultProfileData.hobbies];
                         if (Array.isArray(parsed.sidequests)) currentProfileData.sidequests = normalizeQuests(parsed.sidequests);
                     }
                 }
@@ -1912,6 +1922,8 @@ h3 {
                         currentProfileData.ultGroups = Object.assign({}, defaultProfileData.ultGroups, s.ultGroups || {});
                         if (Array.isArray(s.knownFacts)) currentProfileData.knownFacts = s.knownFacts;
                         if (Array.isArray(s.unknownFacts)) currentProfileData.unknownFacts = s.unknownFacts;
+                        if (Array.isArray(s.hobbies)) currentProfileData.hobbies = s.hobbies;
+                        if (!Array.isArray(currentProfileData.hobbies)) currentProfileData.hobbies = [...defaultProfileData.hobbies];
                         if (Array.isArray(s.sidequests)) currentProfileData.sidequests = normalizeQuests(s.sidequests);
                         try {
                             localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
@@ -2067,6 +2079,9 @@ h3 {
                     } else if (sectionKey === 'unknownFacts') {
                         const text = (formData.get('facts') || '').trim();
                         currentProfileData.unknownFacts = text.split('\n').map(l => l.trim()).filter(Boolean);
+                    } else if (sectionKey === 'hobbies') {
+                        const text = (formData.get('facts') || formData.get('hobbies') || '').trim();
+                        currentProfileData.hobbies = text.split('\n').map(l => l.trim()).filter(Boolean);
                     } else if (sectionKey === 'ultBias') {
                         currentProfileData.ultBias = {
                             kpop: (formData.get('kpop') || '').trim(),
@@ -2237,6 +2252,44 @@ h3 {
                         <div class="fact-box scrollable-facts-box">
                             <ul>
                                 ${currentProfileData.unknownFacts.map(fact => `<li>${escapeHtml(fact)}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (sectionKey === 'hobbies') {
+                if (isEditing) {
+                    return `
+                        <div class="panel-content hobbies-panel">
+                            <div class="profile-header-row">
+                                <h2>EDIT HOBBIES</h2>
+                            </div>
+                            <div class="fact-box scrollable-facts-box">
+                                <form class="profile-edit-form" id="form-hobbies" onsubmit="event.preventDefault(); promptSaveProfile('hobbies');">
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">HOBBIES (ONE HOBBY PER LINE)</label>
+                                        <textarea class="profile-textarea-field" name="facts" rows="7" required>${escapeHtml((currentProfileData.hobbies || []).join('\n'))}</textarea>
+                                    </div>
+                                    <div class="profile-edit-actions">
+                                        <button type="submit" class="btn-save-profile">SAVE CHANGES</button>
+                                        <button type="button" class="btn-cancel-profile" onclick="cancelEditProfile('hobbies')">CANCEL</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="panel-content hobbies-panel">
+                        <div class="profile-header-row">
+                            <h2>HOBBIES</h2>
+                            <button type="button" class="edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}" onclick="toggleEditProfile('hobbies')" title="${isAdminLoggedIn ? 'Edit hobbies' : 'Owner access required'}">${isAdminLoggedIn ? '✎ EDIT' : '🔒 OWNER EDIT'}</button>
+                        </div>
+                        <div class="fact-box scrollable-facts-box">
+                            <ul>
+                                ${(currentProfileData.hobbies || []).map(item => `<li>${escapeHtml(item)}</li>`).join('')}
                             </ul>
                         </div>
                     </div>
@@ -3389,6 +3442,7 @@ h3 {
                             <button class="menu-item" data-page="knowMe">GET TO KNOW ME</button>
                             <button class="menu-item" data-page="knownFacts">KNOWN FACTS</button>
                             <button class="menu-item" data-page="unknownFacts">UNKNOWN FACTS</button>
+                            <button class="menu-item" data-page="hobbies">HOBBIES</button>
                             <button class="menu-item" data-page="whoIUlt">WHO I ULT</button>
                         </div>
                     </div>
@@ -3545,7 +3599,7 @@ h3 {
             }
         }
 
-        const DETAIL_PAGES = ['knowMe', 'knownFacts', 'unknownFacts', 'whoIUlt', 'ultBias', 'ultGroups'];
+        const DETAIL_PAGES = ['knowMe', 'knownFacts', 'unknownFacts', 'hobbies', 'whoIUlt', 'ultBias', 'ultGroups'];
         const TOP_PAGES = ['profile', 'socials', 'nowPlaying', 'sidequests', 'message'];
 
         function restoreNavigation() {
