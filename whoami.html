@@ -2129,7 +2129,8 @@ h3 {
             playArcadeBeep();
             editingSection = null;
             isEditingSideQuests = false;
-            renderDetail(targetSection, true);
+            history.replaceState({ screen: 'detail', detail: targetSection }, '', `#${targetSection}`);
+            renderDetail(targetSection, false);
         }
 
         function promptSaveProfile(sectionKey) {
@@ -3641,7 +3642,8 @@ h3 {
                 document.querySelectorAll('.who-i-ult-menu-panel .sub-menu .menu-item').forEach(button => {
                     button.addEventListener('click', () => {
                         playArcadeBeep();
-                        renderDetail(button.dataset.page, true);
+                        history.replaceState({ screen: 'detail', detail: button.dataset.page }, '', `#${button.dataset.page}`);
+                        renderDetail(button.dataset.page, false);
                     });
                 });
                 return;
@@ -3662,16 +3664,8 @@ h3 {
                 backButton.addEventListener('click', () => {
                     playArcadeBeep();
                     editingSection = null;
-            isEditingSideQuests = false;
-                    if (window.history.length > 1) {
-                        history.back();
-                    } else {
-                        if (pageName === 'ultBias' || pageName === 'ultGroups') {
-                            renderDetail('whoIUlt', true);
-                        } else {
-                            renderPage('profile', true);
-                        }
-                    }
+                    isEditingSideQuests = false;
+                    renderPage('profile', true);
                 });
             }
         }
@@ -3701,13 +3695,21 @@ h3 {
             isEditingSideQuests = false;
 
             if (state && state.screen === 'detail') {
-                renderDetail(state.detail, false);
+                if (state.detail === 'whoIUlt') {
+                    renderPage('profile', false);
+                } else {
+                    renderDetail(state.detail, false);
+                }
             } else if (state && state.screen === 'page') {
                 renderPage(state.page, false);
             } else if (state && state.screen === 'menu') {
                 renderMainMenu(false);
             } else if (DETAIL_PAGES.includes(hash)) {
-                renderDetail(hash, false);
+                if (hash === 'whoIUlt') {
+                    renderPage('profile', false);
+                } else {
+                    renderDetail(hash, false);
+                }
             } else if (TOP_PAGES.includes(hash)) {
                 renderPage(hash, false);
             } else {
