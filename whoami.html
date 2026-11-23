@@ -941,6 +941,190 @@ h3 {
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* Side Quests Checklist & Editor */
+.sidequests-panel h3 {
+    margin: 0 0 10px 0;
+    color: #9ab7ff;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+}
+
+.quest-progress-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+    width: 100%;
+}
+
+.quest-progress-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #9ab7ff;
+}
+
+.quest-progress-track {
+    width: 100%;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid #004cff;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.quest-progress-fill {
+    height: 100%;
+    background: #004cff;
+    box-shadow: 0 0 8px #004cff;
+    transition: width 0.3s ease;
+}
+
+.quest-checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.quest-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: rgba(0, 76, 255, 0.08);
+    border: 2px solid rgba(0, 76, 255, 0.45);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    text-align: left;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.quest-item:hover,
+.quest-item:focus {
+    background: rgba(0, 76, 255, 0.18);
+    border-color: #004cff;
+    box-shadow: 0 0 10px rgba(0, 76, 255, 0.5);
+    transform: translateY(-1px);
+}
+
+.quest-item.completed {
+    border-color: rgba(0, 76, 255, 0.25);
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.quest-checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #004cff;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: rgba(0, 0, 0, 0.6);
+    font-size: 12px;
+    color: #ffffff;
+    transition: all 0.2s;
+}
+
+.quest-item.completed .quest-checkbox {
+    background: #004cff;
+    border-color: #ffffff;
+    box-shadow: 0 0 8px rgba(0, 76, 255, 0.8);
+}
+
+.quest-text {
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #ffffff;
+    flex: 1;
+    transition: all 0.2s;
+    word-break: break-word;
+}
+
+.quest-item.completed .quest-text {
+    color: #9ab7ff;
+    text-decoration: line-through;
+    opacity: 0.75;
+}
+
+.quest-empty-msg {
+    color: #9ab7ff;
+    font-size: 12px;
+    line-height: 1.6;
+    text-align: center;
+    padding: 20px 0;
+}
+
+.quest-edit-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.quest-edit-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.quest-edit-input {
+    flex: 1;
+}
+
+.quest-delete-btn {
+    background: rgba(255, 0, 60, 0.15);
+    border: 2px solid rgba(255, 0, 60, 0.5);
+    color: #ff6b8b;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.quest-delete-btn:hover,
+.quest-delete-btn:focus {
+    background: #ff003c;
+    color: #ffffff;
+    border-color: #ffffff;
+    box-shadow: 0 0 8px rgba(255, 0, 60, 0.6);
+}
+
+.btn-add-quest {
+    background: rgba(0, 76, 255, 0.2);
+    border: 2px dashed #004cff;
+    color: #ffffff;
+    border-radius: 6px;
+    padding: 9px 16px;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.btn-add-quest:hover,
+.btn-add-quest:focus {
+    background: #004cff;
+    border-style: solid;
+    box-shadow: 0 0 10px rgba(0, 76, 255, 0.7);
+    transform: translateY(-1px);
+}
+
 .lanyard-track-info[hidden] {
     display: none;
 }
@@ -1367,6 +1551,44 @@ h3 {
         padding: 8px 12px;
     }
 
+    .sidequests-panel h3 {
+        font-size: 12px;
+        margin-bottom: 8px;
+    }
+
+    .quest-progress-header {
+        font-size: 10px;
+    }
+
+    .quest-item {
+        padding: 8px 10px;
+        gap: 10px;
+    }
+
+    .quest-checkbox {
+        width: 18px;
+        height: 18px;
+        font-size: 11px;
+    }
+
+    .quest-text {
+        font-size: 12px;
+    }
+
+    .quest-edit-row {
+        gap: 6px;
+    }
+
+    .quest-delete-btn {
+        padding: 7px 10px;
+        font-size: 11px;
+    }
+
+    .btn-add-quest {
+        font-size: 10px;
+        padding: 8px 12px;
+    }
+
 }
 
     </style>
@@ -1427,11 +1649,31 @@ h3 {
                 mainUlt: 'aespa, Nmixx, Red Velvet, Stayc, Twice, Cortis',
                 stanGroups: 'Blackpink, Itzy, Le Sserafim, NewJeans, Loona, Kep1er, Iz*one, IVE, GFriend, Mamamoo, WJSN, SNSD',
                 boyGroups: 'ILLIT, NCT and its sub-units, Seventeen, Stray Kids, EXO, Tomorrow X Together'
-            }
+            },
+            sidequests: [
+                { id: 'sq-1', text: 'Expand my knowledge in coding and designing.', done: false },
+                { id: 'sq-2', text: 'Make a website based on what it needs.', done: true },
+                { id: 'sq-3', text: 'Keep learning unexpectedly.', done: false }
+            ]
         };
 
         let currentProfileData = JSON.parse(JSON.stringify(defaultProfileData));
         let editingSection = null;
+        let isEditingSideQuests = false;
+
+        function normalizeQuests(quests) {
+            if (!Array.isArray(quests)) return [];
+            return quests.map((q, idx) => {
+                if (typeof q === 'string') {
+                    return { id: `sq-${idx}`, text: q, done: false };
+                }
+                return {
+                    id: (q && q.id) ? q.id : `sq-${idx}`,
+                    text: (q && typeof q.text === 'string') ? q.text : String(q ? q.text || '' : ''),
+                    done: Boolean(q && q.done)
+                };
+            });
+        }
 
         function escapeHtml(str) {
             if (typeof str !== 'string') return String(str || '');
@@ -1455,6 +1697,7 @@ h3 {
                         currentProfileData.ultGroups = Object.assign({}, defaultProfileData.ultGroups, parsed.ultGroups || {});
                         if (Array.isArray(parsed.knownFacts)) currentProfileData.knownFacts = parsed.knownFacts;
                         if (Array.isArray(parsed.unknownFacts)) currentProfileData.unknownFacts = parsed.unknownFacts;
+                        if (Array.isArray(parsed.sidequests)) currentProfileData.sidequests = normalizeQuests(parsed.sidequests);
                     }
                 }
             } catch {}
@@ -1471,6 +1714,7 @@ h3 {
                         currentProfileData.ultGroups = Object.assign({}, defaultProfileData.ultGroups, s.ultGroups || {});
                         if (Array.isArray(s.knownFacts)) currentProfileData.knownFacts = s.knownFacts;
                         if (Array.isArray(s.unknownFacts)) currentProfileData.unknownFacts = s.unknownFacts;
+                        if (Array.isArray(s.sidequests)) currentProfileData.sidequests = normalizeQuests(s.sidequests);
                         try {
                             localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
                         } catch {}
@@ -1478,6 +1722,8 @@ h3 {
                         const hash = (window.location.hash || '').replace(/^#/, '').trim();
                         if (DETAIL_PAGES.includes(hash) && !editingSection) {
                             renderDetail(hash, false);
+                        } else if (hash === 'sidequests' && !isEditingSideQuests) {
+                            renderPage('sidequests', false);
                         }
                     }
                 }
@@ -1568,12 +1814,14 @@ h3 {
         function cancelEditProfile(sectionKey) {
             playArcadeBeep();
             editingSection = null;
+            isEditingSideQuests = false;
             renderDetail(sectionKey, false);
         }
 
         function switchUltTab(targetSection) {
             playArcadeBeep();
             editingSection = null;
+            isEditingSideQuests = false;
             renderDetail(targetSection, true);
         }
 
@@ -1623,6 +1871,7 @@ h3 {
 
                     saveProfileToServer(currentProfileData);
                     editingSection = null;
+            isEditingSideQuests = false;
                     showToast('PROFILE UPDATED SUCCESSFULLY!');
                     renderDetail(sectionKey, false);
                 }
@@ -1906,6 +2155,153 @@ h3 {
             return '';
         }
 
+        function toggleQuestDone(index) {
+            playArcadeBeep();
+            if (!currentProfileData.sidequests || !currentProfileData.sidequests[index]) return;
+            currentProfileData.sidequests[index].done = !currentProfileData.sidequests[index].done;
+            try {
+                localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+            } catch {}
+            saveProfileToServer(currentProfileData);
+            renderPage('sidequests', false);
+        }
+
+        function toggleEditSideQuests() {
+            playArcadeBeep();
+            isEditingSideQuests = true;
+            renderPage('sidequests', false);
+        }
+
+        function cancelEditSideQuests() {
+            playArcadeBeep();
+            isEditingSideQuests = false;
+            renderPage('sidequests', false);
+        }
+
+        function addQuestInputRow() {
+            playArcadeBeep();
+            const list = document.getElementById('quest-edit-list');
+            if (!list) return;
+            const row = document.createElement('div');
+            row.className = 'quest-edit-row';
+            row.innerHTML = `
+                <input class="profile-input-field quest-edit-input" name="questText" placeholder="Enter quest description..." required autocomplete="off">
+                <button type="button" class="quest-delete-btn" onclick="this.closest('.quest-edit-row').remove()" title="Delete quest">✕</button>
+            `;
+            list.appendChild(row);
+            const input = row.querySelector('input');
+            if (input) input.focus();
+        }
+
+        function promptSaveSideQuests() {
+            const form = document.getElementById('form-sidequests');
+            if (!form) return;
+
+            showConfirmationModal(
+                'SAVE QUESTS?',
+                'Are you sure you want to save your updated side quests checklist?',
+                () => {
+                    const inputs = form.querySelectorAll('input[name="questText"]');
+                    const newQuests = [];
+                    const previousQuests = currentProfileData.sidequests || [];
+
+                    inputs.forEach((input, idx) => {
+                        const text = input.value.trim();
+                        if (text) {
+                            const existing = previousQuests.find(q => q.text.toLowerCase() === text.toLowerCase());
+                            newQuests.push({
+                                id: existing ? existing.id : `sq-${Date.now()}-${idx}`,
+                                text: text,
+                                done: existing ? existing.done : false
+                            });
+                        }
+                    });
+
+                    currentProfileData.sidequests = newQuests;
+                    try {
+                        localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+                    } catch {}
+
+                    saveProfileToServer(currentProfileData);
+                    isEditingSideQuests = false;
+                    showToast('SIDE QUESTS UPDATED!');
+                    renderPage('sidequests', false);
+                }
+            );
+        }
+
+        window.toggleQuestDone = toggleQuestDone;
+        window.toggleEditSideQuests = toggleEditSideQuests;
+        window.cancelEditSideQuests = cancelEditSideQuests;
+        window.addQuestInputRow = addQuestInputRow;
+        window.promptSaveSideQuests = promptSaveSideQuests;
+
+        function getSideQuestsContent() {
+            const quests = currentProfileData.sidequests || [];
+            const total = quests.length;
+            const completed = quests.filter(q => q.done).length;
+            const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+            if (isEditingSideQuests) {
+                return `
+                    <div class="panel-content sidequests-panel">
+                        <div class="profile-header-row">
+                            <h2>EDIT SIDE QUESTS</h2>
+                        </div>
+                        <div class="fact-box scrollable-facts-box">
+                            <h3>MISSION LOG EDITOR</h3>
+                            <form class="profile-edit-form" id="form-sidequests" onsubmit="event.preventDefault(); promptSaveSideQuests();">
+                                <div class="quest-edit-list" id="quest-edit-list">
+                                    ${quests.map((q) => `
+                                        <div class="quest-edit-row">
+                                            <input class="profile-input-field quest-edit-input" name="questText" value="${escapeHtml(q.text)}" placeholder="Enter quest description..." required autocomplete="off">
+                                            <button type="button" class="quest-delete-btn" onclick="this.closest('.quest-edit-row').remove()" title="Delete quest">✕</button>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <button type="button" class="btn-add-quest" onclick="addQuestInputRow()">+ ADD NEW QUEST</button>
+                                <div class="profile-edit-actions" style="margin-top: 14px;">
+                                    <button type="submit" class="btn-save-profile">SAVE CHANGES</button>
+                                    <button type="button" class="btn-cancel-profile" onclick="cancelEditSideQuests()">CANCEL</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="panel-content sidequests-panel">
+                    <div class="profile-header-row">
+                        <h2>SIDE QUESTS</h2>
+                        <button type="button" class="edit-profile-btn" onclick="toggleEditSideQuests()">✎ EDIT</button>
+                    </div>
+                    <div class="fact-box scrollable-facts-box">
+                        <h3>MISSION LOG</h3>
+                        <div class="quest-progress-wrap">
+                            <div class="quest-progress-header">
+                                <span>QUEST PROGRESS</span>
+                                <span>${completed} / ${total} (${percent}%)</span>
+                            </div>
+                            <div class="quest-progress-track">
+                                <div class="quest-progress-fill" style="width: ${percent}%;"></div>
+                            </div>
+                        </div>
+                        <div class="quest-checklist">
+                            ${quests.length === 0 ? `
+                                <p class="quest-empty-msg">NO ACTIVE QUESTS.<br>CLICK "✎ EDIT" TO ADD YOUR FIRST QUEST!</p>
+                            ` : quests.map((q, idx) => `
+                                <div class="quest-item ${q.done ? 'completed' : ''}" onclick="toggleQuestDone(${idx})" role="checkbox" aria-checked="${q.done}" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleQuestDone(${idx});}">
+                                    <div class="quest-checkbox">${q.done ? '✔' : ''}</div>
+                                    <span class="quest-text">${escapeHtml(q.text)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         const profileSections = {
             socials: `
                 <div class="panel-content">
@@ -1930,19 +2326,6 @@ h3 {
                         <div id="lanyard-music-list" class="lanyard-music-list">
                             <p class="lanyard-activity">CONNECTING TO AUDIO STREAM...</p>
                         </div>
-                    </div>
-                </div>
-            `,
-            sidequests: `
-                <div class="panel-content">
-                    <h2>SIDE QUESTS</h2>
-                    <div class="fact-box">
-                        <h3>MISSION LOG</h3>
-                        <ul>
-                            <li>Expand my knowledge in coding and designing.</li>
-                            <li>Make a website based on what it needs.</li>
-                            <li>Keep learning unexpectedly.</li>
-                        </ul>
                     </div>
                 </div>
             `,
@@ -1981,6 +2364,8 @@ h3 {
 
         function renderMainMenu(updateHistory = true) {
             stopLanyardRefresh();
+            editingSection = null;
+            isEditingSideQuests = false;
             if (updateHistory) {
                 if (window.location.hash !== '' && window.location.hash !== '#menu') {
                     history.pushState({ screen: 'menu' }, '', '#menu');
@@ -2708,6 +3093,32 @@ h3 {
                 return;
             }
 
+            if (pageName === 'sidequests') {
+                const content = getSideQuestsContent();
+                rightPanel.innerHTML = `
+                    <div class="panel-content-only">
+                        <div class="top-row">
+                            <button class="back-button" aria-label="Go back to main menu">←</button>
+                        </div>
+                        ${content}
+                    </div>
+                `;
+
+                const backButton = document.querySelector('.back-button');
+                if (backButton) {
+                    backButton.addEventListener('click', () => {
+                        playArcadeBeep();
+                        isEditingSideQuests = false;
+                        if (window.history.length > 1) {
+                            history.back();
+                        } else {
+                            renderMainMenu(true);
+                        }
+                    });
+                }
+                return;
+            }
+
             const content = profileSections[pageName] || '';
             rightPanel.innerHTML = `
                 <div class="panel-content-only">
@@ -2798,6 +3209,7 @@ h3 {
                 backButton.addEventListener('click', () => {
                     playArcadeBeep();
                     editingSection = null;
+            isEditingSideQuests = false;
                     if (window.history.length > 1) {
                         history.back();
                     } else {
@@ -2833,6 +3245,7 @@ h3 {
             const state = event.state;
             const hash = (window.location.hash || '').replace(/^#/, '').trim();
             editingSection = null;
+            isEditingSideQuests = false;
 
             if (state && state.screen === 'detail') {
                 renderDetail(state.detail, false);
