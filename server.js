@@ -164,6 +164,52 @@ function requireAdmin(req, res, next) {
   return res.status(401).json({ error: 'Invalid admin credentials.' });
 }
 
+function getProvidedAdminToken(req) {
+  const authHeader = (req.headers.authorization || '').trim();
+  if (authHeader.startsWith('Bearer ')) {
+    return authHeader.slice(7).trim();
+  }
+  if (authHeader.startsWith('Basic ')) {
+    try {
+      const decoded = Buffer.from(authHeader.replace('Basic ', ''), 'base64').toString('utf8');
+      const separator = decoded.indexOf(':');
+      const password = separator === -1 ? decoded : decoded.slice(separator + 1);
+      return password.trim();
+    } catch {}
+  }
+  if (req.headers['x-admin-password']) {
+    return String(req.headers['x-admin-password']).trim();
+  }
+  if (req.headers['x-admin-token']) {
+    return String(req.headers['x-admin-token']).trim();
+  }
+  return null;
+}
+
+function getAdminAuthToken() {
+  if (!ADMIN_PASSWORD) return null;
+  return crypto.createHash('sha256').update(`admin_token:${ADMIN_PASSWORD}`).digest('hex');
+}
+
+function isAuthorizedAdmin(req) {
+  if (!ADMIN_PASSWORD) return false;
+  const provided = getProvidedAdminToken(req);
+  if (!provided) return false;
+
+  if (isValidAdminPassword(provided)) return true;
+
+  const expectedToken = getAdminAuthToken();
+  if (expectedToken) {
+    const expectedBuf = Buffer.from(expectedToken);
+    const providedBuf = Buffer.from(provided);
+    if (expectedBuf.length === providedBuf.length && crypto.timingSafeEqual(expectedBuf, providedBuf)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 if (!ADMIN_PASSWORD) {
   console.error('ADMIN_PASSWORD is not configured; admin access is disabled.');
 }
@@ -683,12 +729,31 @@ async function saveStoredProfile(data) {
   } catch {}
 }
 
+app.get('/api/admin/status', (req, res) => {
+  return res.json({ isAdmin: isAuthorizedAdmin(req) });
+});
+
+app.post('/api/admin/verify', (req, res) => {
+  const password = req.body && req.body.password ? String(req.body.password).trim() : '';
+  if (isAuthorizedAdmin(req) || (password && isValidAdminPassword(password))) {
+    return res.json({
+      success: true,
+      token: getAdminAuthToken()
+    });
+  }
+  return res.status(401).json({ error: 'Invalid admin password.' });
+});
+
 app.get('/api/profile', async (_req, res) => {
   const profile = await loadStoredProfile();
   return res.json({ success: true, profile: profile || null });
 });
 
 app.post('/api/profile', async (req, res) => {
+  if (!isAuthorizedAdmin(req)) {
+    return res.status(401).json({ error: 'Unauthorized. Admin / owner access required to save changes.' });
+  }
+
   const data = req.body;
   if (!data || typeof data !== 'object') {
     return res.status(400).json({ error: 'Valid profile data object is required.' });

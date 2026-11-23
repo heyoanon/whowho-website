@@ -680,6 +680,46 @@ h3 {
     transform: translateY(-1px);
 }
 
+.edit-profile-btn.locked {
+    border-color: rgba(0, 76, 255, 0.45);
+    color: #9ab7ff;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.edit-profile-btn.locked:hover,
+.edit-profile-btn.locked:focus {
+    border-color: #004cff;
+    color: #ffffff;
+    background: rgba(0, 76, 255, 0.25);
+    box-shadow: 0 0 10px rgba(0, 76, 255, 0.6);
+}
+
+.admin-logout-btn {
+    font-family: inherit;
+    font-size: 10px;
+    color: #ffb1b1;
+    background: rgba(255, 0, 60, 0.15);
+    border: 2px solid rgba(255, 0, 60, 0.5);
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+}
+
+.admin-logout-btn:hover,
+.admin-logout-btn:focus {
+    background: #ff003c;
+    color: #ffffff;
+    border-color: #ffffff;
+    box-shadow: 0 0 10px rgba(255, 0, 60, 0.7);
+    transform: translateY(-1px);
+}
+
 .ult-tabs {
     display: flex;
     gap: 8px;
@@ -1589,6 +1629,12 @@ h3 {
         padding: 8px 12px;
     }
 
+    .admin-logout-btn {
+        font-size: 9px;
+        padding: 5px 10px;
+        margin-top: 10px;
+    }
+
 }
 
     </style>
@@ -1660,6 +1706,158 @@ h3 {
         let currentProfileData = JSON.parse(JSON.stringify(defaultProfileData));
         let editingSection = null;
         let isEditingSideQuests = false;
+        let isAdminLoggedIn = false;
+
+        function getStoredAdminToken() {
+            return sessionStorage.getItem('whowho_admin_token') || localStorage.getItem('whowho_admin_token') || '';
+        }
+
+        function setStoredAdminToken(token) {
+            if (token) {
+                sessionStorage.setItem('whowho_admin_token', token);
+                localStorage.setItem('whowho_admin_token', token);
+                isAdminLoggedIn = true;
+            } else {
+                sessionStorage.removeItem('whowho_admin_token');
+                localStorage.removeItem('whowho_admin_token');
+                isAdminLoggedIn = false;
+            }
+        }
+
+        async function checkAdminStatus() {
+            const token = getStoredAdminToken();
+            if (!token) {
+                isAdminLoggedIn = false;
+                return false;
+            }
+            try {
+                const res = await fetch('/api/admin/status', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    isAdminLoggedIn = Boolean(data && data.isAdmin);
+                    if (!isAdminLoggedIn) setStoredAdminToken(null);
+                } else {
+                    isAdminLoggedIn = false;
+                    setStoredAdminToken(null);
+                }
+            } catch {
+                isAdminLoggedIn = Boolean(token);
+            }
+            return isAdminLoggedIn;
+        }
+
+        function logoutAdmin() {
+            playArcadeBeep();
+            setStoredAdminToken(null);
+            editingSection = null;
+            isEditingSideQuests = false;
+            showToast('LOGGED OUT OF OWNER MODE.');
+            const hash = (window.location.hash || '').replace(/^#/, '').trim();
+            if (DETAIL_PAGES.includes(hash)) {
+                renderDetail(hash, false);
+            } else if (TOP_PAGES.includes(hash)) {
+                renderPage(hash, false);
+            } else {
+                renderMainMenu(false);
+            }
+        }
+
+        window.logoutAdmin = logoutAdmin;
+
+        function showAdminPasswordModal(actionPrompt, onAuthenticated) {
+            playArcadeBeep();
+            const existing = document.getElementById('admin-auth-modal');
+            if (existing) existing.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'admin-auth-modal';
+            overlay.className = 'confirm-modal-overlay';
+            overlay.innerHTML = `
+                <div class="confirm-modal-box admin-auth-box" role="dialog" aria-modal="true" aria-labelledby="admin-modal-title">
+                    <h3 class="confirm-modal-title" id="admin-modal-title">👑 OWNER / ADMIN ACCESS</h3>
+                    <p class="confirm-modal-desc">${escapeHtml(actionPrompt || 'Only the owner of the website can edit this section.')}<br><br>ENTER ADMIN PASSWORD:</p>
+                    <form id="admin-auth-form" onsubmit="event.preventDefault(); submitAdminPassword();" style="display:flex; flex-direction:column; gap:12px; width:100%;">
+                        <input type="password" id="admin-password-input" class="profile-input-field" placeholder="Enter password..." autocomplete="current-password" required autofocus style="text-align:center; letter-spacing: 2px;">
+                        <div id="admin-auth-error" style="color:#ff6b8b; font-size:11px; display:none;"></div>
+                        <div class="confirm-modal-actions" style="margin-top:6px;">
+                            <button type="submit" class="confirm-modal-btn confirm" id="btn-admin-login">UNLOCK</button>
+                            <button type="button" class="confirm-modal-btn cancel" id="btn-admin-cancel">CANCEL</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            const close = () => {
+                playArcadeBeep();
+                overlay.remove();
+                document.removeEventListener('keydown', handleKey);
+            };
+
+            const handleKey = (e) => {
+                if (e.key === 'Escape') close();
+            };
+
+            document.addEventListener('keydown', handleKey);
+            overlay.querySelector('#btn-admin-cancel').addEventListener('click', close);
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) close();
+            });
+
+            const pwdInput = overlay.querySelector('#admin-password-input');
+            pwdInput.focus();
+
+            window.submitAdminPassword = async () => {
+                playArcadeBeep();
+                const pwd = pwdInput.value.trim();
+                const errorEl = overlay.querySelector('#admin-auth-error');
+                const submitBtn = overlay.querySelector('#btn-admin-login');
+
+                if (!pwd) {
+                    pwdInput.focus();
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'CHECKING...';
+                if (errorEl) errorEl.style.display = 'none';
+
+                try {
+                    const res = await fetch('/api/admin/verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password: pwd })
+                    });
+
+                    if (!res.ok) {
+                        const errData = await res.json().catch(() => ({}));
+                        throw new Error(errData.error || 'Invalid admin password.');
+                    }
+
+                    const data = await res.json();
+                    setStoredAdminToken(data.token);
+                    showToast('ADMIN UNLOCKED! WELCOME.');
+                    overlay.remove();
+                    document.removeEventListener('keydown', handleKey);
+
+                    if (typeof onAuthenticated === 'function') {
+                        onAuthenticated();
+                    }
+                } catch (err) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'UNLOCK';
+                    if (errorEl) {
+                        errorEl.textContent = err.message || 'Invalid admin password.';
+                        errorEl.style.display = 'block';
+                    }
+                    pwdInput.focus();
+                    pwdInput.select();
+                }
+            };
+        }
 
         function normalizeQuests(quests) {
             if (!Array.isArray(quests)) return [];
@@ -1733,12 +1931,24 @@ h3 {
         }
 
         async function saveProfileToServer(data) {
+            const token = getStoredAdminToken();
             try {
-                await fetch('/api/profile', {
+                const res = await fetch('/api/profile', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    },
                     body: JSON.stringify(data)
                 });
+                if (!res.ok) {
+                    if (res.status === 401) {
+                        showToast('ADMIN AUTH REQUIRED TO SAVE.');
+                        showAdminPasswordModal('Admin authentication expired or required. Enter password to save:', () => {
+                            saveProfileToServer(data);
+                        });
+                    }
+                }
             } catch (err) {
                 console.warn('Profile save warning:', err);
             }
@@ -1807,6 +2017,13 @@ h3 {
 
         function toggleEditProfile(sectionKey) {
             playArcadeBeep();
+            if (!isAdminLoggedIn) {
+                showAdminPasswordModal('Only the owner of the website can edit profile options.', () => {
+                    editingSection = sectionKey;
+                    renderDetail(sectionKey, false);
+                });
+                return;
+            }
             editingSection = sectionKey;
             renderDetail(sectionKey, false);
         }
@@ -1933,7 +2150,7 @@ h3 {
                     <div class="panel-content">
                         <div class="profile-header-row">
                             <h2>GET TO KNOW ME</h2>
-                            <button type="button" class="edit-profile-btn" onclick="toggleEditProfile('knowMe')">✎ EDIT</button>
+                            <button type="button" class="edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}" onclick="toggleEditProfile('knowMe')" title="${isAdminLoggedIn ? 'Edit profile' : 'Owner access required'}">${isAdminLoggedIn ? '✎ EDIT' : '🔒 OWNER EDIT'}</button>
                         </div>
                         <div class="fact-box know-me-box">
                             <img class="blue-cat-cap-image" src="blue%20cat%20cap.jpg" alt="Blue cat cap">
@@ -1977,7 +2194,7 @@ h3 {
                     <div class="panel-content known-facts-panel">
                         <div class="profile-header-row">
                             <h2>KNOWN FACTS</h2>
-                            <button type="button" class="edit-profile-btn" onclick="toggleEditProfile('knownFacts')">✎ EDIT</button>
+                            <button type="button" class="edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}" onclick="toggleEditProfile('knownFacts')" title="${isAdminLoggedIn ? 'Edit known facts' : 'Owner access required'}">${isAdminLoggedIn ? '✎ EDIT' : '🔒 OWNER EDIT'}</button>
                         </div>
                         <div class="fact-box scrollable-facts-box">
                             <ul>
@@ -2015,7 +2232,7 @@ h3 {
                     <div class="panel-content unknown-facts-panel">
                         <div class="profile-header-row">
                             <h2>UNKNOWN FACTS</h2>
-                            <button type="button" class="edit-profile-btn" onclick="toggleEditProfile('unknownFacts')">✎ EDIT</button>
+                            <button type="button" class="edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}" onclick="toggleEditProfile('unknownFacts')" title="${isAdminLoggedIn ? 'Edit unknown facts' : 'Owner access required'}">${isAdminLoggedIn ? '✎ EDIT' : '🔒 OWNER EDIT'}</button>
                         </div>
                         <div class="fact-box scrollable-facts-box">
                             <ul>
@@ -2065,7 +2282,7 @@ h3 {
                     <div class="panel-content who-i-ult-panel">
                         <div class="profile-header-row">
                             <h2>WHO I ULT</h2>
-                            <button type="button" class="edit-profile-btn" onclick="toggleEditProfile('ultBias')">✎ EDIT</button>
+                            <button type="button" class="edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}" onclick="toggleEditProfile('ultBias')" title="${isAdminLoggedIn ? 'Edit biases' : 'Owner access required'}">${isAdminLoggedIn ? '✎ EDIT' : '🔒 OWNER EDIT'}</button>
                         </div>
                         <div class="ult-tabs">
                             <button type="button" class="ult-tab-btn active">★ BIAS</button>
@@ -2128,7 +2345,7 @@ h3 {
                     <div class="panel-content who-i-ult-panel">
                         <div class="profile-header-row">
                             <h2>WHO I ULT</h2>
-                            <button type="button" class="edit-profile-btn" onclick="toggleEditProfile('ultGroups')">✎ EDIT</button>
+                            <button type="button" class="edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}" onclick="toggleEditProfile('ultGroups')" title="${isAdminLoggedIn ? 'Edit groups' : 'Owner access required'}">${isAdminLoggedIn ? '✎ EDIT' : '🔒 OWNER EDIT'}</button>
                         </div>
                         <div class="ult-tabs">
                             <button type="button" class="ult-tab-btn" onclick="switchUltTab('ultBias')">★ BIAS</button>
@@ -2157,6 +2374,19 @@ h3 {
 
         function toggleQuestDone(index) {
             playArcadeBeep();
+            if (!isAdminLoggedIn) {
+                showAdminPasswordModal('Only the owner of the website can update quest completion status.', () => {
+                    if (currentProfileData.sidequests && currentProfileData.sidequests[index]) {
+                        currentProfileData.sidequests[index].done = !currentProfileData.sidequests[index].done;
+                        try {
+                            localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+                        } catch {}
+                        saveProfileToServer(currentProfileData);
+                        renderPage('sidequests', false);
+                    }
+                });
+                return;
+            }
             if (!currentProfileData.sidequests || !currentProfileData.sidequests[index]) return;
             currentProfileData.sidequests[index].done = !currentProfileData.sidequests[index].done;
             try {
@@ -2168,6 +2398,13 @@ h3 {
 
         function toggleEditSideQuests() {
             playArcadeBeep();
+            if (!isAdminLoggedIn) {
+                showAdminPasswordModal('Only the owner of the website can edit side quests.', () => {
+                    isEditingSideQuests = true;
+                    renderPage('sidequests', false);
+                });
+                return;
+            }
             isEditingSideQuests = true;
             renderPage('sidequests', false);
         }
@@ -2274,7 +2511,7 @@ h3 {
                 <div class="panel-content sidequests-panel">
                     <div class="profile-header-row">
                         <h2>SIDE QUESTS</h2>
-                        <button type="button" class="edit-profile-btn" onclick="toggleEditSideQuests()">✎ EDIT</button>
+                        <button type="button" class="edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}" onclick="toggleEditSideQuests()" title="${isAdminLoggedIn ? 'Edit side quests' : 'Owner access required'}">${isAdminLoggedIn ? '✎ EDIT' : '🔒 OWNER EDIT'}</button>
                     </div>
                     <div class="fact-box scrollable-facts-box">
                         <h3>MISSION LOG</h3>
@@ -2381,6 +2618,7 @@ h3 {
                     <button class="menu-item" data-page="nowPlaying">NOW PLAYING</button>
                     <button class="menu-item" data-page="sidequests">SIDE QUESTS</button>
                     <button class="menu-item" data-page="message">MESSAGE ME</button>
+                    ${isAdminLoggedIn ? '<button type="button" class="admin-logout-btn" onclick="logoutAdmin()">👑 OWNER LOGOUT</button>' : ''}
                 </div>
             `;
 
@@ -3263,7 +3501,17 @@ h3 {
         });
 
         restoreNavigation();
-        loadProfileData();
+        checkAdminStatus().then(() => {
+            loadProfileData();
+            const hash = (window.location.hash || '').replace(/^#/, '').trim();
+            if (DETAIL_PAGES.includes(hash)) {
+                renderDetail(hash, false);
+            } else if (TOP_PAGES.includes(hash)) {
+                renderPage(hash, false);
+            } else {
+                renderMainMenu(false);
+            }
+        });
         prefetchNowPlaying();
         setInterval(prefetchNowPlaying, 25000);
     </script>
