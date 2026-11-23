@@ -13,8 +13,10 @@ const PORT = process.env.PORT || 3000;
 const RECIPIENT_EMAIL = process.env.EMAIL_TO || 'danyaellap@gmail.com';
 const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || '').trim();
 const messagesFile = path.join(__dirname, 'messages.json');
+const profileFile = path.join(__dirname, 'profile.json');
 const database = process.env.DATABASE_URL ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }) : null;
 let messages = [];
+let memoryProfileData = null;
 
 try {
   if (fs.existsSync(messagesFile)) {
@@ -61,6 +63,14 @@ async function initializeDatabase() {
       started_at BIGINT,
       ends_at BIGINT,
       is_playing BOOLEAN NOT NULL DEFAULT true,
+      updated_at TIMESTAMPTZ NOT NULL
+    )
+  `);
+
+  await database.query(`
+    CREATE TABLE IF NOT EXISTS profile_data (
+      id TEXT PRIMARY KEY,
+      data JSONB NOT NULL,
       updated_at TIMESTAMPTZ NOT NULL
     )
   `);
@@ -628,6 +638,64 @@ app.get('/api/now-playing', async (req, res) => {
       directGet: 'GET /api/now-playing'
     }
   });
+});
+
+async function loadStoredProfile() {
+  if (database) {
+    try {
+      const res = await database.query('SELECT data FROM profile_data WHERE id = $1', ['current']);
+      if (res.rows.length > 0) {
+        return res.rows[0].data;
+      }
+    } catch (err) {
+      console.error('Unable to load profile from database:', err.message);
+    }
+  }
+
+  if (fs.existsSync(profileFile)) {
+    try {
+      return JSON.parse(fs.readFileSync(profileFile, 'utf8'));
+    } catch {}
+  }
+
+  return memoryProfileData;
+}
+
+async function saveStoredProfile(data) {
+  memoryProfileData = data;
+
+  if (database) {
+    try {
+      await database.query(`
+        INSERT INTO profile_data (id, data, updated_at)
+        VALUES ($1, $2, NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          data = EXCLUDED.data,
+          updated_at = NOW()
+      `, ['current', JSON.stringify(data)]);
+    } catch (err) {
+      console.error('Unable to save profile to database:', err.message);
+    }
+  }
+
+  try {
+    fs.writeFileSync(profileFile, JSON.stringify(data, null, 2));
+  } catch {}
+}
+
+app.get('/api/profile', async (_req, res) => {
+  const profile = await loadStoredProfile();
+  return res.json({ success: true, profile: profile || null });
+});
+
+app.post('/api/profile', async (req, res) => {
+  const data = req.body;
+  if (!data || typeof data !== 'object') {
+    return res.status(400).json({ error: 'Valid profile data object is required.' });
+  }
+
+  await saveStoredProfile(data);
+  return res.json({ success: true, profile: data });
 });
 
 app.get('*', (req, res, next) => {

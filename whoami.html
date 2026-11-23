@@ -104,11 +104,13 @@ body {
     text-align: center;
 }
 
-.profile-menu-panel {
+.profile-menu-panel,
+.who-i-ult-menu-panel {
     position: relative;
 }
 
-.profile-menu-panel > .sub-menu {
+.profile-menu-panel > .sub-menu,
+.who-i-ult-menu-panel > .sub-menu {
     position: absolute;
     top: 50%;
     left: 0;
@@ -640,6 +642,305 @@ h3 {
     box-shadow: 0 0 8px rgba(0, 76, 255, 0.6);
 }
 
+/* Profile Header, Tabs, and Edit Controls */
+.profile-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 8px;
+    gap: 12px;
+}
+
+.profile-header-row h2 {
+    margin: 0;
+}
+
+.edit-profile-btn {
+    font-family: inherit;
+    font-size: 11px;
+    color: #ffffff;
+    background: rgba(0, 76, 255, 0.2);
+    border: 2px solid #004cff;
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.edit-profile-btn:hover,
+.edit-profile-btn:focus {
+    background: #004cff;
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(0, 76, 255, 0.7);
+    transform: translateY(-1px);
+}
+
+.ult-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    width: 100%;
+}
+
+.ult-tab-btn {
+    font-family: inherit;
+    font-size: 12px;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid #004cff;
+    border-radius: 6px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ult-tab-btn.active,
+.ult-tab-btn:hover {
+    background: #004cff;
+    color: #ffffff;
+    box-shadow: 0 0 8px rgba(0, 76, 255, 0.6);
+}
+
+.ult-category-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.ult-category-group:last-child {
+    margin-bottom: 0;
+}
+
+.ult-cat-title {
+    color: #9ab7ff;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+.ult-cat-items {
+    color: #ffffff;
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.profile-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.profile-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: left;
+}
+
+.profile-form-label {
+    color: #9ab7ff;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+}
+
+.profile-input-field {
+    background: rgba(0, 0, 0, 0.65);
+    border: 2px solid #004cff;
+    color: #ffffff;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.profile-input-field:focus,
+.profile-textarea-field:focus {
+    outline: none;
+    border-color: #9ab7ff;
+    box-shadow: 0 0 10px rgba(0, 76, 255, 0.7);
+}
+
+.profile-textarea-field {
+    background: rgba(0, 0, 0, 0.65);
+    border: 2px solid #004cff;
+    color: #ffffff;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.6;
+    width: 100%;
+    min-height: 160px;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.profile-edit-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-save-profile {
+    font-family: inherit;
+    font-size: 12px;
+    color: #ffffff;
+    background: #004cff;
+    border: 2px solid #ffffff;
+    border-radius: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(0, 76, 255, 0.5);
+    transition: all 0.2s;
+}
+
+.btn-save-profile:hover,
+.btn-save-profile:focus {
+    background: #1a62ff;
+    box-shadow: 0 0 14px rgba(0, 76, 255, 0.8);
+    transform: translateY(-1px);
+}
+
+.btn-cancel-profile {
+    font-family: inherit;
+    font-size: 12px;
+    color: #9ab7ff;
+    background: transparent;
+    border: 2px solid rgba(0, 76, 255, 0.6);
+    border-radius: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-cancel-profile:hover,
+.btn-cancel-profile:focus {
+    color: #ffffff;
+    border-color: #004cff;
+    background: rgba(0, 76, 255, 0.15);
+}
+
+/* Confirmation Modal */
+.confirm-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.78);
+    backdrop-filter: blur(5px);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    animation: fadeInModal 0.15s ease-out;
+}
+
+@keyframes fadeInModal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.confirm-modal-box {
+    background: #050b17;
+    border: 3px solid #004cff;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(0, 76, 255, 0.7), inset 0 0 12px rgba(0, 76, 255, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-sizing: border-box;
+}
+
+.confirm-modal-title {
+    color: #ffffff;
+    font-size: 15px;
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+.confirm-modal-desc {
+    color: #9ab7ff;
+    font-size: 12px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.confirm-modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.confirm-modal-btn {
+    font-family: inherit;
+    font-size: 11px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.confirm-modal-btn.confirm {
+    background: #004cff;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 8px rgba(0, 76, 255, 0.6);
+}
+
+.confirm-modal-btn.confirm:hover {
+    background: #1a62ff;
+    box-shadow: 0 0 14px rgba(0, 76, 255, 0.9);
+}
+
+.confirm-modal-btn.cancel {
+    background: transparent;
+    color: #ffffff;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+}
+
+.confirm-modal-btn.cancel:hover {
+    border-color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.profile-save-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #004cff;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 11px;
+    box-shadow: 0 0 16px rgba(0, 76, 255, 0.8);
+    z-index: 100000;
+    pointer-events: none;
+    animation: fadeInToast 0.2s ease-out;
+}
+
+@keyframes fadeInToast {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .lanyard-track-info[hidden] {
     display: none;
 }
@@ -957,6 +1258,115 @@ h3 {
         min-height: 140px;
     }
 
+    /* Mobile styles for profile header, edit controls, ult tabs, confirmation modal, and toast */
+    .profile-header-row {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 6px;
+    }
+
+    .profile-header-row h2 {
+        font-size: 20px;
+        margin-bottom: 0;
+    }
+
+    .edit-profile-btn {
+        font-size: 10px;
+        padding: 5px 10px;
+    }
+
+    .ult-tabs {
+        gap: 6px;
+        margin-bottom: 10px;
+    }
+
+    .ult-tab-btn {
+        font-size: 11px;
+        padding: 5px 10px;
+    }
+
+    .ult-category-group {
+        gap: 4px;
+        margin-bottom: 12px;
+    }
+
+    .ult-cat-title {
+        font-size: 12px;
+    }
+
+    .ult-cat-items {
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .profile-edit-form {
+        gap: 10px;
+    }
+
+    .profile-form-group {
+        gap: 4px;
+    }
+
+    .profile-form-label {
+        font-size: 10px;
+    }
+
+    .profile-input-field {
+        font-size: 12px;
+        padding: 7px 10px;
+    }
+
+    .profile-textarea-field {
+        font-size: 12px;
+        min-height: 130px;
+        padding: 7px 10px;
+    }
+
+    .profile-edit-actions {
+        gap: 8px;
+        margin-top: 6px;
+    }
+
+    .btn-save-profile,
+    .btn-cancel-profile {
+        font-size: 11px;
+        padding: 7px 12px;
+    }
+
+    .confirm-modal-box {
+        padding: 18px 14px;
+        max-width: 90vw;
+        gap: 12px;
+    }
+
+    .confirm-modal-title {
+        font-size: 14px;
+    }
+
+    .confirm-modal-desc {
+        font-size: 11px;
+        line-height: 1.5;
+    }
+
+    .confirm-modal-actions {
+        gap: 8px;
+    }
+
+    .confirm-modal-btn {
+        font-size: 10px;
+        padding: 7px 14px;
+    }
+
+    .profile-save-toast {
+        bottom: 16px;
+        right: 16px;
+        left: 16px;
+        text-align: center;
+        font-size: 10px;
+        padding: 8px 12px;
+    }
+
 }
 
     </style>
@@ -984,65 +1394,519 @@ h3 {
     <script>
         const registeredEmail = 'danyaellap@gmail.com';
 
-        const profileSections = {
-            knowMe: `
-                <div class="panel-content">
-                    <h2>GET TO KNOW ME</h2>
-                    <div class="fact-box know-me-box">
-                        <img class="blue-cat-cap-image" src="blue%20cat%20cap.jpg" alt="Blue cat cap">
-                        <div class="know-me-grid">
-                            <p>NAME: DAN</p>
-                            <p>NICKNAME: ANON, DADA</p>
-                            <p>AGE: 19</p>
-                            <p>COUNTRY: PHILIPPINES</p>
-                            <p>TIMEZONE: GMT +8</p>
-                            <p>PRONOUNS: SHE/THEY</p>
+        const defaultProfileData = {
+            knowMe: {
+                name: 'DAN',
+                nickname: 'ANON, DADA',
+                age: '19',
+                country: 'PHILIPPINES',
+                timezone: 'GMT +8',
+                pronouns: 'SHE/THEY'
+            },
+            knownFacts: [
+                "Currently, I'm a 2nd Year College Student.",
+                "I enjoy making stuff, especially related  to music and interior design",
+                "I also like experimenting stuff overall.",
+                "English is not my first languange so I have sometimes a hard time talking to.",
+                "I rarely open dms so if I don't reply, please don't take it personally."
+            ],
+            unknownFacts: [
+                "I like to collect stuff related to games, especially card games, legos, and tech devices",
+                "I'm secretely into arcade games and vintage/retro stuff.",
+                "One day I want to build a whole game from scratch.",
+                "I'm a big fan of the 80s, 90s pop culture and K-pop girl groups.",
+                "A Humanities and Social Sciences graduate who took a STEM degree in college so expect that I'm busy for most of the time."
+            ],
+            ultBias: {
+                kpop: 'Winter, Seulgi, Mina, Yoon, Minji, Kazuha, Chaewon, Minju, Haewon, Lily',
+                thaiGl: 'Freen, Becky, Milk, Love, Caprice, Pangjie',
+                ppop: 'Mikha, Gwen, Colet, Aiah, Mable',
+                other: 'Krystal'
+            },
+            ultGroups: {
+                mainUlt: 'aespa, Nmixx, Red Velvet, Stayc, Twice, Cortis',
+                stanGroups: 'Blackpink, Itzy, Le Sserafim, NewJeans, Loona, Kep1er, Iz*one, IVE, GFriend, Mamamoo, WJSN, SNSD',
+                boyGroups: 'ILLIT, NCT and its sub-units, Seventeen, Stray Kids, EXO, Tomorrow X Together'
+            }
+        };
+
+        let currentProfileData = JSON.parse(JSON.stringify(defaultProfileData));
+        let editingSection = null;
+
+        function escapeHtml(str) {
+            if (typeof str !== 'string') return String(str || '');
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        async function loadProfileData() {
+            try {
+                const local = localStorage.getItem('whowho_profile_data');
+                if (local) {
+                    const parsed = JSON.parse(local);
+                    if (parsed && typeof parsed === 'object') {
+                        currentProfileData = Object.assign({}, defaultProfileData, parsed);
+                        currentProfileData.knowMe = Object.assign({}, defaultProfileData.knowMe, parsed.knowMe || {});
+                        currentProfileData.ultBias = Object.assign({}, defaultProfileData.ultBias, parsed.ultBias || {});
+                        currentProfileData.ultGroups = Object.assign({}, defaultProfileData.ultGroups, parsed.ultGroups || {});
+                        if (Array.isArray(parsed.knownFacts)) currentProfileData.knownFacts = parsed.knownFacts;
+                        if (Array.isArray(parsed.unknownFacts)) currentProfileData.unknownFacts = parsed.unknownFacts;
+                    }
+                }
+            } catch {}
+
+            try {
+                const res = await fetch('/api/profile', { cache: 'no-store' });
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json && json.success && json.profile && typeof json.profile === 'object') {
+                        const s = json.profile;
+                        currentProfileData = Object.assign({}, defaultProfileData, s);
+                        currentProfileData.knowMe = Object.assign({}, defaultProfileData.knowMe, s.knowMe || {});
+                        currentProfileData.ultBias = Object.assign({}, defaultProfileData.ultBias, s.ultBias || {});
+                        currentProfileData.ultGroups = Object.assign({}, defaultProfileData.ultGroups, s.ultGroups || {});
+                        if (Array.isArray(s.knownFacts)) currentProfileData.knownFacts = s.knownFacts;
+                        if (Array.isArray(s.unknownFacts)) currentProfileData.unknownFacts = s.unknownFacts;
+                        try {
+                            localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+                        } catch {}
+
+                        const hash = (window.location.hash || '').replace(/^#/, '').trim();
+                        if (DETAIL_PAGES.includes(hash) && !editingSection) {
+                            renderDetail(hash, false);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('Profile sync notice:', err);
+            }
+        }
+
+        async function saveProfileToServer(data) {
+            try {
+                await fetch('/api/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            } catch (err) {
+                console.warn('Profile save warning:', err);
+            }
+        }
+
+        function showConfirmationModal(title, message, onConfirm) {
+            playArcadeBeep();
+            const existing = document.getElementById('profile-confirm-modal');
+            if (existing) existing.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'profile-confirm-modal';
+            overlay.className = 'confirm-modal-overlay';
+            overlay.innerHTML = `
+                <div class="confirm-modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+                    <h3 class="confirm-modal-title" id="modal-title">${escapeHtml(title)}</h3>
+                    <p class="confirm-modal-desc">${escapeHtml(message)}</p>
+                    <div class="confirm-modal-actions">
+                        <button type="button" class="confirm-modal-btn confirm" id="modal-confirm-btn">CONFIRM</button>
+                        <button type="button" class="confirm-modal-btn cancel" id="modal-cancel-btn">CANCEL</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            const close = () => {
+                playArcadeBeep();
+                overlay.remove();
+                document.removeEventListener('keydown', handleKey);
+            };
+
+            const handleKey = (e) => {
+                if (e.key === 'Escape') close();
+            };
+
+            overlay.querySelector('#modal-confirm-btn').addEventListener('click', () => {
+                playArcadeBeep();
+                overlay.remove();
+                document.removeEventListener('keydown', handleKey);
+                if (typeof onConfirm === 'function') onConfirm();
+            });
+
+            overlay.querySelector('#modal-cancel-btn').addEventListener('click', close);
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) close();
+            });
+            document.addEventListener('keydown', handleKey);
+        }
+
+        function showToast(message) {
+            const existing = document.querySelector('.profile-save-toast');
+            if (existing) existing.remove();
+
+            const toast = document.createElement('div');
+            toast.className = 'profile-save-toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 2800);
+        }
+
+        function toggleEditProfile(sectionKey) {
+            playArcadeBeep();
+            editingSection = sectionKey;
+            renderDetail(sectionKey, false);
+        }
+
+        function cancelEditProfile(sectionKey) {
+            playArcadeBeep();
+            editingSection = null;
+            renderDetail(sectionKey, false);
+        }
+
+        function switchUltTab(targetSection) {
+            playArcadeBeep();
+            editingSection = null;
+            renderDetail(targetSection, true);
+        }
+
+        function promptSaveProfile(sectionKey) {
+            const form = document.getElementById(`form-${sectionKey}`);
+            if (!form) return;
+
+            showConfirmationModal(
+                'SAVE CHANGES?',
+                'Are you sure you want to save your updated profile information?',
+                () => {
+                    const formData = new FormData(form);
+
+                    if (sectionKey === 'knowMe') {
+                        currentProfileData.knowMe = {
+                            name: (formData.get('name') || '').trim(),
+                            nickname: (formData.get('nickname') || '').trim(),
+                            age: (formData.get('age') || '').trim(),
+                            country: (formData.get('country') || '').trim(),
+                            timezone: (formData.get('timezone') || '').trim(),
+                            pronouns: (formData.get('pronouns') || '').trim()
+                        };
+                    } else if (sectionKey === 'knownFacts') {
+                        const text = (formData.get('facts') || '').trim();
+                        currentProfileData.knownFacts = text.split('\n').map(l => l.trim()).filter(Boolean);
+                    } else if (sectionKey === 'unknownFacts') {
+                        const text = (formData.get('facts') || '').trim();
+                        currentProfileData.unknownFacts = text.split('\n').map(l => l.trim()).filter(Boolean);
+                    } else if (sectionKey === 'ultBias') {
+                        currentProfileData.ultBias = {
+                            kpop: (formData.get('kpop') || '').trim(),
+                            thaiGl: (formData.get('thaiGl') || '').trim(),
+                            ppop: (formData.get('ppop') || '').trim(),
+                            other: (formData.get('other') || '').trim()
+                        };
+                    } else if (sectionKey === 'ultGroups') {
+                        currentProfileData.ultGroups = {
+                            mainUlt: (formData.get('mainUlt') || '').trim(),
+                            stanGroups: (formData.get('stanGroups') || '').trim(),
+                            boyGroups: (formData.get('boyGroups') || '').trim()
+                        };
+                    }
+
+                    try {
+                        localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+                    } catch {}
+
+                    saveProfileToServer(currentProfileData);
+                    editingSection = null;
+                    showToast('PROFILE UPDATED SUCCESSFULLY!');
+                    renderDetail(sectionKey, false);
+                }
+            );
+        }
+
+        window.toggleEditProfile = toggleEditProfile;
+        window.cancelEditProfile = cancelEditProfile;
+        window.promptSaveProfile = promptSaveProfile;
+        window.switchUltTab = switchUltTab;
+
+        function getProfileSectionContent(sectionKey) {
+            const isEditing = editingSection === sectionKey;
+
+            if (sectionKey === 'knowMe') {
+                if (isEditing) {
+                    return `
+                        <div class="panel-content">
+                            <div class="profile-header-row">
+                                <h2>EDIT PROFILE</h2>
+                            </div>
+                            <div class="fact-box scrollable-facts-box">
+                                <form class="profile-edit-form" id="form-knowMe" onsubmit="event.preventDefault(); promptSaveProfile('knowMe');">
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">NAME</label>
+                                        <input class="profile-input-field" name="name" value="${escapeHtml(currentProfileData.knowMe.name)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">NICKNAME</label>
+                                        <input class="profile-input-field" name="nickname" value="${escapeHtml(currentProfileData.knowMe.nickname)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">AGE</label>
+                                        <input class="profile-input-field" name="age" value="${escapeHtml(currentProfileData.knowMe.age)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">COUNTRY</label>
+                                        <input class="profile-input-field" name="country" value="${escapeHtml(currentProfileData.knowMe.country)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">TIMEZONE</label>
+                                        <input class="profile-input-field" name="timezone" value="${escapeHtml(currentProfileData.knowMe.timezone)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">PRONOUNS</label>
+                                        <input class="profile-input-field" name="pronouns" value="${escapeHtml(currentProfileData.knowMe.pronouns)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-edit-actions">
+                                        <button type="submit" class="btn-save-profile">SAVE CHANGES</button>
+                                        <button type="button" class="btn-cancel-profile" onclick="cancelEditProfile('knowMe')">CANCEL</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="panel-content">
+                        <div class="profile-header-row">
+                            <h2>GET TO KNOW ME</h2>
+                            <button type="button" class="edit-profile-btn" onclick="toggleEditProfile('knowMe')">✎ EDIT</button>
+                        </div>
+                        <div class="fact-box know-me-box">
+                            <img class="blue-cat-cap-image" src="blue%20cat%20cap.jpg" alt="Blue cat cap">
+                            <div class="know-me-grid">
+                                <p>NAME: ${escapeHtml(currentProfileData.knowMe.name)}</p>
+                                <p>NICKNAME: ${escapeHtml(currentProfileData.knowMe.nickname)}</p>
+                                <p>AGE: ${escapeHtml(currentProfileData.knowMe.age)}</p>
+                                <p>COUNTRY: ${escapeHtml(currentProfileData.knowMe.country)}</p>
+                                <p>TIMEZONE: ${escapeHtml(currentProfileData.knowMe.timezone)}</p>
+                                <p>PRONOUNS: ${escapeHtml(currentProfileData.knowMe.pronouns)}</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `,
-            knownFacts: `
-                <div class="panel-content known-facts-panel">
-                    <h2>KNOWN FACTS</h2>
-                    <div class="fact-box scrollable-facts-box">
-                        <ul>
-                            <li>Currently, I'm a 2nd Year College Student.</li>
-                            <li>I enjoy making stuff, especially related  to music and interior design</li>
-                            <li>I also like experimenting stuff overall.</li>
-                            <li>English is not my first languange so I have sometimes a hard time talking to.</li>
-                            <li>I rarely open dms so if I don't reply, please don't take it personally.</li>
-                        </ul>
+                `;
+            }
+
+            if (sectionKey === 'knownFacts') {
+                if (isEditing) {
+                    return `
+                        <div class="panel-content known-facts-panel">
+                            <div class="profile-header-row">
+                                <h2>EDIT KNOWN FACTS</h2>
+                            </div>
+                            <div class="fact-box scrollable-facts-box">
+                                <form class="profile-edit-form" id="form-knownFacts" onsubmit="event.preventDefault(); promptSaveProfile('knownFacts');">
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">FACTS (ONE FACT PER LINE)</label>
+                                        <textarea class="profile-textarea-field" name="facts" rows="7" required>${escapeHtml(currentProfileData.knownFacts.join('\n'))}</textarea>
+                                    </div>
+                                    <div class="profile-edit-actions">
+                                        <button type="submit" class="btn-save-profile">SAVE CHANGES</button>
+                                        <button type="button" class="btn-cancel-profile" onclick="cancelEditProfile('knownFacts')">CANCEL</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="panel-content known-facts-panel">
+                        <div class="profile-header-row">
+                            <h2>KNOWN FACTS</h2>
+                            <button type="button" class="edit-profile-btn" onclick="toggleEditProfile('knownFacts')">✎ EDIT</button>
+                        </div>
+                        <div class="fact-box scrollable-facts-box">
+                            <ul>
+                                ${currentProfileData.knownFacts.map(fact => `<li>${escapeHtml(fact)}</li>`).join('')}
+                            </ul>
+                        </div>
                     </div>
-                </div>
-            `,
-            unknownFacts: `
-                <div class="panel-content unknown-facts-panel">
-                    <h2>UNKNOWN FACTS</h2>
-                    <div class="fact-box scrollable-facts-box">
-                        <ul>
-                            <li>I like to collect stuff related to games, especially card games, legos, and tech devices</li>
-                            <li>I'm secretely into arcade games and vintage/retro stuff.</li>
-                            <li>One day I want to build a whole game from scratch.</li>
-                            <li>I'm a big fan of the 80s, 90s pop culture and K-pop girl groups.</li>
-                            <li>A Humanities and Social Sciences graduate who took a STEM degree in college so expect that I'm busy for most of the time.</li>
-                        </ul>
+                `;
+            }
+
+            if (sectionKey === 'unknownFacts') {
+                if (isEditing) {
+                    return `
+                        <div class="panel-content unknown-facts-panel">
+                            <div class="profile-header-row">
+                                <h2>EDIT UNKNOWN FACTS</h2>
+                            </div>
+                            <div class="fact-box scrollable-facts-box">
+                                <form class="profile-edit-form" id="form-unknownFacts" onsubmit="event.preventDefault(); promptSaveProfile('unknownFacts');">
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">FACTS (ONE FACT PER LINE)</label>
+                                        <textarea class="profile-textarea-field" name="facts" rows="7" required>${escapeHtml(currentProfileData.unknownFacts.join('\n'))}</textarea>
+                                    </div>
+                                    <div class="profile-edit-actions">
+                                        <button type="submit" class="btn-save-profile">SAVE CHANGES</button>
+                                        <button type="button" class="btn-cancel-profile" onclick="cancelEditProfile('unknownFacts')">CANCEL</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="panel-content unknown-facts-panel">
+                        <div class="profile-header-row">
+                            <h2>UNKNOWN FACTS</h2>
+                            <button type="button" class="edit-profile-btn" onclick="toggleEditProfile('unknownFacts')">✎ EDIT</button>
+                        </div>
+                        <div class="fact-box scrollable-facts-box">
+                            <ul>
+                                ${currentProfileData.unknownFacts.map(fact => `<li>${escapeHtml(fact)}</li>`).join('')}
+                            </ul>
+                        </div>
                     </div>
-                </div>
-            `,
-            whoIUlt: `
-                <div class="panel-content who-i-ult-panel">
-                    <h2>WHO I ULT</h2>
-                    <div class="fact-box scrollable-facts-box">
-                        <ul>
-                            <li>Current main bias (K-Pop): Winter, Seulgi, Mina, Yoon, Minji, Kazuha, Chaewon, Minju, Haewon, Lily .</li>
-                            <li>Other main biases: Krystal, Caprice, Freen, Becky, Mikha, Gwen, Colet, Milk, Love, Pangjie, Mable, Aiah</li>
-                            <li>Current main ult groups: aespa, Nmixx, Red Velvet, Stayc, Twice, and Cortis.</li>
-                            <li>Other groups I stan: Blackpink, Itzy, Le Sserafim, NewJeans, Loona, Kep1er, Iz*one, IVE, GFriend, Mamamoo, WJSN, and SNSD.</li>
-                            <li>Other ult groups: ILLIT, NCT and its sub-units, Seventeen, Stray Kids, EXO, and Tomorrow X Together.</li>
-                        </ul>
+                `;
+            }
+
+            if (sectionKey === 'ultBias') {
+                if (isEditing) {
+                    return `
+                        <div class="panel-content who-i-ult-panel">
+                            <div class="profile-header-row">
+                                <h2>EDIT BIASES</h2>
+                            </div>
+                            <div class="fact-box scrollable-facts-box">
+                                <form class="profile-edit-form" id="form-ultBias" onsubmit="event.preventDefault(); promptSaveProfile('ultBias');">
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">K-POP MAIN BIASES</label>
+                                        <input class="profile-input-field" name="kpop" value="${escapeHtml(currentProfileData.ultBias.kpop)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">THAI GL &amp; ASIAN ENTERTAINMENT</label>
+                                        <input class="profile-input-field" name="thaiGl" value="${escapeHtml(currentProfileData.ultBias.thaiGl)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">P-POP / BINI</label>
+                                        <input class="profile-input-field" name="ppop" value="${escapeHtml(currentProfileData.ultBias.ppop)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">OTHER MAIN BIASES</label>
+                                        <input class="profile-input-field" name="other" value="${escapeHtml(currentProfileData.ultBias.other)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-edit-actions">
+                                        <button type="submit" class="btn-save-profile">SAVE CHANGES</button>
+                                        <button type="button" class="btn-cancel-profile" onclick="cancelEditProfile('ultBias')">CANCEL</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="panel-content who-i-ult-panel">
+                        <div class="profile-header-row">
+                            <h2>WHO I ULT</h2>
+                            <button type="button" class="edit-profile-btn" onclick="toggleEditProfile('ultBias')">✎ EDIT</button>
+                        </div>
+                        <div class="ult-tabs">
+                            <button type="button" class="ult-tab-btn active">★ BIAS</button>
+                            <button type="button" class="ult-tab-btn" onclick="switchUltTab('ultGroups')">★ GROUPS</button>
+                        </div>
+                        <div class="fact-box scrollable-facts-box">
+                            <div class="ult-category-group">
+                                <h4 class="ult-cat-title">★ K-POP MAIN BIASES</h4>
+                                <p class="ult-cat-items">${escapeHtml(currentProfileData.ultBias.kpop)}</p>
+                            </div>
+                            <div class="ult-category-group">
+                                <h4 class="ult-cat-title">★ THAI GL &amp; ASIAN ENTERTAINMENT</h4>
+                                <p class="ult-cat-items">${escapeHtml(currentProfileData.ultBias.thaiGl)}</p>
+                            </div>
+                            <div class="ult-category-group">
+                                <h4 class="ult-cat-title">★ P-POP / BINI</h4>
+                                <p class="ult-cat-items">${escapeHtml(currentProfileData.ultBias.ppop)}</p>
+                            </div>
+                            <div class="ult-category-group">
+                                <h4 class="ult-cat-title">★ OTHER MAIN BIASES</h4>
+                                <p class="ult-cat-items">${escapeHtml(currentProfileData.ultBias.other)}</p>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            `,
+                `;
+            }
+
+            if (sectionKey === 'ultGroups') {
+                if (isEditing) {
+                    return `
+                        <div class="panel-content who-i-ult-panel">
+                            <div class="profile-header-row">
+                                <h2>EDIT GROUPS</h2>
+                            </div>
+                            <div class="fact-box scrollable-facts-box">
+                                <form class="profile-edit-form" id="form-ultGroups" onsubmit="event.preventDefault(); promptSaveProfile('ultGroups');">
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">MAIN ULT GROUPS</label>
+                                        <input class="profile-input-field" name="mainUlt" value="${escapeHtml(currentProfileData.ultGroups.mainUlt)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">OTHER GROUPS I STAN</label>
+                                        <input class="profile-input-field" name="stanGroups" value="${escapeHtml(currentProfileData.ultGroups.stanGroups)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">ULT BOY GROUPS &amp; SUB-UNITS</label>
+                                        <input class="profile-input-field" name="boyGroups" value="${escapeHtml(currentProfileData.ultGroups.boyGroups)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-edit-actions">
+                                        <button type="submit" class="btn-save-profile">SAVE CHANGES</button>
+                                        <button type="button" class="btn-cancel-profile" onclick="cancelEditProfile('ultGroups')">CANCEL</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="panel-content who-i-ult-panel">
+                        <div class="profile-header-row">
+                            <h2>WHO I ULT</h2>
+                            <button type="button" class="edit-profile-btn" onclick="toggleEditProfile('ultGroups')">✎ EDIT</button>
+                        </div>
+                        <div class="ult-tabs">
+                            <button type="button" class="ult-tab-btn" onclick="switchUltTab('ultBias')">★ BIAS</button>
+                            <button type="button" class="ult-tab-btn active">★ GROUPS</button>
+                        </div>
+                        <div class="fact-box scrollable-facts-box">
+                            <div class="ult-category-group">
+                                <h4 class="ult-cat-title">★ MAIN ULT GROUPS</h4>
+                                <p class="ult-cat-items">${escapeHtml(currentProfileData.ultGroups.mainUlt)}</p>
+                            </div>
+                            <div class="ult-category-group">
+                                <h4 class="ult-cat-title">★ OTHER GROUPS I STAN</h4>
+                                <p class="ult-cat-items">${escapeHtml(currentProfileData.ultGroups.stanGroups)}</p>
+                            </div>
+                            <div class="ult-category-group">
+                                <h4 class="ult-cat-title">★ ULT BOY GROUPS &amp; SUB-UNITS</h4>
+                                <p class="ult-cat-items">${escapeHtml(currentProfileData.ultGroups.boyGroups)}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return '';
+        }
+
+        const profileSections = {
             socials: `
                 <div class="panel-content">
                     <h2>SOCIALS</h2>
@@ -1844,7 +2708,7 @@ h3 {
                 return;
             }
 
-            const content = profileSections[pageName] || profileSections.knowMe;
+            const content = profileSections[pageName] || '';
             rightPanel.innerHTML = `
                 <div class="panel-content-only">
                     <div class="top-row">
@@ -1885,11 +2749,45 @@ h3 {
                 history.pushState({ screen: 'detail', detail: pageName }, '', `#${pageName}`);
             }
 
-            const content = profileSections[pageName] || profileSections.knowMe;
+            if (pageName === 'whoIUlt') {
+                rightPanel.innerHTML = `
+                    <div class="panel-content-only who-i-ult-menu-panel">
+                        <div class="top-row">
+                            <button class="back-button" aria-label="Go back to profile menu">←</button>
+                        </div>
+                        <div class="sub-menu">
+                            <button class="menu-item" data-page="ultBias">BIAS</button>
+                            <button class="menu-item" data-page="ultGroups">GROUPS</button>
+                        </div>
+                    </div>
+                `;
+
+                const backButton = document.querySelector('.back-button');
+                if (backButton) {
+                    backButton.addEventListener('click', () => {
+                        playArcadeBeep();
+                        if (window.history.length > 1) {
+                            history.back();
+                        } else {
+                            renderPage('profile', true);
+                        }
+                    });
+                }
+
+                document.querySelectorAll('.who-i-ult-menu-panel .sub-menu .menu-item').forEach(button => {
+                    button.addEventListener('click', () => {
+                        playArcadeBeep();
+                        renderDetail(button.dataset.page, true);
+                    });
+                });
+                return;
+            }
+
+            const content = getProfileSectionContent(pageName);
             rightPanel.innerHTML = `
                 <div class="panel-content-only">
                     <div class="top-row">
-                        <button class="back-button" aria-label="Go back to main menu">←</button>
+                        <button class="back-button" aria-label="Go back">←</button>
                     </div>
                     ${content}
                 </div>
@@ -1899,16 +2797,21 @@ h3 {
             if (backButton) {
                 backButton.addEventListener('click', () => {
                     playArcadeBeep();
+                    editingSection = null;
                     if (window.history.length > 1) {
                         history.back();
                     } else {
-                        renderPage('profile', true);
+                        if (pageName === 'ultBias' || pageName === 'ultGroups') {
+                            renderDetail('whoIUlt', true);
+                        } else {
+                            renderPage('profile', true);
+                        }
                     }
                 });
             }
         }
 
-        const DETAIL_PAGES = ['knowMe', 'knownFacts', 'unknownFacts', 'whoIUlt'];
+        const DETAIL_PAGES = ['knowMe', 'knownFacts', 'unknownFacts', 'whoIUlt', 'ultBias', 'ultGroups'];
         const TOP_PAGES = ['profile', 'socials', 'nowPlaying', 'sidequests', 'message'];
 
         function restoreNavigation() {
@@ -1929,6 +2832,7 @@ h3 {
             playArcadeBeep();
             const state = event.state;
             const hash = (window.location.hash || '').replace(/^#/, '').trim();
+            editingSection = null;
 
             if (state && state.screen === 'detail') {
                 renderDetail(state.detail, false);
@@ -1946,6 +2850,7 @@ h3 {
         });
 
         restoreNavigation();
+        loadProfileData();
         prefetchNowPlaying();
         setInterval(prefetchNowPlaying, 25000);
     </script>
