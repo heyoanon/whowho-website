@@ -611,7 +611,41 @@
                             <h2>EDIT NOW PLAYING</h2>
                         </div>
                         <div class="fact-box scrollable-facts-box">
-                            <form class="profile-edit-form" id="form-nowPlaying" onsubmit="event.preventDefault(); promptSaveProfile('nowPlaying');">
+                            <!-- 1. Live Streaming Broadcaster (Spotify, YouTube Music, Apple Music) -->
+                            <div class="streaming-sync-box">
+                                <div class="streaming-sync-title">📡 BROADCAST WHAT'S PLAYING LIVE</div>
+                                <p style="font-size:10px; color:#9ab7ff; line-height:1.7; margin-bottom:12px;">
+                                    Select your streaming platform to broadcast a live track to the site right now:
+                                </p>
+                                <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+                                    <button type="button" class="streaming-service-pill spotify active" id="pill-spotify" onclick="selectStreamingService('Spotify')">🟢 SPOTIFY</button>
+                                    <button type="button" class="streaming-service-pill ytm" id="pill-ytm" onclick="selectStreamingService('YouTube Music')">🔴 YOUTUBE MUSIC</button>
+                                    <button type="button" class="streaming-service-pill apple" id="pill-apple" onclick="selectStreamingService('Apple Music')">🍎 APPLE MUSIC</button>
+                                </div>
+                                <input type="hidden" id="live-stream-service" value="Spotify">
+                                <div class="profile-form-group">
+                                    <label class="profile-form-label">CURRENT SONG TITLE</label>
+                                    <input class="profile-input-field" id="live-stream-title" placeholder="e.g. Supernova" autocomplete="off">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label class="profile-form-label">ARTIST</label>
+                                    <input class="profile-input-field" id="live-stream-artist" placeholder="e.g. aespa" autocomplete="off">
+                                </div>
+                                <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
+                                    <button type="button" class="btn-save-profile" style="background:#00ffaa; color:#000; border-color:#00ffaa;" onclick="submitLiveStreamBroadcast()">▶ BROADCAST LIVE</button>
+                                    <button type="button" class="btn-cancel-profile" style="border-color:#ff4d4d; color:#ff4d4d;" onclick="clearLiveStreamBroadcast()">⏹ STOP STREAM</button>
+                                </div>
+                                <div style="margin-top:14px; padding-top:12px; border-top:1px dashed rgba(0,76,255,0.4); font-size:9px; color:#9ab7ff; line-height:1.8;">
+                                    💡 <b>AUTO-SYNC OPTIONS:</b><br>
+                                    • <b>Windows:</b> Run <code>scripts/now-playing-sync.ps1</code> in PowerShell to auto-sync any active playback.<br>
+                                    • <b>Web Browser:</b> Install <code>scripts/now-playing-sync.user.js</code> on Spotify, YouTube Music, or Apple Music Web.<br>
+                                    • <b>Last.fm:</b> Enter your username below to automatically scrobble mobile + desktop 24/7!
+                                </div>
+                            </div>
+
+                            <!-- 2. On Repeat Fallback & Last.fm Settings -->
+                            <form class="profile-edit-form" id="form-nowPlaying" onsubmit="event.preventDefault(); promptSaveProfile('nowPlaying');" style="margin-top:20px;">
+                                <h3 style="font-size:12px; color:#ffd700; margin-bottom:12px;">★ DEFAULT ON-REPEAT SONG & SETTINGS</h3>
                                 <div class="profile-form-group">
                                     <label class="profile-form-label">SONG TITLE</label>
                                     <input class="profile-input-field" name="title" value="${escapeHtml(currentVibe.title || '')}" placeholder="e.g. Supernova" required autocomplete="off">
@@ -625,7 +659,7 @@
                                     <input class="profile-input-field" name="album" value="${escapeHtml(currentVibe.album || '')}" placeholder="e.g. Armageddon - The 1st Album" autocomplete="off">
                                 </div>
                                 <div class="profile-form-group">
-                                    <label class="profile-form-label">SONG LINK (SPOTIFY, YOUTUBE, ETC.)</label>
+                                    <label class="profile-form-label">SONG LINK (SPOTIFY, YOUTUBE, APPLE MUSIC, ETC.)</label>
                                     <input class="profile-input-field" name="url" value="${escapeHtml(currentVibe.url || '')}" placeholder="https://open.spotify.com/track/..." autocomplete="off">
                                 </div>
                                 <div class="profile-form-group">
@@ -633,11 +667,11 @@
                                     <input class="profile-input-field" name="artworkUrl" value="${escapeHtml(currentVibe.artworkUrl || '')}" placeholder="https://i.scdn.co/image/..." autocomplete="off">
                                 </div>
                                 <div class="profile-form-group">
-                                    <label class="profile-form-label">LAST.FM USERNAME (OPTIONAL • SCROBBLES 24/7 WITHOUT DISCORD)</label>
+                                    <label class="profile-form-label">LAST.FM USERNAME (AUTO-SCROBBLES SPOTIFY, APPLE MUSIC & YOUTUBE MUSIC 24/7)</label>
                                     <input class="profile-input-field" name="lastfmUser" value="${escapeHtml(currentProfileData.lastfmUser || '')}" placeholder="e.g. your_lastfm_user" autocomplete="off">
                                 </div>
                                 <div class="profile-edit-actions">
-                                    <button type="submit" class="btn-save-profile">SAVE CHANGES</button>
+                                    <button type="submit" class="btn-save-profile">SAVE ON REPEAT</button>
                                     <button type="button" class="btn-cancel-profile" onclick="cancelEditProfile('nowPlaying')">CANCEL</button>
                                 </div>
                             </form>
@@ -1694,6 +1728,82 @@
             };
         }
 
+        let selectedStreamingService = 'Spotify';
+        function selectStreamingService(service) {
+            playArcadeBeep();
+            selectedStreamingService = service;
+            const input = document.getElementById('live-stream-service');
+            if (input) input.value = service;
+            document.querySelectorAll('.streaming-service-pill').forEach(p => p.classList.remove('active'));
+            if (service === 'Spotify') document.getElementById('pill-spotify')?.classList.add('active');
+            else if (service === 'YouTube Music') document.getElementById('pill-ytm')?.classList.add('active');
+            else if (service === 'Apple Music') document.getElementById('pill-apple')?.classList.add('active');
+        }
+        window.selectStreamingService = selectStreamingService;
+
+        async function submitLiveStreamBroadcast() {
+            playArcadeBeep();
+            const service = selectedStreamingService || 'Spotify';
+            const titleInput = document.getElementById('live-stream-title');
+            const artistInput = document.getElementById('live-stream-artist');
+            const title = (titleInput ? titleInput.value : '').trim();
+            const artist = (artistInput ? artistInput.value : '').trim();
+
+            if (!title) {
+                if (titleInput) titleInput.focus();
+                showToast('PLEASE ENTER A SONG TITLE!');
+                return;
+            }
+
+            const token = getStoredAdminToken();
+            try {
+                const res = await fetch('/api/now-playing', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    },
+                    body: JSON.stringify({
+                        source: service,
+                        title,
+                        artist,
+                        isPlaying: true
+                    })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.error || 'Failed to broadcast stream');
+                }
+
+                showToast(`NOW STREAMING ON ${service.toUpperCase()}!`);
+                editingSection = null;
+                renderPage('nowPlaying', false);
+            } catch (err) {
+                showToast(err.message || 'Broadcast failed.');
+            }
+        }
+        window.submitLiveStreamBroadcast = submitLiveStreamBroadcast;
+
+        async function clearLiveStreamBroadcast() {
+            playArcadeBeep();
+            const token = getStoredAdminToken();
+            try {
+                await fetch('/api/now-playing', {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    }
+                });
+                showToast('STREAM STOPPED (RETURNED TO ON REPEAT).');
+                editingSection = null;
+                renderPage('nowPlaying', false);
+            } catch (err) {
+                showToast('Unable to clear stream.');
+            }
+        }
+        window.clearLiveStreamBroadcast = clearLiveStreamBroadcast;
+
         function createMusicCard(track) {
             const card = document.createElement('article');
             card.className = 'lanyard-music-card';
@@ -1701,9 +1811,35 @@
                 card.classList.add('no-art');
             }
 
+            const sourceStr = String(track.source || 'Music').trim();
+            const sourceLower = sourceStr.toLowerCase();
+            let sourceLabelHtml = '';
+            let sourceClass = 'live';
+            let listenBtnClass = 'streaming-listen-btn';
+            let listenBtnText = '▶ LISTEN';
+
+            if (sourceLower.includes('spotify')) {
+                sourceClass += ' source-spotify';
+                sourceLabelHtml = '<span class="live-pulse spotify-pulse"></span> 🟢 LIVE ON SPOTIFY';
+                listenBtnClass += ' spotify';
+                listenBtnText = '▶ OPEN ON SPOTIFY';
+            } else if (sourceLower.includes('youtube') || sourceLower.includes('ytm')) {
+                sourceClass += ' source-ytm';
+                sourceLabelHtml = '<span class="live-pulse ytm-pulse"></span> 🔴 LIVE ON YOUTUBE MUSIC';
+                listenBtnClass += ' ytm';
+                listenBtnText = '▶ OPEN ON YOUTUBE MUSIC';
+            } else if (sourceLower.includes('apple') || sourceLower.includes('itunes')) {
+                sourceClass += ' source-apple';
+                sourceLabelHtml = '<span class="live-pulse apple-pulse"></span> 🍎 LIVE ON APPLE MUSIC';
+                listenBtnClass += ' apple';
+                listenBtnText = '▶ OPEN ON APPLE MUSIC';
+            } else {
+                sourceLabelHtml = `<span class="live-pulse"></span> LIVE NOW • ${escapeHtml(sourceStr.toUpperCase())}`;
+            }
+
             const sourceLabel = document.createElement('span');
-            sourceLabel.className = 'lanyard-source-label live';
-            sourceLabel.innerHTML = `<span class="live-pulse"></span> LIVE NOW • ${escapeHtml(String(track.source || 'Music').toUpperCase())}`;
+            sourceLabel.className = `lanyard-source-label ${sourceClass}`;
+            sourceLabel.innerHTML = sourceLabelHtml;
             card.appendChild(sourceLabel);
 
             if (track.artworkUrl) {
@@ -1796,6 +1932,16 @@
 
                 timing.append(elapsedTime, progress, totalTime);
                 trackInfo.appendChild(timing);
+            }
+
+            if (track.url) {
+                const listenBtn = document.createElement('a');
+                listenBtn.className = listenBtnClass;
+                listenBtn.href = track.url;
+                listenBtn.target = '_blank';
+                listenBtn.rel = 'noopener noreferrer';
+                listenBtn.textContent = listenBtnText;
+                trackInfo.appendChild(listenBtn);
             }
 
             card.appendChild(trackInfo);

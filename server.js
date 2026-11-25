@@ -550,6 +550,29 @@ async function fetchSpotifyCurrentlyPlaying() {
   }
 }
 
+async function fetchArtworkFromItunes(artist, title) {
+  if (!title) return { artworkUrl: '', album: '', url: '' };
+  try {
+    const term = encodeURIComponent(`${artist || ''} ${title}`.trim());
+    const res = await fetch(`https://itunes.apple.com/search?term=${term}&entity=song&limit=1`, {
+      headers: { 'User-Agent': 'WhoamiWebsite/1.0' }
+    });
+    if (!res.ok) return { artworkUrl: '', album: '', url: '' };
+    const data = await res.json();
+    if (data && data.results && data.results.length > 0) {
+      const match = data.results[0];
+      const rawArt = match.artworkUrl100 || match.artworkUrl60 || '';
+      const artworkUrl = rawArt ? rawArt.replace(/\/\d+x\d+bb\./, '/600x600bb.') : '';
+      return {
+        artworkUrl,
+        album: match.collectionName || '',
+        url: match.trackViewUrl || ''
+      };
+    }
+  } catch {}
+  return { artworkUrl: '', album: '', url: '' };
+}
+
 async function fetchLastFmCurrentlyPlaying(userParam) {
   const username = userParam || process.env.LASTFM_USER;
   const apiKey = process.env.LASTFM_API_KEY || '4a9f2c38cb805c560f8d05b83f2f811b';
@@ -572,10 +595,18 @@ async function fetchLastFmCurrentlyPlaying(userParam) {
 
     const title = (current.name || '').trim();
     const artist = (current.artist && current.artist['#text'] ? current.artist['#text'] : current.artist || '').trim();
-    const album = (current.album && current.album['#text'] ? current.album['#text'] : '').trim();
+    let album = (current.album && current.album['#text'] ? current.album['#text'] : '').trim();
     const images = current.image || [];
-    const artworkUrl = (images.find(img => img.size === 'extralarge') || images.find(img => img.size === 'large') || images[images.length - 1] || {})['#text'] || '';
-    const trackUrl = current.url || `https://www.google.com/search?q=${encodeURIComponent(`${title} ${artist}`)}`;
+    let artworkUrl = (images.find(img => img.size === 'extralarge') || images.find(img => img.size === 'large') || images[images.length - 1] || {})['#text'] || '';
+    
+    // If Last.fm does not provide artwork, fetch high-res artwork from iTunes
+    if (!artworkUrl && title) {
+      const itunesInfo = await fetchArtworkFromItunes(artist, title);
+      if (itunesInfo.artworkUrl) artworkUrl = itunesInfo.artworkUrl;
+      if (!album && itunesInfo.album) album = itunesInfo.album;
+    }
+
+    const trackUrl = current.url || `https://open.spotify.com/search/${encodeURIComponent(`${title} ${artist}`)}`;
 
     return {
       isPlaying: true,
@@ -601,7 +632,7 @@ app.post('/api/now-playing', async (req, res) => {
     return res.status(401).json({ error: 'Unauthorized. Provide valid secret or API key.' });
   }
 
-  const {
+  let {
     source = 'Music',
     title,
     artist = '',
@@ -616,11 +647,44 @@ app.post('/api/now-playing', async (req, res) => {
     return res.status(400).json({ error: 'Track title is required when isPlaying is true.' });
   }
 
+  // Normalize source name for Spotify, YouTube Music, and Apple Music
+  const sourceLower = String(source).toLowerCase();
+  let normalizedSource = String(source).trim() || 'Music';
+  if (sourceLower.includes('spotify')) {
+    normalizedSource = 'Spotify';
+  } else if (sourceLower.includes('youtube') || sourceLower.includes('ytm')) {
+    normalizedSource = 'YouTube Music';
+  } else if (sourceLower.includes('apple') || sourceLower.includes('itunes')) {
+    normalizedSource = 'Apple Music';
+  }
+
+  // Auto-resolve artwork and album if missing
+  if (isPlaying && (!artworkUrl || !album)) {
+    const itunesInfo = await fetchArtworkFromItunes(artist, title);
+    if (!artworkUrl && itunesInfo.artworkUrl) artworkUrl = itunesInfo.artworkUrl;
+    if (!album && itunesInfo.album) album = itunesInfo.album;
+    if (!url && itunesInfo.url && normalizedSource === 'Apple Music') url = itunesInfo.url;
+  }
+
+  // Generate official streaming link if none provided
+  if (!url && title) {
+    const query = encodeURIComponent(`${title} ${artist}`.trim());
+    if (normalizedSource === 'Spotify') {
+      url = `https://open.spotify.com/search/${query}`;
+    } else if (normalizedSource === 'YouTube Music') {
+      url = `https://music.youtube.com/search?q=${query}`;
+    } else if (normalizedSource === 'Apple Music') {
+      url = `https://music.apple.com/search?term=${query}`;
+    } else {
+      url = `https://www.google.com/search?q=${query}`;
+    }
+  }
+
   const durationMs = Number(duration) > 0 ? Number(duration) * 1000 : 0;
   const now = Date.now();
   const trackData = {
     isPlaying: Boolean(isPlaying),
-    source: String(source).trim() || 'Music',
+    source: normalizedSource,
     title: String(title || '').trim(),
     artist: String(artist || '').trim(),
     album: String(album || '').trim(),
