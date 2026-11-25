@@ -2066,7 +2066,7 @@ h3 {
         min-height: 100dvh;
         overflow-x: hidden;
         overflow-y: auto;
-        background-image: linear-gradient(rgba(0, 0, 0, 0.58), rgba(0, 0, 0, 0.78)), url('../pacman-pac.gif');
+        background-image: linear-gradient(rgba(0, 0, 0, 0.58), rgba(0, 0, 0, 0.78)), url('/pacman-pac.gif');
         background-position: center;
         background-repeat: no-repeat;
         background-size: cover;

@@ -274,16 +274,94 @@ app.get(['/admin', '/admin.html', '/admin/*'], requireAdmin, (_req, res) => {
   return res.status(404).send('admin.html not found');
 });
 
+const staticMimeTypes = {
+  '.gif': 'image/gif',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.css': 'text/css',
+  '.js': 'application/javascript'
+};
+
+app.get(/\.(gif|jpg|jpeg|png|webp|svg|ico)$/i, (req, res) => {
+  let decoded = '';
+  try {
+    decoded = decodeURIComponent(req.path).replace(/^\/+/, '');
+  } catch {
+    decoded = req.path.replace(/^\/+/, '');
+  }
+
+  const ext = path.extname(decoded).toLowerCase();
+  const contentType = staticMimeTypes[ext] || 'application/octet-stream';
+  const baseName = path.basename(decoded);
+
+  const candidatePaths = [
+    path.join(__dirname, decoded),
+    path.join(process.cwd(), decoded),
+    path.join(__dirname, 'public', decoded),
+    path.join(process.cwd(), 'public', decoded),
+    path.join(__dirname, '..', decoded),
+    path.join(__dirname, baseName),
+    path.join(process.cwd(), baseName),
+    path.join(__dirname, 'public', baseName),
+    path.join(process.cwd(), 'public', baseName),
+    path.join(__dirname, '..', 'public', baseName)
+  ];
+
+  // Specific fallback for blue cat cap spacing/hyphenation
+  if (baseName.includes('blue') && baseName.includes('cat')) {
+    candidatePaths.push(
+      path.join(__dirname, 'blue cat cap.jpg'),
+      path.join(process.cwd(), 'blue cat cap.jpg'),
+      path.join(__dirname, 'public', 'blue cat cap.jpg'),
+      path.join(process.cwd(), 'public', 'blue cat cap.jpg'),
+      path.join(__dirname, 'blue-cat-cap.jpg'),
+      path.join(process.cwd(), 'blue-cat-cap.jpg')
+    );
+  }
+
+  for (const candidate of candidatePaths) {
+    if (fs.existsSync(candidate)) {
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      return res.sendFile(candidate);
+    }
+  }
+
+  return res.status(404).send('Image not found');
+});
+
+app.use('/public', express.static(path.join(__dirname, 'public')));
+app.use('/public', express.static(path.join(process.cwd(), 'public')));
 app.use('/css', express.static(path.join(__dirname, 'css')));
+app.use('/css', express.static(path.join(process.cwd(), 'css')));
+app.use('/css', express.static(path.join(process.cwd(), 'public', 'css')));
+
 app.get(['/css/style.css', '/style.css'], (_req, res) => {
   res.setHeader('Content-Type', 'text/css');
-  const cssFile = path.join(__dirname, 'css', 'style.css');
-  if (fs.existsSync(cssFile)) {
-    return res.sendFile(cssFile);
+  const candidateCss = [
+    path.join(__dirname, 'css', 'style.css'),
+    path.join(process.cwd(), 'css', 'style.css'),
+    path.join(__dirname, 'public', 'css', 'style.css'),
+    path.join(process.cwd(), 'public', 'css', 'style.css'),
+    path.join(__dirname, 'style.css'),
+    path.join(process.cwd(), 'style.css')
+  ];
+  for (const cssFile of candidateCss) {
+    if (fs.existsSync(cssFile)) {
+      return res.sendFile(cssFile);
+    }
   }
   return res.sendFile(path.join(__dirname, 'style.css'));
 });
+
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(process.cwd(), 'public')));
 app.use(express.static(__dirname));
+app.use(express.static(process.cwd()));
 
 app.post('/api/message', async (req, res) => {
   if (!hasPersistentMessageStorage()) {
@@ -1022,6 +1100,24 @@ app.post('/api/profile', async (req, res) => {
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) {
     return next();
+  }
+
+  // Never send whoami.html for static asset requests
+  if (/\.(gif|jpg|jpeg|png|webp|svg|ico|css|js|map|json|woff2?|ttf|eot)$/i.test(req.path)) {
+    return res.status(404).send('Asset not found');
+  }
+
+  const candidateHtml = [
+    path.join(__dirname, 'whoami.html'),
+    path.join(process.cwd(), 'whoami.html'),
+    path.join(__dirname, 'public', 'whoami.html'),
+    path.join(process.cwd(), 'public', 'whoami.html')
+  ];
+
+  for (const htmlPath of candidateHtml) {
+    if (fs.existsSync(htmlPath)) {
+      return res.sendFile(htmlPath);
+    }
   }
 
   res.sendFile(path.join(__dirname, 'whoami.html'));

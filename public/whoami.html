@@ -1,0 +1,3625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Whoami</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>👾</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=2.6">
+</head>
+
+<body>
+    <div class="split-container">
+        <div class="left-half">
+            <img src="pacman-pac.gif" alt="Whoami Image" class="whoami-image" onerror="if (this.src.indexOf('/pacman-pac.gif') === -1) { this.src='/pacman-pac.gif'; }">
+        </div>
+
+        <div class="right-half" id="right-panel">
+            <div class="menu-panel">
+                <h1>WHOAMI</h1>
+                <button class="menu-item" data-page="profile">PROFILE</button>
+                <button class="menu-item" data-page="socials">SOCIALS</button>
+                <button class="menu-item" data-page="nowPlaying">NOW PLAYING</button>
+                <button class="menu-item" data-page="sidequests">SIDE QUESTS</button>
+                <button class="menu-item" data-page="message">MESSAGE ME</button>
+                <button class="menu-item" data-page="randomGame">RANDOM GAME</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const registeredEmail = 'danyaellap@gmail.com';
+
+        const defaultProfileData = {
+            knowMe: {
+                name: 'DAN',
+                nickname: 'ANON, DADA',
+                age: '19',
+                country: 'PHILIPPINES',
+                timezone: 'GMT +8',
+                pronouns: 'SHE/THEY'
+            },
+            knownFacts: [
+                "Currently, I'm a 2nd Year College Student.",
+                "I enjoy making stuff, especially related  to music and interior design",
+                "I also like experimenting stuff overall.",
+                "English is not my first languange so I have sometimes a hard time talking to.",
+                "I rarely open dms so if I don't reply, please don't take it personally."
+            ],
+            unknownFacts: [
+                "I like to collect stuff related to games, especially card games, legos, and tech devices",
+                "I'm secretely into arcade games and vintage/retro stuff.",
+                "One day I want to build a whole game from scratch.",
+                "I'm a big fan of the 80s, 90s pop culture and K-pop girl groups.",
+                "A Humanities and Social Sciences graduate who took a STEM degree in college so expect that I'm busy for most of the time."
+            ],
+            hobbies: [
+                "Gaming (retro arcade & rhythm games)",
+                "Building Lego sets and collecting tech devices",
+                "Coding and web development experiments",
+                "Listening to music and curating playlists",
+                "Interior aesthetic design and creative crafts"
+            ],
+            ultBias: {
+                kpop: 'Winter, Seulgi, Mina, Yoon, Minji, Kazuha, Chaewon, Minju, Haewon, Lily',
+                thaiGl: 'Freen, Becky, Milk, Love, Caprice, Pangjie',
+                ppop: 'Mikha, Gwen, Colet, Aiah, Mable',
+                other: 'Krystal'
+            },
+            ultGroups: {
+                mainUlt: 'aespa, Nmixx, Red Velvet, Stayc, Twice, Cortis',
+                stanGroups: 'Blackpink, Itzy, Le Sserafim, NewJeans, Loona, Kep1er, Iz*one, IVE, GFriend, Mamamoo, WJSN, SNSD',
+                boyGroups: 'ILLIT, NCT and its sub-units, Seventeen, Stray Kids, EXO, Tomorrow X Together'
+            },
+            sidequests: [
+                { id: 'sq-1', text: 'Expand my knowledge in coding and designing.', done: false },
+                { id: 'sq-2', text: 'Make a website based on what it needs.', done: true },
+                { id: 'sq-3', text: 'Keep learning unexpectedly.', done: false }
+            ],
+            onRepeat: {
+                title: 'Supernova',
+                artist: 'aespa',
+                album: 'Armageddon - The 1st Album',
+                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b2734107e0e7a8e8f85f34177f1f',
+                url: 'https://open.spotify.com/track/712roG90pcuZ9mQdrwUojT',
+                source: 'On Repeat'
+            },
+            lastfmUser: ''
+        };
+
+        const curatedVibes = [
+            {
+                title: 'Supernova',
+                artist: 'aespa',
+                album: 'Armageddon - The 1st Album',
+                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b2734107e0e7a8e8f85f34177f1f',
+                url: 'https://open.spotify.com/track/712roG90pcuZ9mQdrwUojT'
+            },
+            {
+                title: 'Whiplash',
+                artist: 'aespa',
+                album: 'Whiplash - The 5th Mini Album',
+                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b2737ceca1aebe42b6a03b54728d',
+                url: 'https://open.spotify.com/track/3FPuk3O0b3s9Z6kE6w0tqG'
+            },
+            {
+                title: 'Cosmic',
+                artist: 'Red Velvet',
+                album: 'Cosmic',
+                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b273cb8a0fa61957c5881bbdf06f',
+                url: 'https://open.spotify.com/track/4l4K3N82jR8q4H8Q03l7vG'
+            },
+            {
+                title: 'DASH',
+                artist: 'NMIXX',
+                album: 'Fe3O4: BREAK',
+                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b273ce96f7c87cbb517f8646b9a2',
+                url: 'https://open.spotify.com/track/2Z1w4Fz1x4j1k4y4k4m4m4'
+            },
+            {
+                title: 'Talk that Talk',
+                artist: 'TWICE',
+                album: 'BETWEEN 1&2',
+                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b27394d0799309ec903cb6d318e8',
+                url: 'https://open.spotify.com/track/0wODX2g6d6s4x8o6y8p6y8'
+            },
+            {
+                title: 'RUN2U',
+                artist: 'STAYC',
+                album: 'YOUNG-LUV.COM',
+                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b273e86f8bf7a1bf64c9d32d0c27',
+                url: 'https://open.spotify.com/track/0x9x8y7w6v5u4t3s2r1q0p'
+            }
+        ];
+        let currentVibeIndex = 0;
+
+        let currentProfileData = JSON.parse(JSON.stringify(defaultProfileData));
+        let editingSection = null;
+        let isEditingSideQuests = false;
+                let isAdminLoggedIn = false;
+
+        const DISCORD_USER_ID = '772073053097033741';
+        const albumCache = new Map();
+        const DETAIL_PAGES = ['knowMe', 'knownFacts', 'unknownFacts', 'hobbies', 'whoIUlt', 'ultBias', 'ultGroups'];
+        const TOP_PAGES = ['profile', 'socials', 'nowPlaying', 'sidequests', 'message', 'randomGame'];
+
+        let rightPanel = null;
+        let arcadeAudioContext = null;
+        let lanyardRefreshTimer = null;
+        let lanyardSocket = null;
+        let lanyardHeartbeatTimer = null;
+        let trackProgressTimer = null;
+        let lanyardReconnectTimer = null;
+        let directEventSource = null;
+        let isLoadingLanyard = false;
+        let isMonitoringNowPlaying = false;
+        let isPrefetching = false;
+        let latestLanyardPresence = null;
+        let latestDirectTrack = null;
+
+        let currentRandomGame = null;
+        let isRollingGame = false;
+        let currentArcadeGameType = 'pacman';
+        let arcadeAnimFrame = null;
+        let arcadeInterval = null;
+        let arcadeKeydownHandler = null;
+        let arcadeKeyupHandler = null;
+        let arcadeActiveInputs = { up: false, down: false, left: false, right: false, action: false };
+        let arcadeDiscreteActionTriggered = false;
+
+        function getStoredAdminToken() {
+            return sessionStorage.getItem('whowho_admin_token') || localStorage.getItem('whowho_admin_token') || '';
+        }
+
+        function setStoredAdminToken(token) {
+            if (token) {
+                sessionStorage.setItem('whowho_admin_token', token);
+                localStorage.setItem('whowho_admin_token', token);
+                isAdminLoggedIn = true;
+            } else {
+                sessionStorage.removeItem('whowho_admin_token');
+                localStorage.removeItem('whowho_admin_token');
+                isAdminLoggedIn = false;
+            }
+        }
+
+        async function checkAdminStatus() {
+            const token = getStoredAdminToken();
+            if (!token) {
+                isAdminLoggedIn = false;
+                return false;
+            }
+            try {
+                const res = await fetch('/api/admin/status', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    isAdminLoggedIn = Boolean(data && data.isAdmin);
+                    if (!isAdminLoggedIn) setStoredAdminToken(null);
+                } else {
+                    isAdminLoggedIn = false;
+                    setStoredAdminToken(null);
+                }
+            } catch {
+                isAdminLoggedIn = Boolean(token);
+            }
+            return isAdminLoggedIn;
+        }
+
+        function logoutAdmin() {
+            playArcadeBeep();
+            setStoredAdminToken(null);
+            editingSection = null;
+            isEditingSideQuests = false;
+            showToast('LOGGED OUT OF OWNER MODE.');
+            const hash = (window.location.hash || '').replace(/^#/, '').trim();
+            if (DETAIL_PAGES.includes(hash)) {
+                renderDetail(hash, false);
+            } else if (TOP_PAGES.includes(hash)) {
+                renderPage(hash, false);
+            } else {
+                renderMainMenu(false);
+            }
+        }
+
+        window.logoutAdmin = logoutAdmin;
+
+        function showAdminPasswordModal(actionPrompt, onAuthenticated) {
+            playArcadeBeep();
+            const existing = document.getElementById('admin-auth-modal');
+            if (existing) existing.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'admin-auth-modal';
+            overlay.className = 'confirm-modal-overlay';
+            overlay.innerHTML = `
+                <div class="confirm-modal-box admin-auth-box" role="dialog" aria-modal="true" aria-labelledby="admin-modal-title">
+                    <h3 class="confirm-modal-title" id="admin-modal-title">👑 OWNER / ADMIN ACCESS</h3>
+                    <p class="confirm-modal-desc">${escapeHtml(actionPrompt || 'Only the owner of the website can edit this section.')}<br><br>ENTER ADMIN PASSWORD:</p>
+                    <form id="admin-auth-form" onsubmit="event.preventDefault(); submitAdminPassword();" style="display:flex; flex-direction:column; gap:12px; width:100%;">
+                        <input type="password" id="admin-password-input" class="profile-input-field" placeholder="Enter password..." autocomplete="current-password" required autofocus style="text-align:center; letter-spacing: 2px;">
+                        <div id="admin-auth-error" style="color:#ff6b8b; font-size:11px; display:none;"></div>
+                        <div class="confirm-modal-actions" style="margin-top:6px;">
+                            <button type="submit" class="confirm-modal-btn confirm" id="btn-admin-login">UNLOCK</button>
+                            <button type="button" class="confirm-modal-btn cancel" id="btn-admin-cancel">CANCEL</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            const close = () => {
+                playArcadeBeep();
+                overlay.remove();
+                document.removeEventListener('keydown', handleKey);
+            };
+
+            const handleKey = (e) => {
+                if (e.key === 'Escape') close();
+            };
+
+            document.addEventListener('keydown', handleKey);
+            overlay.querySelector('#btn-admin-cancel').addEventListener('click', close);
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) close();
+            });
+
+            const pwdInput = overlay.querySelector('#admin-password-input');
+            pwdInput.focus();
+
+            window.submitAdminPassword = async () => {
+                playArcadeBeep();
+                const pwd = pwdInput.value.trim();
+                const errorEl = overlay.querySelector('#admin-auth-error');
+                const submitBtn = overlay.querySelector('#btn-admin-login');
+
+                if (!pwd) {
+                    pwdInput.focus();
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'CHECKING...';
+                if (errorEl) errorEl.style.display = 'none';
+
+                try {
+                    const res = await fetch('/api/admin/verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password: pwd })
+                    });
+
+                    if (!res.ok) {
+                        const errData = await res.json().catch(() => ({}));
+                        throw new Error(errData.error || 'Invalid admin password.');
+                    }
+
+                    const data = await res.json();
+                    setStoredAdminToken(data.token);
+                    showToast('ADMIN UNLOCKED! WELCOME.');
+                    overlay.remove();
+                    document.removeEventListener('keydown', handleKey);
+
+                    if (typeof onAuthenticated === 'function') {
+                        onAuthenticated();
+                    }
+                } catch (err) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'UNLOCK';
+                    if (errorEl) {
+                        errorEl.textContent = err.message || 'Invalid admin password.';
+                        errorEl.style.display = 'block';
+                    }
+                    pwdInput.focus();
+                    pwdInput.select();
+                }
+            };
+        }
+
+        function normalizeQuests(quests) {
+            if (!Array.isArray(quests)) return [];
+            return quests.map((q, idx) => {
+                if (typeof q === 'string') {
+                    return { id: `sq-${idx}`, text: q, done: false };
+                }
+                return {
+                    id: (q && q.id) ? q.id : `sq-${idx}`,
+                    text: (q && typeof q.text === 'string') ? q.text : String(q ? q.text || '' : ''),
+                    done: Boolean(q && q.done)
+                };
+            });
+        }
+
+        function escapeHtml(str) {
+            if (typeof str !== 'string') return String(str || '');
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        async function loadProfileData() {
+            try {
+                const local = localStorage.getItem('whowho_profile_data');
+                if (local) {
+                    const parsed = JSON.parse(local);
+                    if (parsed && typeof parsed === 'object') {
+                        currentProfileData = Object.assign({}, defaultProfileData, parsed);
+                        currentProfileData.knowMe = Object.assign({}, defaultProfileData.knowMe, parsed.knowMe || {});
+                        currentProfileData.ultBias = Object.assign({}, defaultProfileData.ultBias, parsed.ultBias || {});
+                        currentProfileData.ultGroups = Object.assign({}, defaultProfileData.ultGroups, parsed.ultGroups || {});
+                        if (Array.isArray(parsed.knownFacts)) currentProfileData.knownFacts = parsed.knownFacts;
+                        if (Array.isArray(parsed.unknownFacts)) currentProfileData.unknownFacts = parsed.unknownFacts;
+                        if (Array.isArray(parsed.hobbies)) currentProfileData.hobbies = parsed.hobbies;
+                        if (!Array.isArray(currentProfileData.hobbies) || currentProfileData.hobbies.length === 0) currentProfileData.hobbies = [...defaultProfileData.hobbies];
+                        if (Array.isArray(parsed.sidequests)) currentProfileData.sidequests = normalizeQuests(parsed.sidequests);
+                    }
+                }
+            } catch {}
+
+            try {
+                const res = await fetch('/api/profile', { cache: 'no-store' });
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json && json.success && json.profile && typeof json.profile === 'object') {
+                        const s = json.profile;
+                        currentProfileData = Object.assign({}, defaultProfileData, s);
+                        currentProfileData.knowMe = Object.assign({}, defaultProfileData.knowMe, s.knowMe || {});
+                        currentProfileData.ultBias = Object.assign({}, defaultProfileData.ultBias, s.ultBias || {});
+                        currentProfileData.ultGroups = Object.assign({}, defaultProfileData.ultGroups, s.ultGroups || {});
+                        if (Array.isArray(s.knownFacts)) currentProfileData.knownFacts = s.knownFacts;
+                        if (Array.isArray(s.unknownFacts)) currentProfileData.unknownFacts = s.unknownFacts;
+                        if (Array.isArray(s.hobbies)) currentProfileData.hobbies = s.hobbies;
+                        if (!Array.isArray(currentProfileData.hobbies) || currentProfileData.hobbies.length === 0) currentProfileData.hobbies = [...defaultProfileData.hobbies];
+                        if (Array.isArray(s.sidequests)) currentProfileData.sidequests = normalizeQuests(s.sidequests);
+                        try {
+                            localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+                        } catch {}
+
+                        const hash = (window.location.hash || '').replace(/^#/, '').trim();
+                        if (DETAIL_PAGES.includes(hash) && !editingSection) {
+                            renderDetail(hash, false);
+                        } else if (hash === 'sidequests' && !isEditingSideQuests) {
+                            renderPage('sidequests', false);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('Profile sync notice:', err);
+            }
+        }
+
+        async function saveProfileToServer(data) {
+            const token = getStoredAdminToken();
+            try {
+                const res = await fetch('/api/profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    },
+                    body: JSON.stringify(data)
+                });
+                if (!res.ok) {
+                    if (res.status === 401) {
+                        showToast('ADMIN AUTH REQUIRED TO SAVE.');
+                        showAdminPasswordModal('Admin authentication expired or required. Enter password to save:', () => {
+                            saveProfileToServer(data);
+                        });
+                    }
+                }
+            } catch (err) {
+                console.warn('Profile save warning:', err);
+            }
+        }
+
+        function showConfirmationModal(title, message, onConfirm) {
+            playArcadeBeep();
+            const existing = document.getElementById('profile-confirm-modal');
+            if (existing) existing.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'profile-confirm-modal';
+            overlay.className = 'confirm-modal-overlay';
+            overlay.innerHTML = `
+                <div class="confirm-modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+                    <h3 class="confirm-modal-title" id="modal-title">${escapeHtml(title)}</h3>
+                    <p class="confirm-modal-desc">${escapeHtml(message)}</p>
+                    <div class="confirm-modal-actions">
+                        <button type="button" class="confirm-modal-btn confirm" id="modal-confirm-btn">CONFIRM</button>
+                        <button type="button" class="confirm-modal-btn cancel" id="modal-cancel-btn">CANCEL</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            const close = () => {
+                playArcadeBeep();
+                overlay.remove();
+                document.removeEventListener('keydown', handleKey);
+            };
+
+            const handleKey = (e) => {
+                if (e.key === 'Escape') close();
+            };
+
+            overlay.querySelector('#modal-confirm-btn').addEventListener('click', () => {
+                playArcadeBeep();
+                overlay.remove();
+                document.removeEventListener('keydown', handleKey);
+                if (typeof onConfirm === 'function') onConfirm();
+            });
+
+            overlay.querySelector('#modal-cancel-btn').addEventListener('click', close);
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) close();
+            });
+            document.addEventListener('keydown', handleKey);
+        }
+
+        function showToast(message) {
+            const existing = document.querySelector('.profile-save-toast');
+            if (existing) existing.remove();
+
+            const toast = document.createElement('div');
+            toast.className = 'profile-save-toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 2800);
+        }
+
+        function toggleEditProfile(sectionKey) {
+            playArcadeBeep();
+            if (!isAdminLoggedIn) {
+                showAdminPasswordModal('Only the owner of the website can edit profile options.', () => {
+                    editingSection = sectionKey;
+                    renderDetail(sectionKey, false);
+                });
+                return;
+            }
+            editingSection = sectionKey;
+            renderDetail(sectionKey, false);
+        }
+
+        function cancelEditProfile(sectionKey) {
+            playArcadeBeep();
+            editingSection = null;
+            isEditingSideQuests = false;
+            if (sectionKey === 'nowPlaying') {
+                renderPage('nowPlaying', false);
+            } else {
+                renderDetail(sectionKey, false);
+            }
+        }
+
+        function toggleEditNowPlaying() {
+            playArcadeBeep();
+            if (!isAdminLoggedIn) {
+                showAdminPasswordModal('Only the owner of the website can edit Now Playing settings.', () => {
+                    editingSection = 'nowPlaying';
+                    renderPage('nowPlaying', false);
+                });
+                return;
+            }
+            editingSection = 'nowPlaying';
+            renderPage('nowPlaying', false);
+        }
+        window.toggleEditNowPlaying = toggleEditNowPlaying;
+
+        function switchUltTab(targetSection) {
+            playArcadeBeep();
+            editingSection = null;
+            isEditingSideQuests = false;
+            history.replaceState({ screen: 'detail', detail: targetSection }, '', `#${targetSection}`);
+            renderDetail(targetSection, false);
+        }
+
+        function promptSaveProfile(sectionKey) {
+            const form = document.getElementById(`form-${sectionKey}`);
+            if (!form) return;
+
+            showConfirmationModal(
+                'SAVE CHANGES?',
+                'Are you sure you want to save your updated information?',
+                () => {
+                    const formData = new FormData(form);
+
+                    if (sectionKey === 'knowMe') {
+                        currentProfileData.knowMe = {
+                            name: (formData.get('name') || '').trim(),
+                            nickname: (formData.get('nickname') || '').trim(),
+                            age: (formData.get('age') || '').trim(),
+                            country: (formData.get('country') || '').trim(),
+                            timezone: (formData.get('timezone') || '').trim(),
+                            pronouns: (formData.get('pronouns') || '').trim()
+                        };
+                    } else if (sectionKey === 'knownFacts') {
+                        const text = (formData.get('facts') || '').trim();
+                        currentProfileData.knownFacts = text.split('\n').map(l => l.trim()).filter(Boolean);
+                    } else if (sectionKey === 'unknownFacts') {
+                        const text = (formData.get('facts') || '').trim();
+                        currentProfileData.unknownFacts = text.split('\n').map(l => l.trim()).filter(Boolean);
+                    } else if (sectionKey === 'hobbies') {
+                        const text = (formData.get('facts') || formData.get('hobbies') || '').trim();
+                        currentProfileData.hobbies = text.split('\n').map(l => l.trim()).filter(Boolean);
+                    } else if (sectionKey === 'ultBias') {
+                        currentProfileData.ultBias = {
+                            kpop: (formData.get('kpop') || '').trim(),
+                            thaiGl: (formData.get('thaiGl') || '').trim(),
+                            ppop: (formData.get('ppop') || '').trim(),
+                            other: (formData.get('other') || '').trim()
+                        };
+                    } else if (sectionKey === 'ultGroups') {
+                        currentProfileData.ultGroups = {
+                            mainUlt: (formData.get('mainUlt') || '').trim(),
+                            stanGroups: (formData.get('stanGroups') || '').trim(),
+                            boyGroups: (formData.get('boyGroups') || '').trim()
+                        };
+                    } else if (sectionKey === 'nowPlaying') {
+                        currentProfileData.onRepeat = {
+                            title: (formData.get('title') || '').trim(),
+                            artist: (formData.get('artist') || '').trim(),
+                            album: (formData.get('album') || '').trim(),
+                            url: (formData.get('url') || '').trim(),
+                            artworkUrl: (formData.get('artworkUrl') || '').trim(),
+                            source: 'On Repeat'
+                        };
+                        currentProfileData.lastfmUser = (formData.get('lastfmUser') || '').trim();
+                    }
+
+                    try {
+                        localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+                    } catch {}
+
+                    saveProfileToServer(currentProfileData);
+                    editingSection = null;
+                    isEditingSideQuests = false;
+                    showToast('UPDATED SUCCESSFULLY!');
+                    if (sectionKey === 'nowPlaying') {
+                        renderPage('nowPlaying', false);
+                    } else {
+                        renderDetail(sectionKey, false);
+                    }
+                }
+            );
+        }
+
+        function getNowPlayingContent() {
+            const isEditing = editingSection === 'nowPlaying';
+            if (isEditing) {
+                const currentVibe = currentProfileData.onRepeat || curatedVibes[0];
+                return `
+                    <div class="panel-content now-playing-panel">
+                        <div class="profile-header-row">
+                            <h2>EDIT NOW PLAYING</h2>
+                        </div>
+                        <div class="fact-box scrollable-facts-box">
+                            <!-- 1. Live Streaming Broadcaster (Spotify, YouTube Music, Apple Music) -->
+                            <div class="streaming-sync-box">
+                                <div class="streaming-sync-title">📡 BROADCAST WHAT'S PLAYING LIVE</div>
+                                <p style="font-size:10px; color:#9ab7ff; line-height:1.7; margin-bottom:12px;">
+                                    Select your streaming platform to broadcast a live track to the site right now:
+                                </p>
+                                <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+                                    <button type="button" class="streaming-service-pill spotify active" id="pill-spotify" onclick="selectStreamingService('Spotify')">🟢 SPOTIFY</button>
+                                    <button type="button" class="streaming-service-pill ytm" id="pill-ytm" onclick="selectStreamingService('YouTube Music')">🔴 YOUTUBE MUSIC</button>
+                                    <button type="button" class="streaming-service-pill apple" id="pill-apple" onclick="selectStreamingService('Apple Music')">🍎 APPLE MUSIC</button>
+                                </div>
+                                <input type="hidden" id="live-stream-service" value="Spotify">
+                                <div class="profile-form-group">
+                                    <label class="profile-form-label">CURRENT SONG TITLE</label>
+                                    <input class="profile-input-field" id="live-stream-title" placeholder="e.g. Supernova" autocomplete="off">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label class="profile-form-label">ARTIST</label>
+                                    <input class="profile-input-field" id="live-stream-artist" placeholder="e.g. aespa" autocomplete="off">
+                                </div>
+                                <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
+                                    <button type="button" class="btn-save-profile" style="background:#00ffaa; color:#000; border-color:#00ffaa;" onclick="submitLiveStreamBroadcast()">▶ BROADCAST LIVE</button>
+                                    <button type="button" class="btn-cancel-profile" style="border-color:#ff4d4d; color:#ff4d4d;" onclick="clearLiveStreamBroadcast()">⏹ STOP STREAM</button>
+                                </div>
+                                <div style="margin-top:14px; padding-top:12px; border-top:1px dashed rgba(0,76,255,0.4); font-size:9px; color:#9ab7ff; line-height:1.8;">
+                                    💡 <b>AUTO-SYNC OPTIONS:</b><br>
+                                    • <b>Windows:</b> Run <code>scripts/now-playing-sync.ps1</code> in PowerShell to auto-sync any active playback.<br>
+                                    • <b>Web Browser:</b> Install <code>scripts/now-playing-sync.user.js</code> on Spotify, YouTube Music, or Apple Music Web.<br>
+                                    • <b>Last.fm:</b> Enter your username below to automatically scrobble mobile + desktop 24/7!
+                                </div>
+                            </div>
+
+                            <!-- 2. On Repeat Fallback & Last.fm Settings -->
+                            <form class="profile-edit-form" id="form-nowPlaying" onsubmit="event.preventDefault(); promptSaveProfile('nowPlaying');" style="margin-top:20px;">
+                                <h3 style="font-size:12px; color:#ffd700; margin-bottom:12px;">★ DEFAULT ON-REPEAT SONG & SETTINGS</h3>
+                                <div class="profile-form-group">
+                                    <label class="profile-form-label">SONG TITLE</label>
+                                    <input class="profile-input-field" name="title" value="${escapeHtml(currentVibe.title || '')}" placeholder="e.g. Supernova" required autocomplete="off">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label class="profile-form-label">ARTIST</label>
+                                    <input class="profile-input-field" name="artist" value="${escapeHtml(currentVibe.artist || '')}" placeholder="e.g. aespa" required autocomplete="off">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label class="profile-form-label">ALBUM</label>
+                                    <input class="profile-input-field" name="album" value="${escapeHtml(currentVibe.album || '')}" placeholder="e.g. Armageddon - The 1st Album" autocomplete="off">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label class="profile-form-label">SONG LINK (SPOTIFY, YOUTUBE, APPLE MUSIC, ETC.)</label>
+                                    <input class="profile-input-field" name="url" value="${escapeHtml(currentVibe.url || '')}" placeholder="https://open.spotify.com/track/..." autocomplete="off">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label class="profile-form-label">ALBUM ARTWORK URL</label>
+                                    <input class="profile-input-field" name="artworkUrl" value="${escapeHtml(currentVibe.artworkUrl || '')}" placeholder="https://i.scdn.co/image/..." autocomplete="off">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label class="profile-form-label">LAST.FM USERNAME (AUTO-SCROBBLES SPOTIFY, APPLE MUSIC & YOUTUBE MUSIC 24/7)</label>
+                                    <input class="profile-input-field" name="lastfmUser" value="${escapeHtml(currentProfileData.lastfmUser || '')}" placeholder="e.g. your_lastfm_user" autocomplete="off">
+                                </div>
+                                <div class="profile-edit-actions">
+                                    <button type="submit" class="btn-save-profile">SAVE ON REPEAT</button>
+                                    <button type="button" class="btn-cancel-profile" onclick="cancelEditProfile('nowPlaying')">CANCEL</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="panel-content now-playing-panel">
+                    <div class="profile-header-row">
+                        <h2>NOW PLAYING</h2>
+                        <button type="button" class="edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}" onclick="toggleEditNowPlaying()" title="${isAdminLoggedIn ? 'Set on-repeat song & music settings' : 'Owner access required'}">${isAdminLoggedIn ? '✎ EDIT VIBE' : '🔒 OWNER EDIT'}</button>
+                    </div>
+                    <div class="fact-box lanyard-box">
+                        <div id="lanyard-music-list" class="lanyard-music-list">
+                            <p class="lanyard-activity">CONNECTING TO AUDIO STREAM...</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.toggleEditProfile = toggleEditProfile;
+        window.cancelEditProfile = cancelEditProfile;
+        window.promptSaveProfile = promptSaveProfile;
+        window.switchUltTab = switchUltTab;
+
+        function getProfileSectionContent(sectionKey) {
+            const isEditing = editingSection === sectionKey;
+
+            if (sectionKey === 'knowMe') {
+                if (isEditing) {
+                    return `
+                        <div class="panel-content">
+                            <div class="profile-header-row">
+                                <h2>EDIT PROFILE</h2>
+                            </div>
+                            <div class="fact-box scrollable-facts-box">
+                                <form class="profile-edit-form" id="form-knowMe" onsubmit="event.preventDefault(); promptSaveProfile('knowMe');">
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">NAME</label>
+                                        <input class="profile-input-field" name="name" value="${escapeHtml(currentProfileData.knowMe.name)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">NICKNAME</label>
+                                        <input class="profile-input-field" name="nickname" value="${escapeHtml(currentProfileData.knowMe.nickname)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">AGE</label>
+                                        <input class="profile-input-field" name="age" value="${escapeHtml(currentProfileData.knowMe.age)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">COUNTRY</label>
+                                        <input class="profile-input-field" name="country" value="${escapeHtml(currentProfileData.knowMe.country)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">TIMEZONE</label>
+                                        <input class="profile-input-field" name="timezone" value="${escapeHtml(currentProfileData.knowMe.timezone)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">PRONOUNS</label>
+                                        <input class="profile-input-field" name="pronouns" value="${escapeHtml(currentProfileData.knowMe.pronouns)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-edit-actions">
+                                        <button type="submit" class="btn-save-profile">SAVE CHANGES</button>
+                                        <button type="button" class="btn-cancel-profile" onclick="cancelEditProfile('knowMe')">CANCEL</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="panel-content">
+                        <div class="profile-header-row">
+                            <h2>GET TO KNOW ME</h2>
+                            <button type="button" class="edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}" onclick="toggleEditProfile('knowMe')" title="${isAdminLoggedIn ? 'Edit profile' : 'Owner access required'}">${isAdminLoggedIn ? '✎ EDIT' : '🔒 OWNER EDIT'}</button>
+                        </div>
+                        <div class="fact-box know-me-box">
+                            <img class="blue-cat-cap-image" src="blue%20cat%20cap.jpg" alt="Blue cat cap" onerror="if (this.src.indexOf('blue-cat-cap.jpg') === -1) { this.src='blue-cat-cap.jpg'; }">
+                            <div class="know-me-grid">
+                                <p>NAME: ${escapeHtml(currentProfileData.knowMe.name)}</p>
+                                <p>NICKNAME: ${escapeHtml(currentProfileData.knowMe.nickname)}</p>
+                                <p>AGE: ${escapeHtml(currentProfileData.knowMe.age)}</p>
+                                <p>COUNTRY: ${escapeHtml(currentProfileData.knowMe.country)}</p>
+                                <p>TIMEZONE: ${escapeHtml(currentProfileData.knowMe.timezone)}</p>
+                                <p>PRONOUNS: ${escapeHtml(currentProfileData.knowMe.pronouns)}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (sectionKey === 'knownFacts') {
+                if (isEditing) {
+                    return `
+                        <div class="panel-content known-facts-panel">
+                            <div class="profile-header-row">
+                                <h2>EDIT KNOWN FACTS</h2>
+                            </div>
+                            <div class="fact-box scrollable-facts-box">
+                                <form class="profile-edit-form" id="form-knownFacts" onsubmit="event.preventDefault(); promptSaveProfile('knownFacts');">
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">FACTS (ONE FACT PER LINE)</label>
+                                        <textarea class="profile-textarea-field" name="facts" rows="7" required>${escapeHtml(currentProfileData.knownFacts.join('\n'))}</textarea>
+                                    </div>
+                                    <div class="profile-edit-actions">
+                                        <button type="submit" class="btn-save-profile">SAVE CHANGES</button>
+                                        <button type="button" class="btn-cancel-profile" onclick="cancelEditProfile('knownFacts')">CANCEL</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="panel-content known-facts-panel">
+                        <div class="profile-header-row">
+                            <h2>KNOWN FACTS</h2>
+                            <button type="button" class="edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}" onclick="toggleEditProfile('knownFacts')" title="${isAdminLoggedIn ? 'Edit known facts' : 'Owner access required'}">${isAdminLoggedIn ? '✎ EDIT' : '🔒 OWNER EDIT'}</button>
+                        </div>
+                        <div class="fact-box scrollable-facts-box">
+                            <ul>
+                                ${currentProfileData.knownFacts.map(fact => `<li>${escapeHtml(fact)}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (sectionKey === 'unknownFacts') {
+                if (isEditing) {
+                    return `
+                        <div class="panel-content unknown-facts-panel">
+                            <div class="profile-header-row">
+                                <h2>EDIT UNKNOWN FACTS</h2>
+                            </div>
+                            <div class="fact-box scrollable-facts-box">
+                                <form class="profile-edit-form" id="form-unknownFacts" onsubmit="event.preventDefault(); promptSaveProfile('unknownFacts');">
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">FACTS (ONE FACT PER LINE)</label>
+                                        <textarea class="profile-textarea-field" name="facts" rows="7" required>${escapeHtml(currentProfileData.unknownFacts.join('\n'))}</textarea>
+                                    </div>
+                                    <div class="profile-edit-actions">
+                                        <button type="submit" class="btn-save-profile">SAVE CHANGES</button>
+                                        <button type="button" class="btn-cancel-profile" onclick="cancelEditProfile('unknownFacts')">CANCEL</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="panel-content unknown-facts-panel">
+                        <div class="profile-header-row">
+                            <h2>UNKNOWN FACTS</h2>
+                            <button type="button" class="edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}" onclick="toggleEditProfile('unknownFacts')" title="${isAdminLoggedIn ? 'Edit unknown facts' : 'Owner access required'}">${isAdminLoggedIn ? '✎ EDIT' : '🔒 OWNER EDIT'}</button>
+                        </div>
+                        <div class="fact-box scrollable-facts-box">
+                            <ul>
+                                ${currentProfileData.unknownFacts.map(fact => `<li>${escapeHtml(fact)}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (sectionKey === 'hobbies') {
+                const hobbiesList = (Array.isArray(currentProfileData.hobbies) && currentProfileData.hobbies.length > 0)
+                    ? currentProfileData.hobbies
+                    : defaultProfileData.hobbies;
+
+                if (isEditing) {
+                    return `
+                        <div class="panel-content hobbies-panel">
+                            <div class="profile-header-row">
+                                <h2>EDIT HOBBIES</h2>
+                            </div>
+                            <div class="fact-box scrollable-facts-box">
+                                <form class="profile-edit-form" id="form-hobbies" onsubmit="event.preventDefault(); promptSaveProfile('hobbies');">
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">HOBBIES (ONE HOBBY PER LINE)</label>
+                                        <textarea class="profile-textarea-field" name="facts" rows="7" required>${escapeHtml(hobbiesList.join('\n'))}</textarea>
+                                    </div>
+                                    <div class="profile-edit-actions">
+                                        <button type="submit" class="btn-save-profile">SAVE CHANGES</button>
+                                        <button type="button" class="btn-cancel-profile" onclick="cancelEditProfile('hobbies')">CANCEL</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="panel-content hobbies-panel">
+                        <div class="profile-header-row">
+                            <h2>HOBBIES</h2>
+                            <button type="button" class="edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}" onclick="toggleEditProfile('hobbies')" title="${isAdminLoggedIn ? 'Edit hobbies' : 'Owner access required'}">${isAdminLoggedIn ? '✎ EDIT' : '🔒 OWNER EDIT'}</button>
+                        </div>
+                        <div class="fact-box scrollable-facts-box">
+                            <ul>
+                                ${hobbiesList.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (sectionKey === 'ultBias') {
+                if (isEditing) {
+                    return `
+                        <div class="panel-content who-i-ult-panel">
+                            <div class="profile-header-row">
+                                <h2>EDIT BIASES</h2>
+                            </div>
+                            <div class="fact-box scrollable-facts-box">
+                                <form class="profile-edit-form" id="form-ultBias" onsubmit="event.preventDefault(); promptSaveProfile('ultBias');">
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">K-POP MAIN BIASES</label>
+                                        <input class="profile-input-field" name="kpop" value="${escapeHtml(currentProfileData.ultBias.kpop)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">THAI GL &amp; ASIAN ENTERTAINMENT</label>
+                                        <input class="profile-input-field" name="thaiGl" value="${escapeHtml(currentProfileData.ultBias.thaiGl)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">P-POP / BINI</label>
+                                        <input class="profile-input-field" name="ppop" value="${escapeHtml(currentProfileData.ultBias.ppop)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">OTHER MAIN BIASES</label>
+                                        <input class="profile-input-field" name="other" value="${escapeHtml(currentProfileData.ultBias.other)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-edit-actions">
+                                        <button type="submit" class="btn-save-profile">SAVE CHANGES</button>
+                                        <button type="button" class="btn-cancel-profile" onclick="cancelEditProfile('ultBias')">CANCEL</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="panel-content who-i-ult-panel">
+                        <div class="profile-header-row">
+                            <h2>WHO I ULT</h2>
+                            <button type="button" class="edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}" onclick="toggleEditProfile('ultBias')" title="${isAdminLoggedIn ? 'Edit biases' : 'Owner access required'}">${isAdminLoggedIn ? '✎ EDIT' : '🔒 OWNER EDIT'}</button>
+                        </div>
+                        <div class="ult-tabs">
+                            <button type="button" class="ult-tab-btn active">★ BIAS</button>
+                            <button type="button" class="ult-tab-btn" onclick="switchUltTab('ultGroups')">★ GROUPS</button>
+                        </div>
+                        <div class="fact-box scrollable-facts-box">
+                            <div class="ult-category-group">
+                                <h4 class="ult-cat-title">★ K-POP MAIN BIASES</h4>
+                                <p class="ult-cat-items">${escapeHtml(currentProfileData.ultBias.kpop)}</p>
+                            </div>
+                            <div class="ult-category-group">
+                                <h4 class="ult-cat-title">★ THAI GL &amp; ASIAN ENTERTAINMENT</h4>
+                                <p class="ult-cat-items">${escapeHtml(currentProfileData.ultBias.thaiGl)}</p>
+                            </div>
+                            <div class="ult-category-group">
+                                <h4 class="ult-cat-title">★ P-POP / BINI</h4>
+                                <p class="ult-cat-items">${escapeHtml(currentProfileData.ultBias.ppop)}</p>
+                            </div>
+                            <div class="ult-category-group">
+                                <h4 class="ult-cat-title">★ OTHER MAIN BIASES</h4>
+                                <p class="ult-cat-items">${escapeHtml(currentProfileData.ultBias.other)}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (sectionKey === 'ultGroups') {
+                if (isEditing) {
+                    return `
+                        <div class="panel-content who-i-ult-panel">
+                            <div class="profile-header-row">
+                                <h2>EDIT GROUPS</h2>
+                            </div>
+                            <div class="fact-box scrollable-facts-box">
+                                <form class="profile-edit-form" id="form-ultGroups" onsubmit="event.preventDefault(); promptSaveProfile('ultGroups');">
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">MAIN ULT GROUPS</label>
+                                        <input class="profile-input-field" name="mainUlt" value="${escapeHtml(currentProfileData.ultGroups.mainUlt)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">OTHER GROUPS I STAN</label>
+                                        <input class="profile-input-field" name="stanGroups" value="${escapeHtml(currentProfileData.ultGroups.stanGroups)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-form-group">
+                                        <label class="profile-form-label">ULT BOY GROUPS &amp; SUB-UNITS</label>
+                                        <input class="profile-input-field" name="boyGroups" value="${escapeHtml(currentProfileData.ultGroups.boyGroups)}" required autocomplete="off">
+                                    </div>
+                                    <div class="profile-edit-actions">
+                                        <button type="submit" class="btn-save-profile">SAVE CHANGES</button>
+                                        <button type="button" class="btn-cancel-profile" onclick="cancelEditProfile('ultGroups')">CANCEL</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="panel-content who-i-ult-panel">
+                        <div class="profile-header-row">
+                            <h2>WHO I ULT</h2>
+                            <button type="button" class="edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}" onclick="toggleEditProfile('ultGroups')" title="${isAdminLoggedIn ? 'Edit groups' : 'Owner access required'}">${isAdminLoggedIn ? '✎ EDIT' : '🔒 OWNER EDIT'}</button>
+                        </div>
+                        <div class="ult-tabs">
+                            <button type="button" class="ult-tab-btn" onclick="switchUltTab('ultBias')">★ BIAS</button>
+                            <button type="button" class="ult-tab-btn active">★ GROUPS</button>
+                        </div>
+                        <div class="fact-box scrollable-facts-box">
+                            <div class="ult-category-group">
+                                <h4 class="ult-cat-title">★ MAIN ULT GROUPS</h4>
+                                <p class="ult-cat-items">${escapeHtml(currentProfileData.ultGroups.mainUlt)}</p>
+                            </div>
+                            <div class="ult-category-group">
+                                <h4 class="ult-cat-title">★ OTHER GROUPS I STAN</h4>
+                                <p class="ult-cat-items">${escapeHtml(currentProfileData.ultGroups.stanGroups)}</p>
+                            </div>
+                            <div class="ult-category-group">
+                                <h4 class="ult-cat-title">★ ULT BOY GROUPS &amp; SUB-UNITS</h4>
+                                <p class="ult-cat-items">${escapeHtml(currentProfileData.ultGroups.boyGroups)}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return '';
+        }
+
+        function toggleQuestDone(index) {
+            if (!isAdminLoggedIn) return;
+            playArcadeBeep();
+            if (!currentProfileData.sidequests || !currentProfileData.sidequests[index]) return;
+            currentProfileData.sidequests[index].done = !currentProfileData.sidequests[index].done;
+            try {
+                localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+            } catch {}
+            saveProfileToServer(currentProfileData);
+            renderPage('sidequests', false);
+        }
+
+        function toggleEditSideQuests() {
+            playArcadeBeep();
+            if (!isAdminLoggedIn) {
+                showAdminPasswordModal('Only the owner of the website can edit side quests.', () => {
+                    isEditingSideQuests = true;
+                    renderPage('sidequests', false);
+                });
+                return;
+            }
+            isEditingSideQuests = true;
+            renderPage('sidequests', false);
+        }
+
+        function cancelEditSideQuests() {
+            playArcadeBeep();
+            isEditingSideQuests = false;
+            renderPage('sidequests', false);
+        }
+
+        function addQuestInputRow() {
+            playArcadeBeep();
+            const list = document.getElementById('quest-edit-list');
+            if (!list) return;
+            const row = document.createElement('div');
+            row.className = 'quest-edit-row';
+            row.innerHTML = `
+                <input class="profile-input-field quest-edit-input" name="questText" placeholder="Enter quest description..." required autocomplete="off">
+                <button type="button" class="quest-delete-btn" onclick="this.closest('.quest-edit-row').remove()" title="Delete quest">✕</button>
+            `;
+            list.appendChild(row);
+            const input = row.querySelector('input');
+            if (input) input.focus();
+        }
+
+        function promptSaveSideQuests() {
+            const form = document.getElementById('form-sidequests');
+            if (!form) return;
+
+            showConfirmationModal(
+                'SAVE QUESTS?',
+                'Are you sure you want to save your updated side quests checklist?',
+                () => {
+                    const inputs = form.querySelectorAll('input[name="questText"]');
+                    const newQuests = [];
+                    const previousQuests = currentProfileData.sidequests || [];
+
+                    inputs.forEach((input, idx) => {
+                        const text = input.value.trim();
+                        if (text) {
+                            const existing = previousQuests.find(q => String(q.text || '').toLowerCase() === String(text || '').toLowerCase());
+                            newQuests.push({
+                                id: existing ? existing.id : `sq-${Date.now()}-${idx}`,
+                                text: text,
+                                done: existing ? existing.done : false
+                            });
+                        }
+                    });
+
+                    currentProfileData.sidequests = newQuests;
+                    try {
+                        localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+                    } catch {}
+
+                    saveProfileToServer(currentProfileData);
+                    isEditingSideQuests = false;
+                    showToast('SIDE QUESTS UPDATED!');
+                    renderPage('sidequests', false);
+                }
+            );
+        }
+
+        window.toggleQuestDone = toggleQuestDone;
+        window.toggleEditSideQuests = toggleEditSideQuests;
+        window.cancelEditSideQuests = cancelEditSideQuests;
+        window.addQuestInputRow = addQuestInputRow;
+        window.promptSaveSideQuests = promptSaveSideQuests;
+
+        function getSideQuestsContent() {
+            const quests = currentProfileData.sidequests || [];
+            const total = quests.length;
+            const completed = quests.filter(q => q.done).length;
+            const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+            if (isEditingSideQuests) {
+                return `
+                    <div class="panel-content sidequests-panel">
+                        <div class="profile-header-row">
+                            <h2>EDIT SIDE QUESTS</h2>
+                        </div>
+                        <div class="fact-box scrollable-facts-box">
+                            <h3>MISSION LOG EDITOR</h3>
+                            <form class="profile-edit-form" id="form-sidequests" onsubmit="event.preventDefault(); promptSaveSideQuests();">
+                                <div class="quest-edit-list" id="quest-edit-list">
+                                    ${quests.map((q) => `
+                                        <div class="quest-edit-row">
+                                            <input class="profile-input-field quest-edit-input" name="questText" value="${escapeHtml(q.text)}" placeholder="Enter quest description..." required autocomplete="off">
+                                            <button type="button" class="quest-delete-btn" onclick="this.closest('.quest-edit-row').remove()" title="Delete quest">✕</button>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <button type="button" class="btn-add-quest" onclick="addQuestInputRow()">+ ADD NEW QUEST</button>
+                                <div class="profile-edit-actions" style="margin-top: 14px;">
+                                    <button type="submit" class="btn-save-profile">SAVE CHANGES</button>
+                                    <button type="button" class="btn-cancel-profile" onclick="cancelEditSideQuests()">CANCEL</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="panel-content sidequests-panel">
+                    <div class="profile-header-row">
+                        <h2>SIDE QUESTS</h2>
+                        <button type="button" class="edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}" onclick="toggleEditSideQuests()" title="${isAdminLoggedIn ? 'Edit side quests' : 'Owner access required'}">${isAdminLoggedIn ? '✎ EDIT' : '🔒 OWNER EDIT'}</button>
+                    </div>
+                    <div class="fact-box scrollable-facts-box">
+                        <h3>MISSION LOG</h3>
+                        <div class="quest-progress-wrap">
+                            <div class="quest-progress-header">
+                                <span>QUEST PROGRESS</span>
+                                <span>${completed} / ${total} (${percent}%)</span>
+                            </div>
+                            <div class="quest-progress-track">
+                                <div class="quest-progress-fill" style="width: ${percent}%;"></div>
+                            </div>
+                        </div>
+                        <div class="quest-checklist">
+                            ${quests.length === 0 ? `
+                                <p class="quest-empty-msg">NO ACTIVE QUESTS.<br>CLICK "✎ EDIT" TO ADD YOUR FIRST QUEST!</p>
+                            ` : quests.map((q, idx) => `
+                                <div class="quest-item ${q.done ? 'completed' : ''} ${isAdminLoggedIn ? '' : 'view-only'}" ${isAdminLoggedIn ? `onclick="toggleQuestDone(${idx})" role="checkbox" aria-checked="${q.done}" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleQuestDone(${idx});}"` : `role="listitem"`} title="${isAdminLoggedIn ? 'Click to toggle quest status' : (q.done ? 'Quest completed' : 'Quest in progress')}">
+                                    <div class="quest-checkbox ${isAdminLoggedIn ? '' : 'view-only'}">${q.done ? '✔' : ''}</div>
+                                    <span class="quest-text">${escapeHtml(q.text)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        const profileSections = {
+            socials: `
+                <div class="panel-content">
+                    <h2>SOCIALS</h2>
+                    <div class="fact-box socials-box">
+                        <div class="social-links">
+                            <a class="social-link" href="mailto:danyaellap@gmail.com" target="_blank" rel="noopener noreferrer">EMAIL</a>
+                            <a class="social-link" href="https://www.instagram.com/dandandalandamn/" target="_blank" rel="noopener noreferrer">INSTAGRAM</a>
+                            <a class="social-link" href="https://github.com/heyoanon/heyoanon" target="_blank" rel="noopener noreferrer">GITHUB</a>
+                            <a class="social-link" href="https://discord.com/users/772073053097033741" target="_blank" rel="noopener noreferrer">DISCORD</a>
+                            <a class="social-link" href="https://open.spotify.com/user/31xlsqnowc5autb22oupuge64fvq" target="_blank" rel="noopener noreferrer">SPOTIFY</a>
+                            <a class="social-link" href="https://www.youtube.com/@anoanondan" target="_blank" rel="noopener noreferrer">YOUTUBE</a>
+                            <a class="social-link" href="https://www.reddit.com/user/AnonymousDan_03/" target="_blank" rel="noopener noreferrer">REDDIT</a>
+                        </div>
+                    </div>
+                </div>
+            `,
+            nowPlaying: `
+                <div class="panel-content now-playing-panel">
+                    <h2>NOW PLAYING</h2>
+                    <div class="fact-box lanyard-box">
+                        <div id="lanyard-music-list" class="lanyard-music-list">
+                            <p class="lanyard-activity">CONNECTING TO AUDIO STREAM...</p>
+                        </div>
+                    </div>
+                </div>
+            `,
+            message: `
+                <div class="panel-content">
+                    <h2>MESSAGE ME</h2>
+                    <div class="fact-box message-box">
+                        <label for="message-input" class="message-label">TYPE YOUR MESSAGE</label>
+                        <textarea id="message-input" class="message-textarea" placeholder="Write something nice..."></textarea>
+                        <button type="button" class="message-submit">SEND</button>
+                    </div>
+                </div>
+            `
+        };
+
+        if (!rightPanel) {
+            rightPanel = document.getElementById('right-panel');
+        }
+
+        function playArcadeBeep(frequency = 620, endFreq = 330, duration = 0.09, type = 'square') {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                arcadeAudioContext ||= new AudioCtx();
+                if (arcadeAudioContext.state === 'suspended') {
+                    arcadeAudioContext.resume().catch(() => {});
+                }
+                const oscillator = arcadeAudioContext.createOscillator();
+                const gain = arcadeAudioContext.createGain();
+                const startTime = arcadeAudioContext.currentTime;
+
+                oscillator.type = type;
+                oscillator.frequency.setValueAtTime(frequency, startTime);
+                oscillator.frequency.exponentialRampToValueAtTime(Math.max(10, endFreq), startTime + duration * 0.85);
+                gain.gain.setValueAtTime(0.0001, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.12, startTime + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+                oscillator.connect(gain);
+                gain.connect(arcadeAudioContext.destination);
+                oscillator.start(startTime);
+                oscillator.stop(startTime + duration + 0.01);
+            } catch {}
+        }
+
+        function navigateBack(target = 'menu') {
+            playArcadeBeep();
+            editingSection = null;
+            isEditingSideQuests = false;
+            stopArcadeGame();
+            stopLanyardRefresh();
+
+            const currentState = window.history.state;
+            if (currentState && typeof currentState.depth === 'number' && currentState.depth > 0) {
+                history.back();
+            } else if (window.history.length > 1 && currentState) {
+                history.back();
+            } else {
+                if (target === 'profile') {
+                    history.replaceState({ screen: 'page', page: 'profile', depth: 1 }, '', '#profile');
+                    renderPage('profile', false);
+                } else {
+                    history.replaceState({ screen: 'menu', depth: 0 }, '', '#menu');
+                    renderMainMenu(false);
+                }
+            }
+        }
+
+        function renderMainMenu(updateHistory = true) {
+            stopLanyardRefresh();
+            stopArcadeGame();
+            editingSection = null;
+            isEditingSideQuests = false;
+            if (updateHistory) {
+                if (window.location.hash !== '' && window.location.hash !== '#menu') {
+                    history.pushState({ screen: 'menu', depth: 0 }, '', '#menu');
+                } else if (!history.state || history.state.screen !== 'menu') {
+                    history.replaceState({ screen: 'menu', depth: 0 }, '', '#menu');
+                }
+            }
+            rightPanel.innerHTML = `
+                <div class="menu-panel">
+                    <h1>WHOAMI</h1>
+                    <button class="menu-item" data-page="profile">PROFILE</button>
+                    <button class="menu-item" data-page="socials">SOCIALS</button>
+                    <button class="menu-item" data-page="nowPlaying">NOW PLAYING</button>
+                    <button class="menu-item" data-page="sidequests">SIDE QUESTS</button>
+                    <button class="menu-item" data-page="message">MESSAGE ME</button>
+                    <button class="menu-item" data-page="randomGame">RANDOM GAME</button>
+                </div>
+            `;
+
+            document.querySelectorAll('.menu-item').forEach(button => {
+                button.addEventListener('click', () => {
+                    playArcadeBeep();
+                    renderPage(button.dataset.page, true);
+                });
+                if (button.dataset.page === 'nowPlaying') {
+                    button.addEventListener('mouseenter', prefetchNowPlaying, { passive: true });
+                    button.addEventListener('touchstart', prefetchNowPlaying, { passive: true });
+                }
+            });
+        }
+
+        function stopLanyardRefresh() {
+            isMonitoringNowPlaying = false;
+            if (lanyardRefreshTimer) {
+                clearInterval(lanyardRefreshTimer);
+                lanyardRefreshTimer = null;
+            }
+            if (lanyardReconnectTimer) {
+                clearTimeout(lanyardReconnectTimer);
+                lanyardReconnectTimer = null;
+            }
+            disconnectLanyardSocket();
+            disconnectDirectStream();
+            stopTrackProgress();
+        }
+
+        function disconnectLanyardSocket() {
+            if (lanyardHeartbeatTimer) {
+                clearInterval(lanyardHeartbeatTimer);
+                lanyardHeartbeatTimer = null;
+            }
+            if (lanyardSocket) {
+                try {
+                    lanyardSocket.onclose = null;
+                    lanyardSocket.onerror = null;
+                    lanyardSocket.close();
+                } catch {}
+                lanyardSocket = null;
+            }
+        }
+
+        function disconnectDirectStream() {
+            if (directEventSource) {
+                try {
+                    directEventSource.close();
+                } catch {}
+                directEventSource = null;
+            }
+        }
+
+        function syncDirectTrackWithLanyard(presence) {
+            if (!presence) return;
+            if (presence.listening_to_spotify && presence.spotify && presence.spotify.song) {
+                if (latestDirectTrack && latestDirectTrack.source && String(latestDirectTrack.source).toLowerCase() === 'spotify') {
+                    if (String(latestDirectTrack.title || '').toLowerCase() !== String(presence.spotify.song || '').toLowerCase()) {
+                        latestDirectTrack = null;
+                    }
+                }
+            }
+            if (Array.isArray(presence.activities)) {
+                for (const act of presence.activities) {
+                    const parsed = parseMusicActivity(act);
+                    if (parsed && latestDirectTrack && latestDirectTrack.source &&
+                        String(latestDirectTrack.source).toLowerCase() === String(parsed.source || '').toLowerCase()) {
+                        if (String(latestDirectTrack.title || '').toLowerCase() !== String(parsed.title || '').toLowerCase()) {
+                            latestDirectTrack = null;
+                        }
+                    }
+                }
+            }
+        }
+
+        function connectDirectStream() {
+            if (typeof EventSource === 'undefined') return;
+            if (directEventSource) return;
+
+            try {
+                directEventSource = new EventSource('/api/now-playing/stream');
+                directEventSource.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        if (data) {
+                            latestDirectTrack = data.isPlaying ? data : null;
+                            renderUnifiedMusic();
+                        }
+                    } catch {}
+                };
+                directEventSource.onerror = () => {
+                    if (directEventSource) {
+                        directEventSource.close();
+                        directEventSource = null;
+                    }
+                    if (isMonitoringNowPlaying) {
+                        setTimeout(() => {
+                            if (isMonitoringNowPlaying && !directEventSource) {
+                                connectDirectStream();
+                            }
+                        }, 3000);
+                    }
+                };
+            } catch {}
+        }
+
+        function connectLanyardSocket() {
+            if (typeof WebSocket === 'undefined') return;
+            if (lanyardSocket && (lanyardSocket.readyState === WebSocket.OPEN || lanyardSocket.readyState === WebSocket.CONNECTING)) {
+                return;
+            }
+
+            try {
+                lanyardSocket = new WebSocket('wss://api.lanyard.rest/socket');
+
+                lanyardSocket.onmessage = (event) => {
+                    try {
+                        const message = JSON.parse(event.data);
+                        const { op, t, d } = message;
+
+                        if (op === 1) { // Hello
+                            const heartbeatInterval = d.heartbeat_interval || 30000;
+                            if (lanyardSocket && lanyardSocket.readyState === WebSocket.OPEN) {
+                                lanyardSocket.send(JSON.stringify({
+                                    op: 2,
+                                    d: {
+                                        subscribe_to_id: DISCORD_USER_ID
+                                    }
+                                }));
+                            }
+
+                            if (lanyardHeartbeatTimer) clearInterval(lanyardHeartbeatTimer);
+                            lanyardHeartbeatTimer = setInterval(() => {
+                                if (lanyardSocket && lanyardSocket.readyState === WebSocket.OPEN) {
+                                    lanyardSocket.send(JSON.stringify({ op: 3 }));
+                                }
+                            }, heartbeatInterval);
+                        } else if (op === 0) { // Event
+                            if (t === 'INIT_STATE' || t === 'PRESENCE_UPDATE') {
+                                latestLanyardPresence = d;
+                                syncDirectTrackWithLanyard(d);
+                                renderUnifiedMusic();
+                            }
+                        }
+                    } catch (err) {
+                        console.warn('Lanyard socket message parse warning:', err);
+                    }
+                };
+
+                lanyardSocket.onopen = () => {
+                    if (lanyardReconnectTimer) {
+                        clearTimeout(lanyardReconnectTimer);
+                        lanyardReconnectTimer = null;
+                    }
+                };
+
+                lanyardSocket.onerror = (err) => {
+                    console.warn('Lanyard WebSocket notice:', err);
+                };
+
+                lanyardSocket.onclose = () => {
+                    if (lanyardHeartbeatTimer) {
+                        clearInterval(lanyardHeartbeatTimer);
+                        lanyardHeartbeatTimer = null;
+                    }
+                    lanyardSocket = null;
+                    if (isMonitoringNowPlaying) {
+                        if (lanyardReconnectTimer) clearTimeout(lanyardReconnectTimer);
+                        lanyardReconnectTimer = setTimeout(() => {
+                            if (isMonitoringNowPlaying) connectLanyardSocket();
+                        }, 1500);
+                    }
+                };
+            } catch (err) {
+                console.warn('Unable to initialize Lanyard WebSocket:', err);
+            }
+        }
+
+        async function prefetchNowPlaying() {
+            if (isPrefetching) return;
+            isPrefetching = true;
+            try {
+                const fetchWithTimeout = async (url, timeoutMs) => {
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), timeoutMs);
+                    try {
+                        const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
+                        clearTimeout(timer);
+                        return res.ok ? await res.json() : null;
+                    } catch {
+                        clearTimeout(timer);
+                        return null;
+                    }
+                };
+
+                const lastFmParam = currentProfileData.lastfmUser ? `?lastfm=${encodeURIComponent(currentProfileData.lastfmUser)}` : '';
+                const [lanyardData, directData] = await Promise.all([
+                    fetchWithTimeout(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`, 4000),
+                    fetchWithTimeout('/api/now-playing' + lastFmParam, 4000)
+                ]);
+
+                if (lanyardData && lanyardData.success && lanyardData.data) {
+                    latestLanyardPresence = lanyardData.data;
+                    syncDirectTrackWithLanyard(lanyardData.data);
+                }
+                if (directData) {
+                    latestDirectTrack = directData.isPlaying ? directData : null;
+                    if (directData.onRepeat && (!currentProfileData.onRepeat || !currentProfileData.onRepeat.title)) {
+                        currentProfileData.onRepeat = directData.onRepeat;
+                    }
+                }
+
+                const musicList = document.getElementById('lanyard-music-list');
+                if (musicList && (latestDirectTrack || latestLanyardPresence)) {
+                    renderUnifiedMusic();
+                }
+            } catch (err) {
+                console.warn('Prefetch notice:', err);
+            } finally {
+                isPrefetching = false;
+            }
+        }
+
+        function startLanyardMonitoring() {
+            stopLanyardRefresh();
+            isMonitoringNowPlaying = true;
+            const musicList = document.getElementById('lanyard-music-list');
+
+            if (latestDirectTrack || latestLanyardPresence) {
+                renderUnifiedMusic();
+            } else if (musicList) {
+                musicList.innerHTML = '<p class="lanyard-activity">CONNECTING TO AUDIO STREAM...</p>';
+                musicList.hidden = false;
+            }
+
+            isLoadingLanyard = false;
+            fetchLanyardPresence();
+            connectLanyardSocket();
+            connectDirectStream();
+            lanyardRefreshTimer = setInterval(fetchLanyardPresence, 2000);
+        }
+
+        function stopTrackProgress() {
+            if (trackProgressTimer) {
+                clearInterval(trackProgressTimer);
+                trackProgressTimer = undefined;
+            }
+        }
+
+        function formatTrackTime(totalSeconds) {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function updateTrackProgress() {
+            document.querySelectorAll('.lanyard-track-timing[data-start][data-end]').forEach(timing => {
+                const startedAt = Number(timing.dataset.start);
+                const endsAt = Number(timing.dataset.end);
+                const durationSeconds = Math.floor((endsAt - startedAt) / 1000);
+                const elapsedSeconds = Math.min(durationSeconds, Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
+                const progressPercent = durationSeconds > 0 ? (elapsedSeconds / durationSeconds) * 100 : 0;
+                const elapsedTime = timing.querySelector('[data-elapsed-time]');
+                const totalTime = timing.querySelector('[data-total-time]');
+                const progress = timing.querySelector('[role="progressbar"]');
+                const progressFill = timing.querySelector('.lanyard-track-progress-fill');
+
+                if (!elapsedTime || !totalTime || !progress || !progressFill || durationSeconds <= 0) return;
+
+                elapsedTime.textContent = formatTrackTime(elapsedSeconds);
+                totalTime.textContent = formatTrackTime(durationSeconds);
+                progress.setAttribute('aria-valuenow', String(Math.round(progressPercent)));
+                progressFill.style.width = `${progressPercent}%`;
+                timing.hidden = false;
+
+                // Instant detection when track ends: query next track immediately
+                if (elapsedSeconds >= durationSeconds) {
+                    if (!timing.dataset.trackEnded) {
+                        timing.dataset.trackEnded = 'true';
+                        fetchLanyardPresence();
+                        setTimeout(fetchLanyardPresence, 1200);
+                    }
+                }
+            });
+        }
+
+        async function fetchAlbumForTrack(artist, title) {
+            const cleanArtist = (artist || '').trim();
+            const cleanTitle = (title || '').trim();
+            if (!cleanArtist || !cleanTitle) return null;
+            const key = `${cleanArtist.toLowerCase()} - ${cleanTitle.toLowerCase()}`;
+            if (albumCache.has(key)) return albumCache.get(key);
+
+            try {
+                const query = encodeURIComponent(`${cleanArtist} ${cleanTitle}`);
+                const response = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`);
+                if (!response.ok) return null;
+                const result = await response.json();
+                const albumName = result.results?.[0]?.collectionName || null;
+                albumCache.set(key, albumName);
+                return albumName;
+            } catch {
+                return null;
+            }
+        }
+
+        function resolveDiscordAssetUrl(applicationId, assetId) {
+            if (!assetId || typeof assetId !== 'string') {
+                return { url: null, fallback: null };
+            }
+            if (assetId.startsWith('spotify:')) {
+                return { url: `https://i.scdn.co/image/${assetId.slice('spotify:'.length)}`, fallback: null };
+            }
+            if (assetId.startsWith('youtube:')) {
+                return { url: `https://i.ytimg.com/vi/${assetId.slice('youtube:'.length)}/hqdefault.jpg`, fallback: null };
+            }
+            if (assetId.startsWith('mp:external/')) {
+                let directUrl = null;
+                const match = assetId.match(/^mp:external\/[^/]+\/(https?)\/(.+)$/);
+                if (match) {
+                    try {
+                        directUrl = `${match[1]}://${decodeURIComponent(match[2])}`;
+                    } catch {
+                        directUrl = `${match[1]}://${match[2]}`;
+                    }
+                }
+                const proxyUrl = `https://media.discordapp.net/external/${assetId.slice('mp:external/'.length)}`;
+                return { url: directUrl || proxyUrl, fallback: directUrl ? proxyUrl : null };
+            }
+            if (assetId.startsWith('http://') || assetId.startsWith('https://')) {
+                return { url: assetId, fallback: null };
+            }
+            if (applicationId) {
+                return {
+                    url: `https://cdn.discordapp.com/app-assets/${applicationId}/${assetId}.png`,
+                    fallback: `https://cdn.discordapp.com/app-assets/${applicationId}/${assetId}.webp`
+                };
+            }
+            return { url: null, fallback: null };
+        }
+
+        function parseMusicActivity(activity) {
+            if (!activity) return null;
+
+            const name = (activity.name || '').trim();
+            const nameLower = name.toLowerCase();
+            const details = (activity.details || '').trim();
+            const state = (activity.state || '').trim();
+            const detailsUrl = (activity.details_url || '').trim();
+            const appId = String(activity.application_id || '');
+            const actType = activity.type;
+            const statusDisplay = activity.status_display_type;
+
+            const buttons = Array.isArray(activity.buttons) ? activity.buttons : [];
+            const buttonTexts = [];
+            const buttonUrls = [];
+            for (const b of buttons) {
+                if (typeof b === 'string') {
+                    buttonTexts.push(String(b).toLowerCase());
+                } else if (b && typeof b === 'object') {
+                    if (b.label) buttonTexts.push(String(b.label).toLowerCase());
+                    if (b.url) buttonUrls.push(String(b.url).toLowerCase());
+                }
+            }
+
+            const largeImage = String(activity.assets?.large_image || '');
+            const largeText = (activity.assets?.large_text || '').trim();
+            const smallText = (activity.assets?.small_text || '').trim();
+
+            const isBitChord = appId === '1543679166967193620' ||
+                               nameLower.includes('bitchord') ||
+                               buttonTexts.some(t => t.includes('bitchord')) ||
+                               detailsUrl.toLowerCase().includes('bitchord');
+
+            const isYouTubeMusic = nameLower.includes('youtube music') ||
+                                   nameLower.includes('yt music') ||
+                                   detailsUrl.toLowerCase().includes('music.youtube.com') ||
+                                   buttonUrls.some(u => u.includes('music.youtube.com')) ||
+                                   buttonTexts.some(t => t.includes('youtube music'));
+
+            const isSpotify = nameLower.includes('spotify') ||
+                              String(activity.id || '').startsWith('spotify:') ||
+                              largeImage.startsWith('spotify:') ||
+                              detailsUrl.toLowerCase().includes('open.spotify.com');
+
+            const isListeningType = actType === 2 || statusDisplay === 2;
+            const isOtherMusic = /apple music|soundcloud|tidal|deezer|musicbee|foobar2000|cider|aimp|winamp|vlc/i.test(name);
+
+            if (!isBitChord && !isYouTubeMusic && !isSpotify && !isListeningType && !isOtherMusic) {
+                return null;
+            }
+
+            let source = 'Music';
+            if (isBitChord) {
+                source = 'BitChord';
+            } else if (isYouTubeMusic) {
+                source = 'YouTube Music';
+            } else if (isSpotify) {
+                source = 'Spotify';
+            } else if (name) {
+                source = name;
+            }
+
+            let title = details || state || name;
+            title = title.replace(/^listening to\s+/i, '').trim();
+
+            let artist = '';
+            if (details && state && details !== state) {
+                artist = state.replace(/^by\s+/i, '').trim();
+            }
+
+            let album = '';
+            const candidateAlbum = largeText || smallText;
+            if (candidateAlbum &&
+                candidateAlbum.toLowerCase() !== nameLower &&
+                !/^(youtube music|bitchord|spotify)$/i.test(candidateAlbum) &&
+                candidateAlbum !== title &&
+                candidateAlbum !== artist) {
+                album = candidateAlbum;
+            }
+
+            const { url: artworkUrl, fallback: fallbackArtworkUrl } = resolveDiscordAssetUrl(
+                activity.application_id,
+                activity.assets?.large_image
+            );
+
+            let url = detailsUrl || '';
+            if (!url && buttonUrls.length > 0) {
+                url = buttonUrls[0];
+            }
+            if (!url) {
+                const searchQuery = encodeURIComponent(`${title} ${artist}`.trim());
+                if (isYouTubeMusic || isBitChord) {
+                    url = `https://music.youtube.com/search?q=${searchQuery}`;
+                } else if (isSpotify) {
+                    url = `https://open.spotify.com/search/${searchQuery}`;
+                } else if (title) {
+                    url = `https://www.google.com/search?q=${encodeURIComponent(`${source} ${title} ${artist}`.trim())}`;
+                }
+            }
+
+            return {
+                source,
+                title,
+                artist,
+                album,
+                artworkUrl,
+                fallbackArtworkUrl,
+                url,
+                timestamps: activity.timestamps || null
+            };
+        }
+
+        let selectedStreamingService = 'Spotify';
+        function selectStreamingService(service) {
+            playArcadeBeep();
+            selectedStreamingService = service;
+            const input = document.getElementById('live-stream-service');
+            if (input) input.value = service;
+            document.querySelectorAll('.streaming-service-pill').forEach(p => p.classList.remove('active'));
+            if (service === 'Spotify') document.getElementById('pill-spotify')?.classList.add('active');
+            else if (service === 'YouTube Music') document.getElementById('pill-ytm')?.classList.add('active');
+            else if (service === 'Apple Music') document.getElementById('pill-apple')?.classList.add('active');
+        }
+        window.selectStreamingService = selectStreamingService;
+
+        async function submitLiveStreamBroadcast() {
+            playArcadeBeep();
+            const service = selectedStreamingService || 'Spotify';
+            const titleInput = document.getElementById('live-stream-title');
+            const artistInput = document.getElementById('live-stream-artist');
+            const title = (titleInput ? titleInput.value : '').trim();
+            const artist = (artistInput ? artistInput.value : '').trim();
+
+            if (!title) {
+                if (titleInput) titleInput.focus();
+                showToast('PLEASE ENTER A SONG TITLE!');
+                return;
+            }
+
+            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const devName = isMobile ? 'Mobile Phone' : 'Desktop PC';
+            const devType = isMobile ? 'mobile' : 'desktop';
+
+            const token = getStoredAdminToken();
+            try {
+                const res = await fetch('/api/now-playing', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    },
+                    body: JSON.stringify({
+                        source: service,
+                        title,
+                        artist,
+                        isPlaying: true,
+                        device: devName,
+                        deviceType: devType
+                    })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.error || 'Failed to broadcast stream');
+                }
+
+                showToast(`NOW STREAMING ON ${service.toUpperCase()}!`);
+                editingSection = null;
+                renderPage('nowPlaying', false);
+            } catch (err) {
+                showToast(err.message || 'Broadcast failed.');
+            }
+        }
+        window.submitLiveStreamBroadcast = submitLiveStreamBroadcast;
+
+        async function clearLiveStreamBroadcast() {
+            playArcadeBeep();
+            const token = getStoredAdminToken();
+            try {
+                await fetch('/api/now-playing', {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    }
+                });
+                showToast('STREAM STOPPED (RETURNED TO ON REPEAT).');
+                editingSection = null;
+                renderPage('nowPlaying', false);
+            } catch (err) {
+                showToast('Unable to clear stream.');
+            }
+        }
+        window.clearLiveStreamBroadcast = clearLiveStreamBroadcast;
+
+        let lastPlayedTrackKey = '';
+        function checkAndNotifyTrackChange(track) {
+            if (!track || !track.title) return;
+            const currentKey = `${track.source || ''}:::${track.title || ''}:::${track.artist || ''}:::${track.device || ''}`;
+            if (lastPlayedTrackKey && lastPlayedTrackKey !== currentKey) {
+                const musicList = document.getElementById('lanyard-music-list');
+                if (musicList) {
+                    musicList.classList.remove('track-change-flash');
+                    void musicList.offsetWidth;
+                    musicList.classList.add('track-change-flash');
+                }
+                const devSuffix = track.device ? ` on ${track.device}` : '';
+                showToast(`TRACK CHANGED: "${track.title}"${devSuffix}`);
+            }
+            lastPlayedTrackKey = currentKey;
+        }
+
+        function createMusicCard(track) {
+            const card = document.createElement('article');
+            card.className = 'lanyard-music-card';
+            if (!track.artworkUrl) {
+                card.classList.add('no-art');
+            }
+
+            const sourceStr = String(track.source || 'Music').trim();
+            const sourceLower = sourceStr.toLowerCase();
+            let sourceLabelHtml = '';
+            let sourceClass = 'live';
+            let listenBtnClass = 'streaming-listen-btn';
+            let listenBtnText = '▶ LISTEN';
+
+            if (sourceLower.includes('spotify')) {
+                sourceClass += ' source-spotify';
+                sourceLabelHtml = '<span class="live-pulse spotify-pulse"></span> 🟢 LIVE ON SPOTIFY';
+                listenBtnClass += ' spotify';
+                listenBtnText = '▶ OPEN ON SPOTIFY';
+            } else if (sourceLower.includes('youtube') || sourceLower.includes('ytm')) {
+                sourceClass += ' source-ytm';
+                sourceLabelHtml = '<span class="live-pulse ytm-pulse"></span> 🔴 LIVE ON YOUTUBE MUSIC';
+                listenBtnClass += ' ytm';
+                listenBtnText = '▶ OPEN ON YOUTUBE MUSIC';
+            } else if (sourceLower.includes('apple') || sourceLower.includes('itunes')) {
+                sourceClass += ' source-apple';
+                sourceLabelHtml = '<span class="live-pulse apple-pulse"></span> 🍎 LIVE ON APPLE MUSIC';
+                listenBtnClass += ' apple';
+                listenBtnText = '▶ OPEN ON APPLE MUSIC';
+            } else {
+                sourceLabelHtml = `<span class="live-pulse"></span> LIVE NOW • ${escapeHtml(sourceStr.toUpperCase())}`;
+            }
+
+            const sourceLabel = document.createElement('span');
+            sourceLabel.className = `lanyard-source-label ${sourceClass}`;
+            sourceLabel.innerHTML = sourceLabelHtml;
+            card.appendChild(sourceLabel);
+
+            if (track.artworkUrl) {
+                const albumArt = document.createElement('img');
+                albumArt.className = 'lanyard-album-art';
+                albumArt.alt = `${track.source || 'Music'} album art`;
+                albumArt.src = track.artworkUrl;
+                albumArt.onerror = () => {
+                    if (track.fallbackArtworkUrl && albumArt.src !== track.fallbackArtworkUrl) {
+                        albumArt.src = track.fallbackArtworkUrl;
+                        return;
+                    }
+                    albumArt.hidden = true;
+                    card.classList.add('no-art');
+                    console.warn(`Unable to load ${track.source || 'Music'} album artwork.`);
+                };
+                card.appendChild(albumArt);
+            }
+
+            const trackInfo = document.createElement('div');
+            trackInfo.className = 'lanyard-track-info';
+
+            const trackTitle = document.createElement(track.url ? 'a' : 'p');
+            trackTitle.className = 'lanyard-track-link';
+            trackTitle.textContent = track.title || `Listening on ${track.source}`;
+            if (track.url) {
+                trackTitle.href = track.url;
+                trackTitle.target = '_blank';
+                trackTitle.rel = 'noopener noreferrer';
+            }
+            trackInfo.appendChild(trackTitle);
+
+            if (track.artist || track.album) {
+                const trackDetails = document.createElement('div');
+                trackDetails.className = 'lanyard-track-details';
+                if (track.artist) {
+                    const artist = document.createElement('span');
+                    artist.className = 'lanyard-track-artists';
+                    artist.textContent = track.artist;
+                    trackDetails.appendChild(artist);
+                }
+                if (track.album) {
+                    const album = document.createElement('span');
+                    album.className = 'lanyard-track-album-line';
+                    album.textContent = track.album;
+                    trackDetails.appendChild(album);
+                } else if (track.artist && track.title) {
+                    fetchAlbumForTrack(track.artist, track.title).then(albumName => {
+                        if (albumName && !trackDetails.querySelector('.lanyard-track-album-line')) {
+                            track.album = albumName;
+                            const album = document.createElement('span');
+                            album.className = 'lanyard-track-album-line';
+                            album.textContent = albumName;
+                            trackDetails.appendChild(album);
+                        }
+                    });
+                }
+                trackInfo.appendChild(trackDetails);
+            }
+
+            // Where it plays badge (Device Location Indicator)
+            const deviceRaw = (track.device || '').trim();
+            const deviceType = (track.deviceType || '').toLowerCase();
+            let devIcon = '🎧';
+            let devLabel = '';
+            let isMobileDev = false;
+
+            if (deviceType === 'mobile' || /mobile|phone|iphone|android|ipad/i.test(deviceRaw)) {
+                devIcon = '📱';
+                isMobileDev = true;
+                devLabel = deviceRaw ? `PLAYING ON ${deviceRaw.toUpperCase()}` : 'PLAYING ON MOBILE PHONE';
+            } else if (deviceType === 'desktop' || /desktop|pc|windows|mac|brave|chrome|firefox|edge/i.test(deviceRaw)) {
+                devIcon = '💻';
+                devLabel = deviceRaw ? `PLAYING ON ${deviceRaw.toUpperCase()}` : 'PLAYING ON DESKTOP PC';
+            } else if (deviceRaw) {
+                devLabel = `PLAYING ON ${deviceRaw.toUpperCase()}`;
+            }
+
+            if (devLabel) {
+                const devBadge = document.createElement('div');
+                devBadge.className = `lanyard-device-pill ${isMobileDev ? 'mobile-device' : 'desktop-device'}`;
+                devBadge.innerHTML = `
+                    <span class="device-pill-icon">${devIcon}</span>
+                    <span class="device-pill-text">${escapeHtml(devLabel)}</span>
+                    <span class="retro-eq-bars" title="Audio playing live">
+                        <span class="retro-bar bar-1"></span>
+                        <span class="retro-bar bar-2"></span>
+                        <span class="retro-bar bar-3"></span>
+                        <span class="retro-bar bar-4"></span>
+                    </span>
+                `;
+                trackInfo.appendChild(devBadge);
+            }
+
+            const timestamps = track.timestamps || {};
+            const startedAt = Number(timestamps.start);
+            const endsAt = Number(timestamps.end);
+            const hasTiming = Number.isFinite(startedAt) && Number.isFinite(endsAt) && startedAt > 0 && endsAt > startedAt;
+            if (hasTiming) {
+                const timing = document.createElement('div');
+                timing.className = 'lanyard-track-timing';
+                timing.dataset.start = String(startedAt);
+                timing.dataset.end = String(endsAt);
+
+                const elapsedTime = document.createElement('span');
+                elapsedTime.dataset.elapsedTime = '';
+                elapsedTime.textContent = '00:00';
+
+                const progress = document.createElement('div');
+                progress.className = 'lanyard-track-progress';
+                progress.setAttribute('role', 'progressbar');
+                progress.setAttribute('aria-label', `${track.source} track progress`);
+                progress.setAttribute('aria-valuemin', '0');
+                progress.setAttribute('aria-valuemax', '100');
+                progress.setAttribute('aria-valuenow', '0');
+
+                const progressFill = document.createElement('span');
+                progressFill.className = 'lanyard-track-progress-fill';
+                progress.appendChild(progressFill);
+
+                const totalTime = document.createElement('span');
+                totalTime.dataset.totalTime = '';
+                totalTime.textContent = '00:00';
+
+                timing.append(elapsedTime, progress, totalTime);
+                trackInfo.appendChild(timing);
+            }
+
+            if (track.url) {
+                const listenBtn = document.createElement('a');
+                listenBtn.className = listenBtnClass;
+                listenBtn.href = track.url;
+                listenBtn.target = '_blank';
+                listenBtn.rel = 'noopener noreferrer';
+                listenBtn.textContent = listenBtnText;
+                trackInfo.appendChild(listenBtn);
+            }
+
+            card.appendChild(trackInfo);
+            return { element: card, hasTiming };
+        }
+
+        function renderNoMusic(musicList, presence, customMessage) {
+            if (!musicList) return;
+
+            const onRepeat = currentProfileData.onRepeat;
+            const currentVibe = (onRepeat && onRepeat.title)
+                ? onRepeat
+                : curatedVibes[currentVibeIndex % curatedVibes.length];
+
+            const title = currentVibe.title || 'Supernova';
+            const artist = currentVibe.artist || 'aespa';
+            const album = currentVibe.album || '';
+            const artwork = currentVibe.artworkUrl || 'pacman-pac.gif';
+            const trackUrl = currentVibe.url || `https://www.google.com/search?q=${encodeURIComponent(title + ' ' + artist)}`;
+
+            musicList.innerHTML = `
+                <div class="lanyard-music-card vibe-card">
+                    <span class="lanyard-source-label on-repeat">★ CURRENT VIBE • ON REPEAT</span>
+                    <img class="lanyard-album-art" src="${escapeHtml(artwork)}" alt="${escapeHtml(title)}" onerror="this.src='pacman-pac.gif'">
+                    <div class="lanyard-track-info">
+                        <a class="lanyard-track-link" href="${escapeHtml(trackUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a>
+                        <div class="lanyard-track-details">
+                            <span class="lanyard-track-artists">${escapeHtml(artist)}</span>
+                            ${album ? `<span class="lanyard-track-album-line">${escapeHtml(album)}</span>` : ''}
+                        </div>
+                        <div class="vibe-actions-row">
+                            <a class="vibe-action-btn listen" href="${escapeHtml(trackUrl)}" target="_blank" rel="noopener noreferrer">▶ LISTEN</a>
+                            <button type="button" class="vibe-action-btn next" onclick="cycleNextCuratedVibe()">⏭ NEXT VIBE (${(currentVibeIndex % curatedVibes.length) + 1}/${curatedVibes.length})</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="now-playing-footer">
+                    <span class="stream-status-pill"><span class="status-dot standby"></span> STANDBY (SHOWING ON REPEAT)</span>
+                    <button type="button" class="stream-check-btn" onclick="fetchLanyardPresence()">CHECK LIVE ⟳</button>
+                </div>
+            `;
+            musicList.hidden = false;
+        }
+
+        function cycleNextCuratedVibe() {
+            playArcadeBeep();
+            currentVibeIndex = (currentVibeIndex + 1) % curatedVibes.length;
+            const musicList = document.getElementById('lanyard-music-list');
+            if (musicList) {
+                renderNoMusic(musicList, latestLanyardPresence);
+            }
+        }
+        window.cycleNextCuratedVibe = cycleNextCuratedVibe;
+
+        window.fetchLanyardPresence = fetchLanyardPresence;
+
+        function renderUnifiedMusic() {
+            const musicList = document.getElementById('lanyard-music-list');
+            if (!musicList) return;
+
+            stopTrackProgress();
+
+            const tracks = [];
+
+            // Determine default Discord active device
+            let discordDevice = 'Desktop PC (Discord)';
+            let discordDeviceType = 'desktop';
+            if (latestLanyardPresence) {
+                if (latestLanyardPresence.active_on_discord_mobile) {
+                    discordDevice = 'Mobile Phone (Discord)';
+                    discordDeviceType = 'mobile';
+                } else if (latestLanyardPresence.active_on_discord_web) {
+                    discordDevice = 'Web Browser (Discord)';
+                    discordDeviceType = 'desktop';
+                }
+            }
+
+            // 1. Direct Cloud API track (/api/now-playing: Spotify, YouTube Music, or BitChord without Discord)
+            if (latestDirectTrack && latestDirectTrack.isPlaying && latestDirectTrack.title) {
+                tracks.push({
+                    source: latestDirectTrack.source || 'Music',
+                    title: latestDirectTrack.title,
+                    artist: latestDirectTrack.artist || '',
+                    album: latestDirectTrack.album || '',
+                    artworkUrl: latestDirectTrack.artworkUrl || null,
+                    fallbackArtworkUrl: null,
+                    url: latestDirectTrack.url || '',
+                    timestamps: latestDirectTrack.timestamps || null,
+                    device: latestDirectTrack.device || '',
+                    deviceType: latestDirectTrack.deviceType || ''
+                });
+            }
+
+            // 2. Native Spotify integration from Discord
+            if (latestLanyardPresence && latestLanyardPresence.spotify && (latestLanyardPresence.listening_to_spotify || latestLanyardPresence.spotify.song)) {
+                const spotify = latestLanyardPresence.spotify;
+                const isDup = tracks.some(t =>
+                    String(t.source || '').toLowerCase() === 'spotify' &&
+                    String(t.title || '').toLowerCase() === String(spotify.song || '').toLowerCase()
+                );
+                if (!isDup) {
+                    tracks.push({
+                        source: 'Spotify',
+                        title: spotify.song,
+                        artist: spotify.artist,
+                        album: spotify.album,
+                        artworkUrl: spotify.album_art_url,
+                        fallbackArtworkUrl: null,
+                        url: spotify.track_id
+                            ? `https://open.spotify.com/track/${encodeURIComponent(spotify.track_id)}`
+                            : 'https://open.spotify.com/',
+                        timestamps: spotify.timestamps,
+                        device: discordDevice,
+                        deviceType: discordDeviceType
+                    });
+                }
+            }
+
+            // 3. Discord Rich Presence activities (BitChord, YouTube Music, etc.)
+            if (latestLanyardPresence && Array.isArray(latestLanyardPresence.activities)) {
+                for (const activity of latestLanyardPresence.activities) {
+                    const parsed = parseMusicActivity(activity);
+                    if (!parsed) continue;
+
+                    if (String(parsed.source || '').toLowerCase() === 'spotify' && tracks.some(t => String(t.source || '').toLowerCase() === 'spotify')) {
+                        continue;
+                    }
+
+                    const isDuplicate = tracks.some(t =>
+                        String(t.source || '').toLowerCase() === String(parsed.source || '').toLowerCase() &&
+                        String(t.title || '').toLowerCase() === String(parsed.title || '').toLowerCase()
+                    );
+                    if (!isDuplicate) {
+                        parsed.device = parsed.device || discordDevice;
+                        parsed.deviceType = parsed.deviceType || discordDeviceType;
+                        tracks.push(parsed);
+                    }
+                }
+            }
+
+            if (tracks.length > 0) {
+                checkAndNotifyTrackChange(tracks[0]);
+                const cards = tracks.map(createMusicCard);
+                musicList.replaceChildren(...cards.map(card => card.element));
+                musicList.hidden = false;
+                if (cards.some(card => card.hasTiming)) {
+                    updateTrackProgress();
+                    trackProgressTimer = setInterval(updateTrackProgress, 1000);
+                }
+            } else {
+                lastPlayedTrackKey = '';
+                renderNoMusic(musicList, latestLanyardPresence);
+            }
+        }
+
+        async function fetchLanyardPresence() {
+            const musicList = document.getElementById('lanyard-music-list');
+            if (!musicList) return;
+
+            if (isLoadingLanyard) return;
+            isLoadingLanyard = true;
+
+            try {
+                const fetchWithTimeout = async (url, timeoutMs) => {
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), timeoutMs);
+                    try {
+                        const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
+                        clearTimeout(timer);
+                        return res.ok ? await res.json() : null;
+                    } catch {
+                        clearTimeout(timer);
+                        return null;
+                    }
+                };
+
+                const lastFmParam = currentProfileData.lastfmUser ? `?lastfm=${encodeURIComponent(currentProfileData.lastfmUser)}` : '';
+                const [lanyardData, directData] = await Promise.all([
+                    fetchWithTimeout(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`, 4000),
+                    fetchWithTimeout('/api/now-playing' + lastFmParam, 4000)
+                ]);
+
+                if (lanyardData && lanyardData.success && lanyardData.data) {
+                    latestLanyardPresence = lanyardData.data;
+                    syncDirectTrackWithLanyard(lanyardData.data);
+                }
+                if (directData) {
+                    latestDirectTrack = directData.isPlaying ? directData : null;
+                    if (directData.onRepeat && (!currentProfileData.onRepeat || !currentProfileData.onRepeat.title)) {
+                        currentProfileData.onRepeat = directData.onRepeat;
+                    }
+                }
+
+                renderUnifiedMusic();
+            } catch (error) {
+                stopTrackProgress();
+                if (!musicList.children.length || musicList.querySelector('.lanyard-empty-card') || musicList.querySelector('.lanyard-activity')) {
+                    renderNoMusic(musicList, latestLanyardPresence, 'Unable to connect to music services.');
+                }
+                console.warn('Music presence fetch notice:', error);
+            } finally {
+                isLoadingLanyard = false;
+            }
+        }
+
+        async function sendMessageToCreator() {
+            const textarea = document.getElementById('message-input');
+            const message = textarea ? textarea.value.trim() : '';
+
+            if (!textarea || !message) {
+                if (textarea) {
+                    textarea.focus();
+                }
+                return;
+            }
+
+            try {
+                textarea.value = '';
+
+                const response = await fetch('/api/message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Unable to send message.');
+                }
+            } catch (error) {
+                textarea.value = message;
+                textarea.placeholder = 'Failed to send. Please try again.';
+                console.error(error);
+            }
+        }
+
+        const RETRO_GAMES = [
+            {
+                title: 'PAC-MAN',
+                year: '1980',
+                developer: 'NAMCO',
+                genre: 'MAZE / ARCADE',
+                builtinGame: 'pacman',
+                playUrl: 'https://pacman.live/play.html',
+                vibeMatch: 'Matches the site\'s glowing Pac-Man background animation and 8-bit maze runner aesthetic!',
+                description: 'The golden age champion! Guide Pac-Man through neon blue mazes, munching power pellets and dodging Blinky, Pinky, Inky, and Clyde.'
+            },
+            {
+                title: 'SPACE INVADERS',
+                year: '1978',
+                developer: 'TAITO',
+                genre: 'SHOOT \'EM UP',
+                builtinGame: 'invaders',
+                playUrl: 'https://freeinvaders.org/',
+                vibeMatch: 'The grandfather of pixel arcade action with thunderous 8-bit tempo and neon alien armadas!',
+                description: 'Defend Earth from marching alien waves that accelerate with every casualty. A legendary masterwork that defined arcade history.'
+            },
+            {
+                title: 'GALAGA',
+                year: '1981',
+                developer: 'NAMCO',
+                genre: 'FIXED SHOOTER',
+                builtinGame: 'invaders',
+                playUrl: 'https://freegalaga.com/',
+                vibeMatch: 'Crisp synthesized laser beeps and cosmic starfield vibes matching our glowing chiptune atmosphere!',
+                description: 'Pilot your starfighter against swooping insectoid fleets. Rescue captured ships to unleash devastating dual-fighter firepower.'
+            },
+            {
+                title: 'DONKEY KONG',
+                year: '1981',
+                developer: 'NINTENDO',
+                genre: 'PLATFORMER',
+                builtinGame: 'pacman',
+                playUrl: 'https://playclassic.games/games/platform-arcade-games-online/play-donkey-kong-online/',
+                vibeMatch: 'Retro girder construction, bouncing barrels, and classic 8-bit jump sound effects!',
+                description: 'Guide Jumpman up hazardous construction girders, leaping rolling barrels and fireballs to rescue Lady Pauline from Donkey Kong.'
+            },
+            {
+                title: 'STREET FIGHTER II',
+                year: '1991',
+                developer: 'CAPCOM',
+                genre: 'FIGHTING',
+                builtinGame: 'invaders',
+                playUrl: 'https://playclassic.games/games/fighting-arcade-games-online/play-street-fighter-ii-the-world-warrior-online/',
+                vibeMatch: 'The pinnacle of 90s arcade cabinet competition with punchy pixel art and legendary chiptune soundtracks!',
+                description: 'Choose from 8 World Warriors and master Hadoukens, Sonic Booms, and Spinning Bird Kicks in the greatest competitive fighting game ever built.'
+            },
+            {
+                title: 'TETRIS',
+                year: '1984',
+                developer: 'ALEXEY PAJITNOV',
+                genre: 'PUZZLE',
+                builtinGame: 'tetris',
+                playUrl: 'https://tetris.com/play-tetris',
+                vibeMatch: 'Hypnotic geometric precision and the timeless Korobeiniki chiptune melody that never gets old!',
+                description: 'Stack falling geometric tetrominoes to clear full lines. Elegant, endlessly replayable, and pure pixel perfection.'
+            },
+            {
+                title: 'OUT RUN',
+                year: '1986',
+                developer: 'SEGA',
+                genre: 'SYNTH RACER',
+                builtinGame: 'tetris',
+                playUrl: 'https://playminigames.ru/en/game/out-run',
+                vibeMatch: 'Pure retro synthwave aesthetic, pixel palms, and cruising through neon sunsets with chiptune radio!',
+                description: 'Hop into the Ferrari Testarossa Spider, select your favorite synth-pop radio station (Magical Sound Shower!), and race toward branching destinations.'
+            },
+            {
+                title: 'METAL SLUG',
+                year: '1996',
+                developer: 'SNK (NEO GEO)',
+                genre: 'RUN AND GUN',
+                builtinGame: 'invaders',
+                playUrl: 'https://kbhgames.com/game/metal-slug',
+                vibeMatch: 'Peak 90s Neo-Geo arcade cabinet action, gorgeous hand-drawn pixel animations, and heavy machine guns!',
+                description: 'Blast through relentless enemy fortifications, rescue bearded POWs, pilot armored combat slugs, and face giant mechanical bosses.'
+            },
+            {
+                title: 'BUBBLE BOBBLE',
+                year: '1986',
+                developer: 'TAITO',
+                genre: 'ARCADE PLATFORMER',
+                builtinGame: 'pacman',
+                playUrl: 'https://playclassic.games/games/platform-arcade-games-online/play-bubble-bobble-online/',
+                vibeMatch: 'Charming pixel sprites and one of the catchiest 8-bit melodies in arcade history!',
+                description: 'Control twin bubble dragons Bub and Bob. Trap quirky monsters inside floating bubbles and pop them for bonus fruit points across 100 levels.'
+            },
+            {
+                title: 'DIG DUG',
+                year: '1982',
+                developer: 'NAMCO',
+                genre: 'MAZE / ACTION',
+                builtinGame: 'pacman',
+                playUrl: 'https://playclassic.games/games/maze-arcade-games-online/play-dig-dug-online/',
+                vibeMatch: 'Chiptune audio that only plays when moving, paired with underground neon pixel tunnels!',
+                description: 'Dig subterranean tunnels through soil, inflate Pookas and Fygars with your air pump, and drop falling boulders for huge combo points.'
+            },
+            {
+                title: 'FROGGER',
+                year: '1981',
+                developer: 'KONAMI',
+                genre: 'ACTION / ARCADE',
+                builtinGame: 'invaders',
+                playUrl: 'https://froggerclassic.appspot.com/',
+                vibeMatch: 'Vintage arcade timing, pixel precision, and classic retro audio cues!',
+                description: 'Dodge speeding cars and trucks on a chaotic freeway, then leap across floating logs, turtles, and alligators to reach your lily pads.'
+            },
+            {
+                title: 'MEGA MAN 2',
+                year: '1988',
+                developer: 'CAPCOM',
+                genre: 'ACTION PLATFORMER',
+                builtinGame: 'invaders',
+                playUrl: 'https://playclassic.games/games/action-nes-games-online/mega-man-2/',
+                vibeMatch: 'The greatest 8-bit soundtrack of all time with blistering chiptune riffs and tight blue bomber combat!',
+                description: 'Battle Dr. Wily\'s eight Robot Masters, acquire their unique weapons, and conquer Wily\'s castle backed by the legendary Wily Stage 1 theme.'
+            },
+            {
+                title: 'SONIC THE HEDGEHOG 2',
+                year: '1992',
+                developer: 'SEGA',
+                genre: 'PLATFORMER',
+                builtinGame: 'pacman',
+                playUrl: 'https://playclassic.games/games/platform-sega-genesis-games-online/play-sonic-the-hedgehog-2-online/',
+                vibeMatch: 'Neon-soaked Casino Night Zone aesthetics with glowing pinball bumpers and chiptune funk!',
+                description: 'Team up as Sonic and Tails to spin-dash through high-speed loops, corkscrews, and mechanical fortresses to stop Dr. Robotnik\'s Death Egg.'
+            },
+            {
+                title: 'CASTLEVANIA: SOTN',
+                year: '1997',
+                developer: 'KONAMI',
+                genre: 'METROIDVANIA',
+                builtinGame: 'invaders',
+                playUrl: 'https://playclassic.games/games/role-playing-playstation-games-online/play-castlevania-symphony-of-the-night-online/',
+                vibeMatch: 'Dark gothic pixel artistry, intricate castle maps, and haunting retro synth audio!',
+                description: 'Awaken as Alucard and explore the sprawling inverted labyrinth of Dracula\'s castle in one of the most celebrated action RPGs ever crafted.'
+            },
+            {
+                title: 'DANCE DANCE REVOLUTION',
+                year: '1998',
+                developer: 'KONAMI',
+                genre: 'RHYTHM / ARCADE',
+                builtinGame: 'tetris',
+                playUrl: 'https://bemuse.ninja/',
+                vibeMatch: 'Matches the creator\'s love for K-Pop beats, music rhythm, and high-energy arcade cabinet crowds!',
+                description: 'Step on the arrows in time with pulsating eurobeat and electronic dance tracks on the iconic flashing arcade stage.'
+            },
+            {
+                title: 'TAIKO NO TATSUJIN',
+                year: '2001',
+                developer: 'NAMCO',
+                genre: 'RHYTHM / ARCADE',
+                builtinGame: 'tetris',
+                playUrl: 'https://taiko.bui.pm/',
+                vibeMatch: 'Arcade rhythm perfection combining Japanese drum beats, bright pixel celebrations, and infectious energy!',
+                description: 'Grab your wooden drum bachi and strike the Don and Ka drum rims in time with iconic anime, pop, and game themes.'
+            }
+        ];
+
+        function pickRandomGame(excludeTitle) {
+            const pool = excludeTitle 
+                ? RETRO_GAMES.filter(g => g.title !== excludeTitle) 
+                : RETRO_GAMES;
+            const chosen = pool[Math.floor(Math.random() * pool.length)] || RETRO_GAMES[0];
+            return chosen;
+        }
+
+        function renderGameCardMarkup(game) {
+            return `
+                <div class="game-card-content" id="game-card-content">
+                    <div class="game-title-row">
+                        <h3 class="game-title">${escapeHtml(game.title)}</h3>
+                        <span class="game-genre-pill">${escapeHtml(game.genre)}</span>
+                    </div>
+                    <div class="game-meta-row">
+                        <span>YEAR: <strong>${escapeHtml(game.year)}</strong></span>
+                        <span>•</span>
+                        <span>DEV: <strong>${escapeHtml(game.developer)}</strong></span>
+                    </div>
+                    <div class="game-vibe-tag">
+                        ★ RETRO THEME MATCH: ${escapeHtml(game.vibeMatch)}
+                    </div>
+                    <p class="game-description">${escapeHtml(game.description)}</p>
+                    <div class="game-actions-row">
+                        <button type="button" class="arcade-btn play-arcade" id="btn-play-game" data-game="${escapeHtml(game.builtinGame || 'pacman')}">🕹 PLAY IN ARCADE</button>
+                        <a href="${escapeHtml(game.playUrl)}" target="_blank" rel="noopener noreferrer" class="arcade-btn play-external" title="Play full version in a new tab">🌐 PLAY ORIGINAL ↗</a>
+                        <button type="button" class="arcade-btn roll" id="btn-roll-game">🎲 ROLL ANOTHER GAME</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getRandomGameContent(game) {
+            return `
+                <div class="panel-content random-game-panel">
+                    <div class="profile-header-row">
+                        <h2>RANDOM GAME</h2>
+                        <span class="arcade-badge highlight">✦ ARCADE VAULT ✦</span>
+                    </div>
+                    <div class="fact-box random-game-box scrollable-facts-box">
+                        <div class="arcade-cabinet-header">
+                            <span class="arcade-badge">INSERT COIN [01]</span>
+                            <span class="arcade-badge highlight">READY PLAYER ONE</span>
+                        </div>
+                        <div id="game-card-wrapper">
+                            ${renderGameCardMarkup(game)}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function rollNewRandomGame() {
+            if (isRollingGame) return;
+            isRollingGame = true;
+            playArcadeBeep();
+
+            const cardContent = document.getElementById('game-card-content');
+            if (cardContent) {
+                cardContent.classList.add('rolling');
+            }
+
+            let ticks = 0;
+            const maxTicks = 6;
+            const interval = setInterval(() => {
+                ticks++;
+                playArcadeBeep();
+                const tempGame = RETRO_GAMES[Math.floor(Math.random() * RETRO_GAMES.length)];
+                const titleEl = document.querySelector('.game-title');
+                if (titleEl) {
+                    titleEl.textContent = tempGame.title;
+                }
+                if (ticks >= maxTicks || !document.getElementById('game-card-wrapper')) {
+                    clearInterval(interval);
+                    isRollingGame = false;
+                    const wrapper = document.getElementById('game-card-wrapper');
+                    if (wrapper) {
+                        const newGame = pickRandomGame(currentRandomGame ? currentRandomGame.title : null);
+                        currentRandomGame = newGame;
+                        wrapper.innerHTML = renderGameCardMarkup(newGame);
+                        attachGameCardListeners();
+                    }
+                }
+            }, 65);
+        }
+
+        function attachGameCardListeners() {
+            const rollBtn = document.getElementById('btn-roll-game');
+            if (rollBtn) {
+                rollBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    rollNewRandomGame();
+                });
+            }
+            const playBtn = document.getElementById('btn-play-game');
+            if (playBtn) {
+                playBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    playArcadeBeep(520, 880, 0.12);
+                    openArcadePlayer(playBtn.dataset.game || 'pacman');
+                });
+            }
+        }
+
+        // ==========================================
+        // BUILT-IN RETRO ARCADE PLAYER & MINI-GAMES
+        // ==========================================
+        function stopArcadeGame() {
+            if (arcadeAnimFrame) {
+                cancelAnimationFrame(arcadeAnimFrame);
+                arcadeAnimFrame = null;
+            }
+            if (arcadeInterval) {
+                clearInterval(arcadeInterval);
+                arcadeInterval = null;
+            }
+            if (arcadeKeydownHandler) {
+                window.removeEventListener('keydown', arcadeKeydownHandler);
+                arcadeKeydownHandler = null;
+            }
+            if (arcadeKeyupHandler) {
+                window.removeEventListener('keyup', arcadeKeyupHandler);
+                arcadeKeyupHandler = null;
+            }
+            arcadeActiveInputs = { up: false, down: false, left: false, right: false, action: false };
+            arcadeDiscreteActionTriggered = false;
+        }
+
+        function updateArcadeScoreDisplay(score) {
+            const scoreEl = document.getElementById('arcade-game-score');
+            if (scoreEl) {
+                scoreEl.textContent = 'SCORE: ' + score;
+            }
+        }
+
+        function showArcadeOverlay(message, buttonText = 'PLAY AGAIN') {
+            const overlay = document.getElementById('arcade-overlay');
+            const msgEl = document.getElementById('arcade-overlay-msg');
+            const btnEl = document.getElementById('arcade-overlay-btn');
+            if (overlay && msgEl && btnEl) {
+                msgEl.textContent = message;
+                btnEl.textContent = buttonText;
+                overlay.style.display = 'flex';
+                btnEl.onclick = () => {
+                    playArcadeBeep(440, 880, 0.1);
+                    overlay.style.display = 'none';
+                    startSelectedArcadeGame(currentArcadeGameType);
+                };
+            }
+        }
+
+        function openArcadePlayer(gameType = 'pacman') {
+            stopArcadeGame();
+            currentArcadeGameType = gameType;
+
+            const titleMap = {
+                pacman: 'PAC-MAN',
+                invaders: 'SPACE INVADERS',
+                tetris: 'TETRIS'
+            };
+            const displayTitle = titleMap[gameType] || 'PAC-MAN';
+
+            rightPanel.innerHTML = `
+                <div class="panel-content-only arcade-player-panel">
+                    <div class="arcade-player-topbar">
+                        <button class="back-button" id="arcade-back-btn" aria-label="Back to Game Vault">←</button>
+                        <div class="arcade-player-title-wrap">
+                            <span class="arcade-player-game-name" id="arcade-game-name">${escapeHtml(displayTitle)}</span>
+                            <span class="arcade-badge highlight" id="arcade-game-score">SCORE: 0</span>
+                        </div>
+                        <button class="arcade-mini-btn" id="arcade-restart-btn" title="Restart Game">⟲</button>
+                    </div>
+
+                    <div class="arcade-game-tabs">
+                        <button type="button" class="arcade-tab-btn ${gameType === 'pacman' ? 'active' : ''}" data-type="pacman">PAC-MAN</button>
+                        <button type="button" class="arcade-tab-btn ${gameType === 'invaders' ? 'active' : ''}" data-type="invaders">SPACE INVADERS</button>
+                        <button type="button" class="arcade-tab-btn ${gameType === 'tetris' ? 'active' : ''}" data-type="tetris">TETRIS</button>
+                    </div>
+
+                    <div class="arcade-screen-container">
+                        <canvas id="arcade-canvas" width="300" height="300"></canvas>
+                        <div id="arcade-overlay" class="arcade-overlay" style="display: none;">
+                            <p id="arcade-overlay-msg">GAME OVER</p>
+                            <button type="button" class="arcade-btn roll" id="arcade-overlay-btn">PRESS START</button>
+                        </div>
+                    </div>
+
+                    <div class="arcade-controls-container">
+                        <div class="arcade-dpad">
+                            <button type="button" class="dpad-btn up" data-dir="up" aria-label="Up">▲</button>
+                            <button type="button" class="dpad-btn left" data-dir="left" aria-label="Left">◀</button>
+                            <div class="dpad-center"></div>
+                            <button type="button" class="dpad-btn right" data-dir="right" aria-label="Right">▶</button>
+                            <button type="button" class="dpad-btn down" data-dir="down" aria-label="Down">▼</button>
+                        </div>
+                        <div class="arcade-action-cluster">
+                            <button type="button" class="action-btn fire" id="arcade-action-btn" aria-label="Action / Fire">A</button>
+                            <span class="arcade-btn-label">ACTION / FIRE</span>
+                        </div>
+                    </div>
+
+                    <div class="arcade-desktop-hint">
+                        KEYBOARD: [ARROWS] / [W,A,S,D] = MOVE • [SPACE] / [Z] = FIRE / ROTATE
+                    </div>
+                </div>
+            `;
+
+            const backBtn = document.getElementById('arcade-back-btn');
+            if (backBtn) {
+                backBtn.addEventListener('click', () => {
+                    playArcadeBeep();
+                    stopArcadeGame();
+                    renderPage('randomGame', false);
+                });
+            }
+
+            const restartBtn = document.getElementById('arcade-restart-btn');
+            if (restartBtn) {
+                restartBtn.addEventListener('click', () => {
+                    playArcadeBeep();
+                    startSelectedArcadeGame(currentArcadeGameType);
+                });
+            }
+
+            document.querySelectorAll('.arcade-tab-btn').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    playArcadeBeep();
+                    const newType = tab.dataset.type;
+                    document.querySelectorAll('.arcade-tab-btn').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    startSelectedArcadeGame(newType);
+                });
+            });
+
+            bindArcadeControls();
+            startSelectedArcadeGame(currentArcadeGameType);
+        }
+
+        function bindArcadeControls() {
+            function setupBtn(el, dir) {
+                if (!el) return;
+                const press = (e) => {
+                    if (e.cancelable) e.preventDefault();
+                    arcadeActiveInputs[dir] = true;
+                    el.classList.add('pressed');
+                    if (dir === 'action') arcadeDiscreteActionTriggered = true;
+                };
+                const release = (e) => {
+                    if (e.cancelable) e.preventDefault();
+                    arcadeActiveInputs[dir] = false;
+                    el.classList.remove('pressed');
+                };
+
+                el.addEventListener('pointerdown', press);
+                el.addEventListener('pointerup', release);
+                el.addEventListener('pointercancel', release);
+                el.addEventListener('pointerleave', release);
+                el.addEventListener('touchstart', press, { passive: false });
+                el.addEventListener('touchend', release, { passive: false });
+            }
+
+            document.querySelectorAll('.dpad-btn').forEach(btn => {
+                setupBtn(btn, btn.dataset.dir);
+            });
+            setupBtn(document.getElementById('arcade-action-btn'), 'action');
+
+            arcadeKeydownHandler = (e) => {
+                const key = e.key;
+                if (['ArrowUp', 'KeyW', 'w', 'W'].includes(key)) {
+                    arcadeActiveInputs.up = true;
+                    e.preventDefault();
+                } else if (['ArrowDown', 'KeyS', 's', 'S'].includes(key)) {
+                    arcadeActiveInputs.down = true;
+                    e.preventDefault();
+                } else if (['ArrowLeft', 'KeyA', 'a', 'A'].includes(key)) {
+                    arcadeActiveInputs.left = true;
+                    e.preventDefault();
+                } else if (['ArrowRight', 'KeyD', 'd', 'D'].includes(key)) {
+                    arcadeActiveInputs.right = true;
+                    e.preventDefault();
+                } else if ([' ', 'Space', 'Spacebar', 'KeyZ', 'z', 'Z', 'Enter'].includes(key)) {
+                    arcadeActiveInputs.action = true;
+                    arcadeDiscreteActionTriggered = true;
+                    e.preventDefault();
+                }
+            };
+
+            arcadeKeyupHandler = (e) => {
+                const key = e.key;
+                if (['ArrowUp', 'KeyW', 'w', 'W'].includes(key)) {
+                    arcadeActiveInputs.up = false;
+                } else if (['ArrowDown', 'KeyS', 's', 'S'].includes(key)) {
+                    arcadeActiveInputs.down = false;
+                } else if (['ArrowLeft', 'KeyA', 'a', 'A'].includes(key)) {
+                    arcadeActiveInputs.left = false;
+                } else if (['ArrowRight', 'KeyD', 'd', 'D'].includes(key)) {
+                    arcadeActiveInputs.right = false;
+                } else if ([' ', 'Space', 'Spacebar', 'KeyZ', 'z', 'Z', 'Enter'].includes(key)) {
+                    arcadeActiveInputs.action = false;
+                }
+            };
+
+            window.addEventListener('keydown', arcadeKeydownHandler);
+            window.addEventListener('keyup', arcadeKeyupHandler);
+        }
+
+        function startSelectedArcadeGame(gameType) {
+            stopArcadeGame();
+            bindArcadeControls();
+            currentArcadeGameType = gameType;
+
+            const nameEl = document.getElementById('arcade-game-name');
+            const overlay = document.getElementById('arcade-overlay');
+            if (overlay) overlay.style.display = 'none';
+
+            const titleMap = {
+                pacman: 'PAC-MAN',
+                invaders: 'SPACE INVADERS',
+                tetris: 'TETRIS'
+            };
+            if (nameEl) nameEl.textContent = titleMap[gameType] || 'PAC-MAN';
+
+            const canvas = document.getElementById('arcade-canvas');
+            if (!canvas) return;
+
+            updateArcadeScoreDisplay(0);
+
+            if (gameType === 'pacman') {
+                runPacmanGame(canvas);
+            } else if (gameType === 'invaders') {
+                runInvadersGame(canvas);
+            } else if (gameType === 'tetris') {
+                runTetrisGame(canvas);
+            }
+        }
+
+        function runPacmanGame(canvas) {
+            const ctx = canvas.getContext('2d');
+            const initialMap = [
+                [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                [1,3,0,0,0,0,0,1,0,0,0,0,0,3,1],
+                [1,0,1,1,0,1,0,1,0,1,0,1,1,0,1],
+                [1,0,0,0,0,1,0,0,0,1,0,0,0,0,1],
+                [1,0,1,1,0,0,0,0,0,0,0,1,1,0,1],
+                [1,0,0,1,0,1,1,2,1,1,0,1,0,0,1],
+                [1,1,0,1,0,1,2,2,2,1,0,1,0,1,1],
+                [2,0,0,0,0,1,2,2,2,1,0,0,0,0,2],
+                [1,1,0,1,0,1,1,1,1,1,0,1,0,1,1],
+                [1,0,0,1,0,0,0,0,0,0,0,1,0,0,1],
+                [1,0,1,1,0,1,1,0,1,1,0,1,1,0,1],
+                [1,0,0,0,0,0,1,0,1,0,0,0,0,0,1],
+                [1,0,1,1,1,0,0,0,0,0,1,1,1,0,1],
+                [1,3,0,0,0,0,1,1,1,0,0,0,0,3,1],
+                [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+            ];
+
+            let map = initialMap.map(row => [...row]);
+            let pelletsLeft = 0;
+            map.forEach(row => row.forEach(c => { if (c === 0 || c === 3) pelletsLeft++; }));
+
+            let score = 0;
+            let lives = 3;
+            let powerTimer = 0;
+            let tick = 0;
+
+            let player = {
+                x: 7 * 20 + 10,
+                y: 11 * 20 + 10,
+                dirX: 0,
+                dirY: 0,
+                nextDirX: 0,
+                nextDirY: 0,
+                speed: 2.5
+            };
+
+            const ghosts = [
+                { x: 7 * 20 + 10, y: 5 * 20 + 10, dirX: 1, dirY: 0, color: '#ff1133' },
+                { x: 6 * 20 + 10, y: 7 * 20 + 10, dirX: 0, dirY: -1, color: '#ff99cc' },
+                { x: 7 * 20 + 10, y: 7 * 20 + 10, dirX: -1, dirY: 0, color: '#00ffff' },
+                { x: 8 * 20 + 10, y: 7 * 20 + 10, dirX: 1, dirY: 0, color: '#ff9900' }
+            ];
+
+            function isWall(gx, gy) {
+                if (gy === 7 && (gx < 0 || gx >= 15)) return false;
+                if (gx < 0 || gx >= 15 || gy < 0 || gy >= 15) return true;
+                return map[gy][gx] === 1;
+            }
+
+            function loop() {
+                tick++;
+
+                if (arcadeActiveInputs.up) { player.nextDirX = 0; player.nextDirY = -1; }
+                else if (arcadeActiveInputs.down) { player.nextDirX = 0; player.nextDirY = 1; }
+                else if (arcadeActiveInputs.left) { player.nextDirX = -1; player.nextDirY = 0; }
+                else if (arcadeActiveInputs.right) { player.nextDirX = 1; player.nextDirY = 0; }
+
+                const gx = Math.floor(player.x / 20);
+                const gy = Math.floor(player.y / 20);
+                const offsetX = player.x % 20;
+                const offsetY = player.y % 20;
+
+                if (Math.abs(offsetX - 10) < player.speed && Math.abs(offsetY - 10) < player.speed) {
+                    if (player.nextDirX !== 0 || player.nextDirY !== 0) {
+                        if (!isWall(gx + player.nextDirX, gy + player.nextDirY)) {
+                            player.dirX = player.nextDirX;
+                            player.dirY = player.nextDirY;
+                            player.x = gx * 20 + 10;
+                            player.y = gy * 20 + 10;
+                        }
+                    }
+                    if (isWall(gx + player.dirX, gy + player.dirY)) {
+                        player.dirX = 0;
+                        player.dirY = 0;
+                        player.x = gx * 20 + 10;
+                        player.y = gy * 20 + 10;
+                    }
+                }
+
+                player.x += player.dirX * player.speed;
+                player.y += player.dirY * player.speed;
+
+                if (player.x < -10) player.x = 310;
+                else if (player.x > 310) player.x = -10;
+
+                const curGx = Math.floor(player.x / 20);
+                const curGy = Math.floor(player.y / 20);
+                if (curGx >= 0 && curGx < 15 && curGy >= 0 && curGy < 15) {
+                    if (map[curGy][curGx] === 0) {
+                        map[curGy][curGx] = 2;
+                        score += 10;
+                        pelletsLeft--;
+                        updateArcadeScoreDisplay(score);
+                        if (tick % 4 === 0) playArcadeBeep(850, 700, 0.03);
+                    } else if (map[curGy][curGx] === 3) {
+                        map[curGy][curGx] = 2;
+                        score += 50;
+                        pelletsLeft--;
+                        powerTimer = 350;
+                        updateArcadeScoreDisplay(score);
+                        playArcadeBeep(520, 880, 0.12);
+                    }
+                }
+
+                if (powerTimer > 0) powerTimer--;
+
+                ghosts.forEach(g => {
+                    const gGx = Math.floor(g.x / 20);
+                    const gGy = Math.floor(g.y / 20);
+                    const gOffX = g.x % 20;
+                    const gOffY = g.y % 20;
+
+                    if (Math.abs(gOffX - 10) < 1.5 && Math.abs(gOffY - 10) < 1.5) {
+                        g.x = gGx * 20 + 10;
+                        g.y = gGy * 20 + 10;
+                        const dirs = [
+                            { x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }
+                        ].filter(d => !isWall(gGx + d.x, gGy + d.y) && !(d.x === -g.dirX && d.y === -g.dirY));
+
+                        if (dirs.length > 0) {
+                            const chosen = dirs[Math.floor(Math.random() * dirs.length)];
+                            g.dirX = chosen.x;
+                            g.dirY = chosen.y;
+                        }
+                    }
+                    g.x += g.dirX * (powerTimer > 0 ? 1.0 : 1.6);
+                    g.y += g.dirY * (powerTimer > 0 ? 1.0 : 1.6);
+                });
+
+                ghosts.forEach(g => {
+                    const dist = Math.hypot(g.x - player.x, g.y - player.y);
+                    if (dist < 14) {
+                        if (powerTimer > 0) {
+                            score += 200;
+                            updateArcadeScoreDisplay(score);
+                            g.x = 7 * 20 + 10;
+                            g.y = 7 * 20 + 10;
+                            playArcadeBeep(440, 880, 0.1);
+                        } else {
+                            lives--;
+                            playArcadeBeep(260, 80, 0.25, 'sawtooth');
+                            player.x = 7 * 20 + 10;
+                            player.y = 11 * 20 + 10;
+                            player.dirX = 0; player.dirY = 0;
+                            player.nextDirX = 0; player.nextDirY = 0;
+                            if (lives <= 0) {
+                                showArcadeOverlay('GAME OVER • FINAL SCORE: ' + score);
+                                return;
+                            }
+                        }
+                    }
+                });
+
+                if (pelletsLeft <= 0) {
+                    score += 500;
+                    updateArcadeScoreDisplay(score);
+                    playArcadeBeep(520, 1040, 0.3);
+                    map = initialMap.map(row => [...row]);
+                    pelletsLeft = 0;
+                    map.forEach(row => row.forEach(c => { if (c === 0 || c === 3) pelletsLeft++; }));
+                    player.x = 7 * 20 + 10; player.y = 11 * 20 + 10;
+                }
+
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, 300, 300);
+
+                for (let r = 0; r < 15; r++) {
+                    for (let c = 0; c < 15; c++) {
+                        const cell = map[r][c];
+                        if (cell === 1) {
+                            ctx.fillStyle = '#0a173d';
+                            ctx.fillRect(c * 20, r * 20, 20, 20);
+                            ctx.strokeStyle = '#004cff';
+                            ctx.lineWidth = 1.5;
+                            ctx.strokeRect(c * 20 + 1, r * 20 + 1, 18, 18);
+                        } else if (cell === 0) {
+                            ctx.fillStyle = '#ffffff';
+                            ctx.beginPath();
+                            ctx.arc(c * 20 + 10, r * 20 + 10, 2, 0, Math.PI * 2);
+                            ctx.fill();
+                        } else if (cell === 3) {
+                            ctx.fillStyle = '#ffff00';
+                            const rad = 4.5 + Math.sin(tick * 0.25) * 1.5;
+                            ctx.beginPath();
+                            ctx.arc(c * 20 + 10, r * 20 + 10, Math.max(2, rad), 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
+
+                ctx.fillStyle = '#ffff00';
+                ctx.beginPath();
+                let angle = 0;
+                if (player.dirX === 1) angle = 0;
+                else if (player.dirX === -1) angle = Math.PI;
+                else if (player.dirY === 1) angle = Math.PI / 2;
+                else if (player.dirY === -1) angle = -Math.PI / 2;
+
+                const mouth = Math.abs(Math.sin(tick * 0.35)) * 0.25 + 0.05;
+                ctx.arc(player.x, player.y, 8, angle + mouth * Math.PI, angle + (2 - mouth) * Math.PI);
+                ctx.lineTo(player.x, player.y);
+                ctx.fill();
+
+                ghosts.forEach(g => {
+                    ctx.fillStyle = powerTimer > 0 ? (powerTimer < 60 && tick % 10 < 5 ? '#ffffff' : '#00aaff') : g.color;
+                    ctx.beginPath();
+                    ctx.arc(g.x, g.y - 1, 7, Math.PI, 0, false);
+                    ctx.lineTo(g.x + 7, g.y + 7);
+                    ctx.lineTo(g.x + 3.5, g.y + 4);
+                    ctx.lineTo(g.x, g.y + 7);
+                    ctx.lineTo(g.x - 3.5, g.y + 4);
+                    ctx.lineTo(g.x - 7, g.y + 7);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(g.x - 4, g.y - 4, 3, 4);
+                    ctx.fillRect(g.x + 1, g.y - 4, 3, 4);
+                    ctx.fillStyle = '#0000ff';
+                    ctx.fillRect(g.x - 3, g.y - 3, 2, 2);
+                    ctx.fillRect(g.x + 2, g.y - 3, 2, 2);
+                });
+
+                ctx.fillStyle = '#ffff00';
+                for (let i = 0; i < lives; i++) {
+                    ctx.beginPath();
+                    ctx.arc(14 + i * 16, 292, 5, 0.2 * Math.PI, 1.8 * Math.PI);
+                    ctx.lineTo(14 + i * 16, 292);
+                    ctx.fill();
+                }
+
+                if (lives > 0) {
+                    arcadeAnimFrame = requestAnimationFrame(loop);
+                }
+            }
+
+            arcadeAnimFrame = requestAnimationFrame(loop);
+        }
+
+        function runInvadersGame(canvas) {
+            const ctx = canvas.getContext('2d');
+            let playerX = 137;
+            let playerY = 265;
+            let pSpeed = 4;
+            let pBullets = [];
+            let alienBombs = [];
+            let lives = 3;
+            let score = 0;
+            let tick = 0;
+
+            const rows = 3;
+            const cols = 6;
+            let invaders = [];
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    invaders.push({
+                        x: 35 + c * 40,
+                        y: 35 + r * 28,
+                        w: 20,
+                        h: 14,
+                        row: r,
+                        alive: true
+                    });
+                }
+            }
+
+            let invDir = 1;
+            let invSpeed = 0.9;
+            let shootCooldown = 0;
+
+            const bunkers = [
+                { x: 45, y: 225, w: 32, h: 16, hp: 4 },
+                { x: 134, y: 225, w: 32, h: 16, hp: 4 },
+                { x: 223, y: 225, w: 32, h: 16, hp: 4 }
+            ];
+
+            function loop() {
+                tick++;
+
+                if (arcadeActiveInputs.left) playerX = Math.max(10, playerX - pSpeed);
+                if (arcadeActiveInputs.right) playerX = Math.min(264, playerX + pSpeed);
+
+                if (shootCooldown > 0) shootCooldown--;
+                if ((arcadeActiveInputs.action || arcadeDiscreteActionTriggered) && shootCooldown === 0 && pBullets.length < 2) {
+                    arcadeDiscreteActionTriggered = false;
+                    pBullets.push({ x: playerX + 12, y: playerY - 4 });
+                    shootCooldown = 15;
+                    playArcadeBeep(880, 300, 0.06);
+                }
+
+                pBullets.forEach(b => b.y -= 7);
+                pBullets = pBullets.filter(b => b.y > 0);
+
+                let remaining = invaders.filter(inv => inv.alive);
+                if (remaining.length === 0) {
+                    score += 300;
+                    updateArcadeScoreDisplay(score);
+                    playArcadeBeep(520, 1040, 0.3);
+                    invaders.forEach(inv => inv.alive = true);
+                    invSpeed += 0.3;
+                    remaining = invaders;
+                }
+
+                let stepDown = false;
+                remaining.forEach(inv => {
+                    inv.x += invDir * (invSpeed + (18 - remaining.length) * 0.1);
+                    if (inv.x > 270 && invDir > 0) stepDown = true;
+                    if (inv.x < 10 && invDir < 0) stepDown = true;
+                });
+
+                if (stepDown) {
+                    invDir = -invDir;
+                    remaining.forEach(inv => {
+                        inv.y += 12;
+                        if (inv.y >= 245) {
+                            showArcadeOverlay('INVADED! SCORE: ' + score);
+                            lives = 0;
+                        }
+                    });
+                }
+
+                if (tick % 45 === 0 && remaining.length > 0) {
+                    const shooter = remaining[Math.floor(Math.random() * remaining.length)];
+                    if (alienBombs.length < 3) {
+                        alienBombs.push({ x: shooter.x + 10, y: shooter.y + 14 });
+                    }
+                }
+
+                alienBombs.forEach(b => b.y += 3.2);
+                alienBombs = alienBombs.filter(b => b.y < 300);
+
+                pBullets.forEach((b, bIdx) => {
+                    remaining.forEach(inv => {
+                        if (inv.alive && b.x >= inv.x && b.x <= inv.x + inv.w && b.y >= inv.y && b.y <= inv.y + inv.h) {
+                            inv.alive = false;
+                            pBullets.splice(bIdx, 1);
+                            const pts = inv.row === 0 ? 30 : inv.row === 1 ? 20 : 10;
+                            score += pts;
+                            updateArcadeScoreDisplay(score);
+                            playArcadeBeep(550, 180, 0.08);
+                        }
+                    });
+                });
+
+                bunkers.forEach(bunk => {
+                    if (bunk.hp <= 0) return;
+                    pBullets.forEach((b, idx) => {
+                        if (b.x >= bunk.x && b.x <= bunk.x + bunk.w && b.y >= bunk.y && b.y <= bunk.y + bunk.h) {
+                            pBullets.splice(idx, 1);
+                            bunk.hp--;
+                        }
+                    });
+                    alienBombs.forEach((ab, idx) => {
+                        if (ab.x >= bunk.x && ab.x <= bunk.x + bunk.w && ab.y >= bunk.y && ab.y <= bunk.y + bunk.h) {
+                            alienBombs.splice(idx, 1);
+                            bunk.hp--;
+                            playArcadeBeep(200, 80, 0.05);
+                        }
+                    });
+                });
+
+                alienBombs.forEach((ab, idx) => {
+                    if (ab.x >= playerX && ab.x <= playerX + 26 && ab.y >= playerY && ab.y <= playerY + 12) {
+                        alienBombs.splice(idx, 1);
+                        lives--;
+                        playArcadeBeep(180, 60, 0.25, 'sawtooth');
+                        if (lives <= 0) {
+                            showArcadeOverlay('GAME OVER • FINAL SCORE: ' + score);
+                            return;
+                        }
+                    }
+                });
+
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, 300, 300);
+
+                remaining.forEach(inv => {
+                    ctx.fillStyle = inv.row === 0 ? '#ff00ff' : inv.row === 1 ? '#00ffff' : '#00ff88';
+                    const frame = Math.floor(tick / 20) % 2;
+                    ctx.fillRect(inv.x + 2, inv.y + 2, inv.w - 4, inv.h - 4);
+                    if (frame === 0) {
+                        ctx.fillRect(inv.x, inv.y, 4, 3);
+                        ctx.fillRect(inv.x + inv.w - 4, inv.y, 4, 3);
+                    } else {
+                        ctx.fillRect(inv.x, inv.y + inv.h - 3, 4, 3);
+                        ctx.fillRect(inv.x + inv.w - 4, inv.y + inv.h - 3, 4, 3);
+                    }
+                });
+
+                bunkers.forEach(b => {
+                    if (b.hp > 0) {
+                        ctx.fillStyle = `rgba(0, 255, 120, ${b.hp / 4})`;
+                        ctx.fillRect(b.x, b.y, b.w, b.h);
+                    }
+                });
+
+                ctx.fillStyle = '#00ffcc';
+                ctx.fillRect(playerX + 2, playerY + 4, 22, 8);
+                ctx.fillRect(playerX + 10, playerY, 6, 6);
+
+                ctx.fillStyle = '#ffff00';
+                pBullets.forEach(b => ctx.fillRect(b.x - 1, b.y, 2, 7));
+
+                ctx.fillStyle = '#ff2244';
+                alienBombs.forEach(b => ctx.fillRect(b.x - 1, b.y, 3, 6));
+
+                ctx.fillStyle = '#00ffcc';
+                for (let i = 0; i < lives; i++) {
+                    ctx.fillRect(10 + i * 14, 290, 10, 5);
+                    ctx.fillRect(13 + i * 14, 287, 4, 3);
+                }
+
+                if (lives > 0) {
+                    arcadeAnimFrame = requestAnimationFrame(loop);
+                }
+            }
+
+            arcadeAnimFrame = requestAnimationFrame(loop);
+        }
+
+        function runTetrisGame(canvas) {
+            const ctx = canvas.getContext('2d');
+            const cols = 10;
+            const rows = 18;
+            const cell = 14;
+            const offsetX = (300 - cols * cell) / 2;
+            const offsetY = (300 - rows * cell) / 2;
+
+            let board = Array.from({ length: rows }, () => Array(cols).fill(0));
+            let score = 0;
+            let isGameOver = false;
+
+            const TETROMINOES = [
+                { shape: [[1,1,1,1]], color: '#00ffff' },
+                { shape: [[1,1],[1,1]], color: '#ffff00' },
+                { shape: [[0,1,0],[1,1,1]], color: '#aa00ff' },
+                { shape: [[0,1,1],[1,1,0]], color: '#00ff44' },
+                { shape: [[1,1,0],[0,1,1]], color: '#ff2233' },
+                { shape: [[1,0,0],[1,1,1]], color: '#0055ff' },
+                { shape: [[0,0,1],[1,1,1]], color: '#ff8800' }
+            ];
+
+            let piece = null;
+            let px = 3;
+            let py = 0;
+
+            function spawnPiece() {
+                const choice = TETROMINOES[Math.floor(Math.random() * TETROMINOES.length)];
+                piece = { shape: choice.shape.map(r => [...r]), color: choice.color };
+                px = Math.floor((cols - piece.shape[0].length) / 2);
+                py = 0;
+
+                if (collides(piece.shape, px, py)) {
+                    isGameOver = true;
+                    showArcadeOverlay('TETRIS OVER • SCORE: ' + score);
+                }
+            }
+
+            function collides(shape, cx, cy) {
+                for (let r = 0; r < shape.length; r++) {
+                    for (let c = 0; c < shape[r].length; c++) {
+                        if (shape[r][c]) {
+                            const nx = cx + c;
+                            const ny = cy + r;
+                            if (nx < 0 || nx >= cols || ny >= rows) return true;
+                            if (ny >= 0 && board[ny][nx]) return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            function rotate(shape) {
+                const h = shape.length;
+                const w = shape[0].length;
+                const rotated = Array.from({ length: w }, () => Array(h).fill(0));
+                for (let r = 0; r < h; r++) {
+                    for (let c = 0; c < w; c++) {
+                        rotated[c][h - 1 - r] = shape[r][c];
+                    }
+                }
+                return rotated;
+            }
+
+            function lockPiece() {
+                for (let r = 0; r < piece.shape.length; r++) {
+                    for (let c = 0; c < piece.shape[r].length; c++) {
+                        if (piece.shape[r][c]) {
+                            const ny = py + r;
+                            const nx = px + c;
+                            if (ny >= 0 && ny < rows && nx >= 0 && nx < cols) {
+                                board[ny][nx] = piece.color;
+                            }
+                        }
+                    }
+                }
+
+                let cleared = 0;
+                for (let r = rows - 1; r >= 0; r--) {
+                    if (board[r].every(c => c !== 0)) {
+                        board.splice(r, 1);
+                        board.unshift(Array(cols).fill(0));
+                        cleared++;
+                        r++;
+                    }
+                }
+
+                if (cleared > 0) {
+                    const bonus = [0, 100, 300, 500, 800][cleared] || 100;
+                    score += bonus;
+                    updateArcadeScoreDisplay(score);
+                    playArcadeBeep(523, 784, 0.15);
+                } else {
+                    playArcadeBeep(350, 150, 0.04);
+                }
+
+                spawnPiece();
+            }
+
+            spawnPiece();
+
+            let moveCooldown = 0;
+            function draw() {
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, 300, 300);
+
+                ctx.strokeStyle = '#004cff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(offsetX - 2, offsetY - 2, cols * cell + 4, rows * cell + 4);
+
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        if (board[r][c]) {
+                            ctx.fillStyle = board[r][c];
+                            ctx.fillRect(offsetX + c * cell + 1, offsetY + r * cell + 1, cell - 2, cell - 2);
+                        } else {
+                            ctx.fillStyle = '#060d24';
+                            ctx.fillRect(offsetX + c * cell + 1, offsetY + r * cell + 1, cell - 2, cell - 2);
+                        }
+                    }
+                }
+
+                if (piece && !isGameOver) {
+                    ctx.fillStyle = piece.color;
+                    for (let r = 0; r < piece.shape.length; r++) {
+                        for (let c = 0; c < piece.shape[r].length; c++) {
+                            if (piece.shape[r][c]) {
+                                ctx.fillRect(offsetX + (px + c) * cell + 1, offsetY + (py + r) * cell + 1, cell - 2, cell - 2);
+                            }
+                        }
+                    }
+                }
+
+                if (moveCooldown > 0) moveCooldown--;
+                if (moveCooldown === 0 && !isGameOver) {
+                    if (arcadeActiveInputs.left && !collides(piece.shape, px - 1, py)) {
+                        px--; moveCooldown = 8;
+                        playArcadeBeep(450, 400, 0.03);
+                    } else if (arcadeActiveInputs.right && !collides(piece.shape, px + 1, py)) {
+                        px++; moveCooldown = 8;
+                        playArcadeBeep(450, 400, 0.03);
+                    } else if (arcadeActiveInputs.down) {
+                        if (!collides(piece.shape, px, py + 1)) {
+                            py++; moveCooldown = 4;
+                        } else {
+                            lockPiece();
+                            moveCooldown = 8;
+                        }
+                    }
+                }
+
+                if ((arcadeActiveInputs.action || arcadeDiscreteActionTriggered) && !isGameOver) {
+                    arcadeDiscreteActionTriggered = false;
+                    const nextShape = rotate(piece.shape);
+                    if (!collides(nextShape, px, py)) {
+                        piece.shape = nextShape;
+                        playArcadeBeep(600, 750, 0.05);
+                    } else if (!collides(nextShape, px - 1, py)) {
+                        px--; piece.shape = nextShape;
+                        playArcadeBeep(600, 750, 0.05);
+                    } else if (!collides(nextShape, px + 1, py)) {
+                        px++; piece.shape = nextShape;
+                        playArcadeBeep(600, 750, 0.05);
+                    }
+                }
+
+                if (!isGameOver) {
+                    arcadeAnimFrame = requestAnimationFrame(draw);
+                }
+            }
+
+            arcadeInterval = setInterval(() => {
+                if (isGameOver || !piece) return;
+                if (!collides(piece.shape, px, py + 1)) {
+                    py++;
+                } else {
+                    lockPiece();
+                }
+            }, 420);
+
+            arcadeAnimFrame = requestAnimationFrame(draw);
+        }
+
+        function renderPage(pageName, updateHistory = true) {
+            stopLanyardRefresh();
+            stopArcadeGame();
+            if (updateHistory) {
+                history.pushState({ screen: 'page', page: pageName, depth: 1 }, '', `#${pageName}`);
+            }
+
+            if (pageName === 'profile') {
+                rightPanel.innerHTML = `
+                    <div class="panel-content-only profile-menu-panel">
+                        <div class="top-row">
+                            <button class="back-button" aria-label="Go back to main menu">←</button>
+                        </div>
+                        <div class="sub-menu">
+                            <button class="menu-item" data-page="knowMe">GET TO KNOW ME</button>
+                            <button class="menu-item" data-page="knownFacts">KNOWN FACTS</button>
+                            <button class="menu-item" data-page="unknownFacts">UNKNOWN FACTS</button>
+                            <button class="menu-item" data-page="hobbies">HOBBIES</button>
+                            <button class="menu-item" data-page="whoIUlt">WHO I ULT</button>
+                        </div>
+                    </div>
+                `;
+
+                const backBtn = document.querySelector('.back-button');
+                if (backBtn) {
+                    backBtn.addEventListener('click', () => {
+                        navigateBack('menu');
+                    });
+                }
+
+                document.querySelectorAll('.sub-menu .menu-item').forEach(button => {
+                    button.addEventListener('click', () => {
+                        playArcadeBeep();
+                        renderDetail(button.dataset.page, true);
+                    });
+                });
+                return;
+            }
+
+            if (pageName === 'sidequests') {
+                const content = getSideQuestsContent();
+                rightPanel.innerHTML = `
+                    <div class="panel-content-only">
+                        <div class="top-row">
+                            <button class="back-button" aria-label="Go back to main menu">←</button>
+                        </div>
+                        ${content}
+                    </div>
+                `;
+
+                const backButton = document.querySelector('.back-button');
+                if (backButton) {
+                    backButton.addEventListener('click', () => {
+                        navigateBack('menu');
+                    });
+                }
+                return;
+            }
+
+            if (pageName === 'randomGame') {
+                if (!currentRandomGame) {
+                    currentRandomGame = pickRandomGame();
+                }
+                const content = getRandomGameContent(currentRandomGame);
+                rightPanel.innerHTML = `
+                    <div class="panel-content-only">
+                        <div class="top-row">
+                            <button class="back-button" aria-label="Go back to main menu">←</button>
+                        </div>
+                        ${content}
+                    </div>
+                `;
+
+                const backButton = document.querySelector('.back-button');
+                if (backButton) {
+                    backButton.addEventListener('click', () => {
+                        navigateBack('menu');
+                    });
+                }
+
+                attachGameCardListeners();
+                return;
+            }
+
+            if (pageName === 'nowPlaying') {
+                const content = getNowPlayingContent();
+                rightPanel.innerHTML = `
+                    <div class="panel-content-only">
+                        <div class="top-row">
+                            <button class="back-button" aria-label="Go back to main menu">←</button>
+                        </div>
+                        ${content}
+                    </div>
+                `;
+
+                const backButton = document.querySelector('.back-button');
+                if (backButton) {
+                    backButton.addEventListener('click', () => {
+                        navigateBack('menu');
+                    });
+                }
+
+                if (editingSection !== 'nowPlaying') {
+                    startLanyardMonitoring();
+                }
+                return;
+            }
+
+            const content = profileSections[pageName] || '';
+            rightPanel.innerHTML = `
+                <div class="panel-content-only">
+                    <div class="top-row">
+                        <button class="back-button" aria-label="Go back to main menu">←</button>
+                    </div>
+                    ${content}
+                </div>
+            `;
+
+            const backButton = document.querySelector('.back-button');
+            if (backButton) {
+                backButton.addEventListener('click', () => {
+                    navigateBack('menu');
+                });
+            }
+
+            if (pageName === 'message') {
+                const submitButton = document.querySelector('.message-submit');
+                if (submitButton) {
+                    submitButton.addEventListener('click', sendMessageToCreator);
+                }
+            }
+
+        }
+
+        function renderDetail(pageName, updateHistory = true) {
+            stopLanyardRefresh();
+            if (updateHistory) {
+                history.pushState({ screen: 'detail', detail: pageName, depth: 2 }, '', `#${pageName}`);
+            }
+
+            if (pageName === 'whoIUlt') {
+                rightPanel.innerHTML = `
+                    <div class="panel-content-only who-i-ult-menu-panel">
+                        <div class="top-row">
+                            <button class="back-button" aria-label="Go back to profile menu">←</button>
+                        </div>
+                        <div class="sub-menu">
+                            <button class="menu-item" data-page="ultBias">BIAS</button>
+                            <button class="menu-item" data-page="ultGroups">GROUPS</button>
+                        </div>
+                    </div>
+                `;
+
+                const backButton = document.querySelector('.back-button');
+                if (backButton) {
+                    backButton.addEventListener('click', () => {
+                        navigateBack('profile');
+                    });
+                }
+
+                document.querySelectorAll('.who-i-ult-menu-panel .sub-menu .menu-item').forEach(button => {
+                    button.addEventListener('click', () => {
+                        playArcadeBeep();
+                        history.replaceState({ screen: 'detail', detail: button.dataset.page, depth: 2 }, '', `#${button.dataset.page}`);
+                        renderDetail(button.dataset.page, false);
+                    });
+                });
+                return;
+            }
+
+            const content = getProfileSectionContent(pageName);
+            rightPanel.innerHTML = `
+                <div class="panel-content-only">
+                    <div class="top-row">
+                        <button class="back-button" aria-label="Go back to profile menu">←</button>
+                    </div>
+                    ${content}
+                </div>
+            `;
+
+            const backButton = document.querySelector('.back-button');
+            if (backButton) {
+                backButton.addEventListener('click', () => {
+                    navigateBack('profile');
+                });
+            }
+        }
+
+        function restoreNavigation() {
+            const hash = (window.location.hash || '').replace(/^#/, '').trim();
+            if (DETAIL_PAGES.includes(hash)) {
+                history.replaceState({ screen: 'detail', detail: hash, depth: 0 }, '', `#${hash}`);
+                renderDetail(hash, false);
+            } else if (TOP_PAGES.includes(hash)) {
+                history.replaceState({ screen: 'page', page: hash, depth: 0 }, '', `#${hash}`);
+                renderPage(hash, false);
+            } else {
+                history.replaceState({ screen: 'menu', depth: 0 }, '', '#menu');
+                renderMainMenu(false);
+            }
+        }
+
+        window.addEventListener('popstate', (event) => {
+            playArcadeBeep();
+            const state = event.state;
+            const hash = (window.location.hash || '').replace(/^#/, '').trim();
+            editingSection = null;
+            isEditingSideQuests = false;
+            stopArcadeGame();
+            stopLanyardRefresh();
+
+            if (state && state.screen === 'detail') {
+                if (state.detail === 'whoIUlt') {
+                    renderPage('profile', false);
+                } else {
+                    renderDetail(state.detail, false);
+                }
+            } else if (state && state.screen === 'page') {
+                renderPage(state.page, false);
+            } else if (state && state.screen === 'menu') {
+                renderMainMenu(false);
+            } else if (DETAIL_PAGES.includes(hash)) {
+                if (hash === 'whoIUlt') {
+                    renderPage('profile', false);
+                } else {
+                    renderDetail(hash, false);
+                }
+            } else if (TOP_PAGES.includes(hash)) {
+                renderPage(hash, false);
+            } else {
+                renderMainMenu(false);
+            }
+        });
+
+        restoreNavigation();
+        checkAdminStatus().then(() => {
+            loadProfileData();
+            const hash = (window.location.hash || '').replace(/^#/, '').trim();
+            if (hash === 'randomGame' || isEditingSideQuests || editingSection) {
+                return;
+            }
+            if (DETAIL_PAGES.includes(hash)) {
+                renderDetail(hash, false);
+            } else if (TOP_PAGES.includes(hash)) {
+                renderPage(hash, false);
+            } else {
+                renderMainMenu(false);
+            }
+        });
+        prefetchNowPlaying();
+        setInterval(prefetchNowPlaying, 15000);
+
+        function handleAppResume() {
+            const hash = (window.location.hash || '').replace(/^#/, '').trim();
+            if (hash === 'nowPlaying' || isMonitoringNowPlaying) {
+                fetchLanyardPresence();
+                connectLanyardSocket();
+                connectDirectStream();
+            } else {
+                prefetchNowPlaying();
+            }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') handleAppResume();
+        });
+        window.addEventListener('focus', handleAppResume);
+        window.addEventListener('pageshow', handleAppResume);
+        window.addEventListener('online', handleAppResume);
+    </script>
+</body>
+</html>

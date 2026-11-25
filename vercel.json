@@ -21,7 +21,10 @@
   ],
   "functions": {
     "api/index.js": {
-      "includeFiles": "admin.html"
+      "includeFiles": "{admin.html,whoami.html,*.gif,*.jpg,*.jpeg,*.png,*.webp,*.svg,*.ico,public/**,css/**,api/**}"
+    },
+    "server.js": {
+      "includeFiles": "{admin.html,whoami.html,*.gif,*.jpg,*.jpeg,*.png,*.webp,*.svg,*.ico,public/**,css/**,api/**}"
     }
   },
   "rewrites": [

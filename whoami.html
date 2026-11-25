@@ -18,7 +18,7 @@
 <body>
     <div class="split-container">
         <div class="left-half">
-            <img src="pacman-pac.gif" alt="Whoami Image" class="whoami-image">
+            <img src="pacman-pac.gif" alt="Whoami Image" class="whoami-image" onerror="if (this.src.indexOf('/pacman-pac.gif') === -1) { this.src='/pacman-pac.gif'; }">
         </div>
 
         <div class="right-half" id="right-panel">
@@ -753,7 +753,7 @@
                             <button type="button" class="edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}" onclick="toggleEditProfile('knowMe')" title="${isAdminLoggedIn ? 'Edit profile' : 'Owner access required'}">${isAdminLoggedIn ? '✎ EDIT' : '🔒 OWNER EDIT'}</button>
                         </div>
                         <div class="fact-box know-me-box">
-                            <img class="blue-cat-cap-image" src="blue%20cat%20cap.jpg" alt="Blue cat cap">
+                            <img class="blue-cat-cap-image" src="blue%20cat%20cap.jpg" alt="Blue cat cap" onerror="if (this.src.indexOf('blue-cat-cap.jpg') === -1) { this.src='blue-cat-cap.jpg'; }">
                             <div class="know-me-grid">
                                 <p>NAME: ${escapeHtml(currentProfileData.knowMe.name)}</p>
                                 <p>NICKNAME: ${escapeHtml(currentProfileData.knowMe.nickname)}</p>
