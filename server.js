@@ -908,14 +908,6 @@ app.post('/api/now-playing', async (req, res) => {
     normalizedSource = 'Apple Music';
   }
 
-  // Auto-resolve artwork and album if missing
-  if (isPlaying && (!artworkUrl || !album)) {
-    const resolved = await resolveTrackArtwork(artist, title, album);
-    if (!artworkUrl && resolved.artworkUrl) artworkUrl = resolved.artworkUrl;
-    if (!album && resolved.album) album = resolved.album;
-    if (!url && resolved.url && normalizedSource === 'Apple Music') url = resolved.url;
-  }
-
   // Generate official streaming link if none provided
   if (!url && title) {
     const query = encodeURIComponent(`${title} ${artist}`.trim());
@@ -948,8 +940,24 @@ app.post('/api/now-playing', async (req, res) => {
     updatedAtMs: now
   };
 
+  // BROADCAST IMMEDIATELY: 0ms latency for track start detection
   await saveNowPlaying(trackData);
-  return res.json({ success: true, track: trackData });
+  res.json({ success: true, track: trackData });
+
+  // Background artwork & album resolution: enriches artwork without blocking track detection
+  if (isPlaying && (!trackData.artworkUrl || !trackData.album)) {
+    resolveTrackArtwork(trackData.artist, trackData.title, trackData.album).then(async (resolved) => {
+      if (resolved && (resolved.artworkUrl || resolved.album)) {
+        const enriched = {
+          ...trackData,
+          artworkUrl: resolved.artworkUrl || trackData.artworkUrl,
+          album: resolved.album || trackData.album,
+          url: (!trackData.url && resolved.url && normalizedSource === 'Apple Music') ? resolved.url : trackData.url
+        };
+        await saveNowPlaying(enriched);
+      }
+    }).catch(() => {});
+  }
 });
 
 app.delete('/api/now-playing', async (req, res) => {

@@ -236,20 +236,69 @@
         }
     }
 
-    // Fast 1s polling + event triggers for instant track change sync
-    setInterval(checkNowPlaying, 1000);
+    // 1. Ultra-fast 250ms polling
+    setInterval(checkNowPlaying, 250);
 
-    // Immediate check on media events
-    document.addEventListener('play', () => setTimeout(checkNowPlaying, 200), true);
-    document.addEventListener('pause', () => setTimeout(checkNowPlaying, 200), true);
-    document.addEventListener('ended', () => setTimeout(checkNowPlaying, 200), true);
+    // 2. Instant MediaSession interception: fires the microsecond Spotify/YTM/Apple sets song metadata
+    try {
+        if (navigator.mediaSession) {
+            let currentMeta = navigator.mediaSession.metadata;
+            Object.defineProperty(navigator.mediaSession, 'metadata', {
+                get() { return currentMeta; },
+                set(val) {
+                    currentMeta = val;
+                    checkNowPlaying();
+                    setTimeout(checkNowPlaying, 80);
+                },
+                configurable: true,
+                enumerable: true
+            });
 
-    // Broadcast pause when tab is closed
+            let currentPlaybackState = navigator.mediaSession.playbackState;
+            Object.defineProperty(navigator.mediaSession, 'playbackState', {
+                get() { return currentPlaybackState; },
+                set(val) {
+                    currentPlaybackState = val;
+                    checkNowPlaying();
+                },
+                configurable: true,
+                enumerable: true
+            });
+        }
+    } catch {}
+
+    // 3. Instant media event triggers (0ms delay as soon as audio starts or unpauses)
+    ['play', 'playing', 'loadeddata', 'loadedmetadata', 'ratechange'].forEach(evt => {
+        document.addEventListener(evt, () => {
+            checkNowPlaying();
+            setTimeout(checkNowPlaying, 100);
+        }, true);
+    });
+    document.addEventListener('pause', () => setTimeout(checkNowPlaying, 50), true);
+    document.addEventListener('ended', () => setTimeout(checkNowPlaying, 50), true);
+
+    // 4. MutationObserver for DOM player bar changes (Spotify, YTM, Apple Music)
+    try {
+        const observer = new MutationObserver(() => {
+            checkNowPlaying();
+        });
+        window.addEventListener('DOMContentLoaded', () => {
+            const playerBar = document.querySelector('[data-testid="now-playing-widget"]') ||
+                              document.querySelector('ytmusic-player-bar') ||
+                              document.querySelector('.playback-description') ||
+                              document.body;
+            if (playerBar) {
+                observer.observe(playerBar, { childList: true, subtree: true, characterData: true });
+            }
+        });
+    } catch {}
+
+    // 5. Broadcast pause when tab is closed
     window.addEventListener('beforeunload', () => {
         if (isCurrentlyPlaying) {
             sendTrackUpdate({ isPlaying: false, title: '' });
         }
     });
 
-    console.log(`[Whoami Sync] Loaded multi-streaming auto-sync for ${detectStreamingPlatform()}.`);
+    console.log(`[Whoami Sync] Loaded ultra-responsive auto-sync for ${detectStreamingPlatform()}.`);
 })();

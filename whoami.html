@@ -1342,7 +1342,6 @@
                 lanyardReconnectTimer = null;
             }
             disconnectLanyardSocket();
-            disconnectDirectStream();
             stopTrackProgress();
         }
 
@@ -1400,13 +1399,11 @@
                         directEventSource.close();
                         directEventSource = null;
                     }
-                    if (isMonitoringNowPlaying || editingSection === 'nowPlaying') {
-                        setTimeout(() => {
-                            if ((isMonitoringNowPlaying || editingSection === 'nowPlaying') && !directEventSource) {
-                                connectDirectStream();
-                            }
-                        }, 3000);
-                    }
+                    setTimeout(() => {
+                        if (!directEventSource) {
+                            connectDirectStream();
+                        }
+                    }, 1000);
                 };
             } catch {}
         }
@@ -1544,7 +1541,7 @@
             fetchLanyardPresence();
             connectLanyardSocket();
             connectDirectStream();
-            lanyardRefreshTimer = setInterval(() => fetchLanyardPresence(false), 1500);
+            lanyardRefreshTimer = setInterval(() => fetchLanyardPresence(false), 1000);
         }
 
         function stopTrackProgress() {
@@ -4008,15 +4005,16 @@
                 renderMainMenu(false);
             }
         });
+        connectDirectStream();
         prefetchNowPlaying();
         setInterval(prefetchNowPlaying, 15000);
 
         function handleAppResume() {
+            connectDirectStream();
             const hash = (window.location.hash || '').replace(/^#/, '').trim();
             if (hash === 'nowPlaying' || isMonitoringNowPlaying) {
                 fetchLanyardPresence();
                 connectLanyardSocket();
-                connectDirectStream();
             } else {
                 prefetchNowPlaying();
             }

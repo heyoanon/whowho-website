@@ -356,10 +356,18 @@ while ($true) {
                 $rawDev = "Desktop PC $bullet $deviceApp ($source)"
                 $device = ($rawDev -replace '[\uFFFD\?]', ' • ' -replace '(?:\s*•\s*)+', ' • ').Trim()
 
-                $artInfo = Get-TrackArtwork -artist $artist -title $title -album $album
-                $artworkUrl = if ($artInfo.artworkUrl) { $artInfo.artworkUrl } else { "" }
-                if (-not $album -and $artInfo.album) { $album = $artInfo.album }
+                $cacheKey = "$artist - $title - $album"
+                $hasCachedArt = $artworkCache.ContainsKey($cacheKey)
 
+                if ($hasCachedArt) {
+                    $artInfo = $artworkCache[$cacheKey]
+                    $artworkUrl = if ($artInfo.artworkUrl) { $artInfo.artworkUrl } else { "" }
+                    if (-not $album -and $artInfo.album) { $album = $artInfo.album }
+                } else {
+                    $artworkUrl = ""
+                }
+
+                # BROADCAST INSTANTLY (0ms delay - do not wait for external artwork lookups)
                 $payload = @{
                     source = $source
                     title = $title
@@ -376,10 +384,26 @@ while ($true) {
                 $jsonBody = $payload | ConvertTo-Json
                 $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($jsonBody)
 
-                Invoke-RestMethod -Uri $ApiUrl -Method POST -Body $bodyBytes -ContentType "application/json; charset=utf-8" -TimeoutSec 5 | Out-Null
+                try {
+                    Invoke-RestMethod -Uri $ApiUrl -Method POST -Body $bodyBytes -ContentType "application/json; charset=utf-8" -TimeoutSec 3 | Out-Null
+                } catch {}
+
                 $stateIcon = if ($isPlaying) { "PLAYING" } else { "PAUSED" }
                 if ($isNewTrack) {
-                    Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] Track Changed -> [$stateIcon] $title by $artist on $source ($device)" -ForegroundColor Green
+                    Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] Track Detected Instantly -> [$stateIcon] $title by $artist on $source ($device)" -ForegroundColor Green
+                }
+
+                # If artwork was not cached, resolve it now and send fast enrichment update
+                if (-not $hasCachedArt -and $isPlaying -and $title) {
+                    $artInfo = Get-TrackArtwork -artist $artist -title $title -album $album
+                    if ($artInfo.artworkUrl -or ($artInfo.album -and -not $album)) {
+                        $payload["artworkUrl"] = $artInfo.artworkUrl
+                        if ($artInfo.album) { $payload["album"] = $artInfo.album }
+                        $enrichBytes = [System.Text.Encoding]::UTF8.GetBytes(($payload | ConvertTo-Json))
+                        try {
+                            Invoke-RestMethod -Uri $ApiUrl -Method POST -Body $enrichBytes -ContentType "application/json; charset=utf-8" -TimeoutSec 3 | Out-Null
+                        } catch {}
+                    }
                 }
             }
         } else {
@@ -392,7 +416,7 @@ while ($true) {
                     title = ""
                 } | ConvertTo-Json
                 $payloadBytes = [System.Text.Encoding]::UTF8.GetBytes($payloadJson)
-                Invoke-RestMethod -Uri $ApiUrl -Method POST -Body $payloadBytes -ContentType "application/json; charset=utf-8" -TimeoutSec 5 | Out-Null
+                Invoke-RestMethod -Uri $ApiUrl -Method POST -Body $payloadBytes -ContentType "application/json; charset=utf-8" -TimeoutSec 3 | Out-Null
                 Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] Playback stopped. Broadcasted standby." -ForegroundColor Yellow
             }
         }
@@ -400,6 +424,6 @@ while ($true) {
         # ignore transient COM or network errors
     }
 
-    # Ultra-responsive 500ms check for instant track change detection
-    Start-Sleep -Milliseconds 500
+    # Ultra-responsive 200ms check for instant track start detection
+    Start-Sleep -Milliseconds 200
 }
