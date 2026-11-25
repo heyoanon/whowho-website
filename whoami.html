@@ -1377,6 +1377,13 @@
                         directEventSource.close();
                         directEventSource = null;
                     }
+                    if (isMonitoringNowPlaying) {
+                        setTimeout(() => {
+                            if (isMonitoringNowPlaying && !directEventSource) {
+                                connectDirectStream();
+                            }
+                        }, 3000);
+                    }
                 };
             } catch {}
         }

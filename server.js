@@ -626,9 +626,9 @@ async function fetchLastFmCurrentlyPlaying(userParam) {
 
 app.post('/api/now-playing', async (req, res) => {
   const secret = req.headers['x-api-key'] || req.body?.secret || req.query?.secret;
-  const configuredSecret = process.env.NOW_PLAYING_SECRET || ADMIN_PASSWORD;
+  const configuredSecret = process.env.NOW_PLAYING_SECRET ? process.env.NOW_PLAYING_SECRET.trim() : '';
 
-  if (configuredSecret && secret !== configuredSecret && !isAuthorizedAdmin(req)) {
+  if (configuredSecret && secret !== configuredSecret && !isValidAdminPassword(secret) && !isAuthorizedAdmin(req)) {
     return res.status(401).json({ error: 'Unauthorized. Provide valid secret or API key.' });
   }
 
@@ -701,9 +701,9 @@ app.post('/api/now-playing', async (req, res) => {
 
 app.delete('/api/now-playing', async (req, res) => {
   const secret = req.headers['x-api-key'] || req.body?.secret || req.query?.secret;
-  const configuredSecret = process.env.NOW_PLAYING_SECRET || ADMIN_PASSWORD;
+  const configuredSecret = process.env.NOW_PLAYING_SECRET ? process.env.NOW_PLAYING_SECRET.trim() : '';
 
-  if (configuredSecret && secret !== configuredSecret && !isAuthorizedAdmin(req)) {
+  if (configuredSecret && secret !== configuredSecret && !isValidAdminPassword(secret) && !isAuthorizedAdmin(req)) {
     return res.status(401).json({ error: 'Unauthorized.' });
   }
 

@@ -11,10 +11,10 @@
 // @connect      *
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
 
-    const API_ENDPOINT = window.location.origin.includes('localhost') 
+    const API_ENDPOINT = window.location.origin.includes('localhost')
         ? 'http://localhost:3000/api/now-playing'
         : 'https://whowho-website.vercel.app/api/now-playing';
 
@@ -44,7 +44,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: payload
-            }).catch(() => {});
+            }).catch(() => { });
         }
     }
 

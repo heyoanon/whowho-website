@@ -1,12 +1,6 @@
 ﻿# Windows Now Playing Broadcast Script for Whoami
-# Automatically detects current audio playback from Spotify, YouTube Music, Apple Music (and any desktop player/browser)
+# Automatically detects current audio playback from Spotify, YouTube Music, Apple Music, and any browser/desktop app
 # and syncs it in real-time to your Whoami website.
-#
-# Usage:
-#   powershell -ExecutionPolicy Bypass -File .\scripts\now-playing-sync.ps1
-#
-# Optional custom API endpoint or secret:
-#   powershell -ExecutionPolicy Bypass -File .\scripts\now-playing-sync.ps1 -ApiUrl "https://whowho-website.vercel.app/api/now-playing" -Secret "your_secret_here"
 
 param(
     [string]$ApiUrl = "https://whowho-website.vercel.app/api/now-playing",
@@ -19,13 +13,26 @@ Write-Host "  Tracks Spotify, YouTube Music & Apple Music in Real Time" -Foregro
 Write-Host "  Target API: $ApiUrl" -ForegroundColor Gray
 Write-Host "==========================================================" -ForegroundColor Cyan
 
-# Load Windows Media Control WinRT APIs (Windows 10/11)
+# Setup WinRT Async helper for PowerShell 5.1 & PowerShell Core
 try {
+    Add-Type -AssemblyName System.Runtime.WindowsRuntime
+    $asTaskGeneric = [System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object {
+        $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1'
+    }[0]
+
+    Function Await-WinRT($asyncOp, $type) {
+        $asTask = $asTaskGeneric.MakeGenericMethod($type)
+        $netTask = $asTask.Invoke($null, @($asyncOp))
+        $netTask.Wait(-1) | Out-Null
+        return $netTask.Result
+    }
+
     [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager, Windows.Media.Control, ContentType = WindowsRuntime] | Out-Null
-    $manager = [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync().GetAwaiter().GetResult()
+    $op = [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync()
+    $manager = Await-WinRT $op ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager])
     Write-Host "[OK] Connected to Windows System Media Transport Controls." -ForegroundColor Green
 } catch {
-    Write-Host "[ERROR] Unable to access Windows Media Session. Please ensure Windows 10/11." -ForegroundColor Red
+    Write-Host "[ERROR] Unable to access Windows Media Session: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
 }
 
@@ -35,7 +42,8 @@ while ($true) {
     try {
         $session = $manager.GetCurrentSession()
         if ($session) {
-            $mediaInfo = $session.TryGetMediaPropertiesAsync().GetAwaiter().GetResult()
+            $propOp = $session.TryGetMediaPropertiesAsync()
+            $mediaInfo = Await-WinRT $propOp ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionMediaProperties])
             $playbackInfo = $session.GetPlaybackInfo()
             $status = $playbackInfo.PlaybackStatus
 
@@ -44,7 +52,8 @@ while ($true) {
             $album = $mediaInfo.AlbumTitle
             $sourceApp = $session.SourceAppUserModelId
 
-            $isPlaying = ($status -eq "Playing")
+            # PlaybackStatus: 4 = Playing, 5 = Paused
+            $isPlaying = ($status -eq 4 -or $status -eq "Playing")
             $trackKey = "$title - $artist - $isPlaying - $sourceApp"
 
             if ($title -and ($trackKey -ne $lastTrack)) {
@@ -64,7 +73,6 @@ while ($true) {
                 } elseif ($appLower -match "bitchord") {
                     $source = "BitChord"
                 } elseif ($appLower -match "chrome|msedge|brave|firefox|opera|vivaldi") {
-                    # Differentiate browser streaming tabs
                     if ($titleLower -match "youtube music") {
                         $source = "YouTube Music"
                     } elseif ($titleLower -match "apple music") {
@@ -72,7 +80,6 @@ while ($true) {
                     } elseif ($titleLower -match "spotify") {
                         $source = "Spotify"
                     } else {
-                        # Default browser music stream to YouTube Music
                         $source = "YouTube Music"
                     }
                 }
@@ -83,10 +90,13 @@ while ($true) {
                     artist = $artist
                     album = $album
                     isPlaying = $isPlaying
-                    secret = $Secret
-                } | ConvertTo-Json
+                }
+                if ($Secret) {
+                    $payload["secret"] = $Secret
+                }
+                $jsonBody = $payload | ConvertTo-Json
 
-                Invoke-RestMethod -Uri $ApiUrl -Method POST -Body $payload -ContentType "application/json" -TimeoutSec 5 | Out-Null
+                Invoke-RestMethod -Uri $ApiUrl -Method POST -Body $jsonBody -ContentType "application/json" -TimeoutSec 5 | Out-Null
                 $stateIcon = if ($isPlaying) { "▶ PLAYING" } else { "⏸ PAUSED" }
                 Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] $stateIcon: $title by $artist on $source" -ForegroundColor Green
             }
