@@ -1544,7 +1544,7 @@
             fetchLanyardPresence();
             connectLanyardSocket();
             connectDirectStream();
-            lanyardRefreshTimer = setInterval(() => fetchLanyardPresence(false), 5000);
+            lanyardRefreshTimer = setInterval(() => fetchLanyardPresence(false), 3000);
         }
 
         function stopTrackProgress() {
@@ -2227,12 +2227,19 @@
             if (deviceType === 'mobile' || /mobile|phone|iphone|android|ipad/i.test(deviceRaw)) {
                 devIcon = '📱';
                 isMobileDev = true;
-                devLabel = deviceRaw ? `PLAYING VIA ${sourceStr.toUpperCase()} • ${deviceRaw.toUpperCase()}` : `PLAYING VIA ${sourceStr.toUpperCase()} ON MOBILE PHONE`;
             } else if (deviceType === 'desktop' || /desktop|pc|windows|mac|linux|brave|zen|opera|librewolf|vivaldi|arc|waterfox|floorp|thorium|chromium|chrome|firefox|edge/i.test(deviceRaw)) {
                 devIcon = '💻';
-                devLabel = deviceRaw ? `PLAYING VIA ${sourceStr.toUpperCase()} • ${deviceRaw.toUpperCase()}` : `PLAYING VIA ${sourceStr.toUpperCase()} ON DESKTOP PC`;
-            } else if (deviceRaw) {
-                devLabel = `PLAYING VIA ${sourceStr.toUpperCase()} • ${deviceRaw.toUpperCase()}`;
+            }
+
+            const cleanDev = deviceRaw.replace(/[\uFFFD\?]/g, '•').replace(/\s*•\s*/g, ' • ').trim();
+            if (cleanDev) {
+                if (/^playing\s+(on|via)/i.test(cleanDev)) {
+                    devLabel = cleanDev.toUpperCase();
+                } else {
+                    devLabel = `PLAYING ON ${cleanDev.toUpperCase()}`;
+                }
+            } else {
+                devLabel = isMobileDev ? `PLAYING VIA ${sourceStr.toUpperCase()} ON MOBILE PHONE` : `PLAYING VIA ${sourceStr.toUpperCase()} ON DESKTOP PC`;
             }
 
             if (devLabel) {
@@ -2307,14 +2314,14 @@
                     <div style="margin-bottom:12px;">
                         <span class="live-pulse" style="background:#5577aa; box-shadow:0 0 8px #5577aa;"></span>
                     </div>
-                    <p class="lanyard-activity" style="color:#ffffff; font-size:12px; margin-bottom:10px; letter-spacing:1px;">NO AUDIO CURRENTLY PLAYING</p>
+                    <p class="lanyard-activity" style="color:#ffffff; font-size:12px; margin-bottom:10px; letter-spacing:1px;">AUDIO STREAM ON STANDBY</p>
                     <p style="font-size:10px; color:#9ab7ff; line-height:1.8; max-width:440px; margin:0 auto 16px auto;">
-                        Testing live device audio only (stored profile is disregarded). Start streaming a track in Brave, Zen Browser, Opera GX, LibreWolf, Spotify, YouTube Music, or Apple Music to see it sync live.
+                        Start streaming any track in Spotify, YouTube Music, Apple Music, or your browser (Brave, Zen, Opera, LibreWolf) to broadcast live.
                     </p>
-                    <button type="button" class="stream-check-btn" onclick="fetchLanyardPresence(true)">CHECK DEVICE AUDIO ⟳</button>
+                    <button type="button" class="stream-check-btn" onclick="fetchLanyardPresence(true)">CHECK AUDIO ⟳</button>
                 </div>
                 <div class="now-playing-footer">
-                    <span class="stream-status-pill"><span class="status-dot standby"></span> STANDBY (TESTING LIVE PLAYBACK ONLY)</span>
+                    <span class="stream-status-pill"><span class="status-dot standby"></span> STREAM STANDBY</span>
                     <button type="button" class="stream-check-btn" onclick="fetchLanyardPresence(true)">REFRESH ⟳</button>
                 </div>
             `;

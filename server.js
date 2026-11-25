@@ -831,6 +831,7 @@ app.post('/api/now-playing', async (req, res) => {
 
   const durationMs = Number(duration) > 0 ? Number(duration) * 1000 : 0;
   const now = Date.now();
+  const sanitizedDevice = String(device || '').replace(/[\uFFFD\?]/g, '•').replace(/\s*•\s*/g, ' • ').trim();
   const trackData = {
     isPlaying: Boolean(isPlaying),
     source: normalizedSource,
@@ -839,7 +840,7 @@ app.post('/api/now-playing', async (req, res) => {
     album: String(album || '').trim(),
     artworkUrl: String(artworkUrl || '').trim(),
     url: String(url || '').trim(),
-    device: String(device || '').trim(),
+    device: sanitizedDevice,
     deviceType: String(deviceType || 'device').trim(),
     durationMs,
     timestamps: (durationMs > 0 && isPlaying) ? { start: now, end: now + durationMs } : null,

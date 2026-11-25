@@ -7,6 +7,14 @@ param(
     [string]$Secret = ""
 )
 
+# Terminate any duplicate previous instance of now-playing-sync to avoid overlapping loops
+$myPid = $PID
+Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object {
+    $_.ProcessId -ne $myPid -and $_.CommandLine -like "*now-playing-sync.ps1*"
+} | ForEach-Object {
+    try { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue } catch {}
+}
+
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host "  ★ WHOAMI NOW PLAYING MULTI-STREAMING SYNC (WINDOWS)" -ForegroundColor Cyan
 Write-Host "  Tracks Spotify, YouTube Music & Apple Music in Real Time" -ForegroundColor Gray
@@ -21,8 +29,10 @@ try {
     }[0]
 
     Function Await-WinRT($asyncOp, $type) {
+        if (-not $asyncOp) { return $null }
         $asTask = $asTaskGeneric.MakeGenericMethod($type)
         $netTask = $asTask.Invoke($null, @($asyncOp))
+        if (-not $netTask) { return $null }
         $netTask.Wait(-1) | Out-Null
         return $netTask.Result
     }
@@ -92,6 +102,7 @@ Function Detect-BrowserStreamingService {
 }
 
 $lastTrack = ""
+$lastBroadcastTime = [DateTime]::MinValue
 
 while ($true) {
     try {
@@ -132,8 +143,12 @@ while ($true) {
             $isPlaying = ($status -eq 4 -or $status -eq "Playing")
             $trackKey = "$title - $artist - $album - $isPlaying - $sourceApp"
 
-            if ($title -and ($trackKey -ne $lastTrack)) {
+            $shouldBroadcast = ($trackKey -ne $lastTrack) -or ($isPlaying -and ([DateTime]::UtcNow - $lastBroadcastTime).TotalSeconds -ge 45)
+
+            if ($title -and $shouldBroadcast) {
+                $isNewTrack = ($trackKey -ne $lastTrack)
                 $lastTrack = $trackKey
+                $lastBroadcastTime = [DateTime]::UtcNow
 
                 # Determine streaming platform
                 $source = "Music"
@@ -254,7 +269,8 @@ while ($true) {
                     }
                 }
 
-                $device = "Desktop PC • $deviceApp ($source)"
+                $bullet = [char]0x2022
+                $device = "Desktop PC $bullet $deviceApp ($source)"
 
                 $payload = @{
                     source = $source
@@ -269,20 +285,25 @@ while ($true) {
                     $payload["secret"] = $Secret
                 }
                 $jsonBody = $payload | ConvertTo-Json
+                $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($jsonBody)
 
-                Invoke-RestMethod -Uri $ApiUrl -Method POST -Body $jsonBody -ContentType "application/json" -TimeoutSec 5 | Out-Null
+                Invoke-RestMethod -Uri $ApiUrl -Method POST -Body $bodyBytes -ContentType "application/json; charset=utf-8" -TimeoutSec 5 | Out-Null
                 $stateIcon = if ($isPlaying) { "PLAYING" } else { "PAUSED" }
-                Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] Track Changed -> [$stateIcon] $title by $artist on $source ($device)" -ForegroundColor Green
+                if ($isNewTrack) {
+                    Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] Track Changed -> [$stateIcon] $title by $artist on $source ($device)" -ForegroundColor Green
+                }
             }
         } else {
             # If playback was active but session is now closed, broadcast paused state
             if ($lastTrack -ne "") {
                 $lastTrack = ""
-                $payload = @{
+                $lastBroadcastTime = [DateTime]::MinValue
+                $payloadJson = @{
                     isPlaying = $false
                     title = ""
                 } | ConvertTo-Json
-                Invoke-RestMethod -Uri $ApiUrl -Method POST -Body $payload -ContentType "application/json" -TimeoutSec 5 | Out-Null
+                $payloadBytes = [System.Text.Encoding]::UTF8.GetBytes($payloadJson)
+                Invoke-RestMethod -Uri $ApiUrl -Method POST -Body $payloadBytes -ContentType "application/json; charset=utf-8" -TimeoutSec 5 | Out-Null
                 Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] Playback stopped. Broadcasted standby." -ForegroundColor Yellow
             }
         }
