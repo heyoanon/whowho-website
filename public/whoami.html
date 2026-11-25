@@ -606,7 +606,7 @@
         function getNowPlayingContent() {
             const isEditing = editingSection === 'nowPlaying';
             if (isEditing) {
-                const currentVibe = currentProfileData.onRepeat || curatedVibes[0];
+                const currentVibe = currentProfileData.onRepeat || { title: '', artist: '', album: '', url: '', artworkUrl: '' };
                 return `
                     <div class="panel-content now-playing-panel">
                         <div class="profile-header-row">
@@ -2287,36 +2287,20 @@
         function renderNoMusic(musicList, presence, customMessage) {
             if (!musicList) return;
 
-            const onRepeat = currentProfileData.onRepeat;
-            const currentVibe = (onRepeat && onRepeat.title)
-                ? onRepeat
-                : curatedVibes[currentVibeIndex % curatedVibes.length];
-
-            const title = currentVibe.title || 'Supernova';
-            const artist = currentVibe.artist || 'aespa';
-            const album = currentVibe.album || '';
-            const artwork = currentVibe.artworkUrl || 'pacman-pac.gif';
-            const trackUrl = currentVibe.url || `https://www.google.com/search?q=${encodeURIComponent(title + ' ' + artist)}`;
-
             musicList.innerHTML = `
-                <div class="lanyard-music-card vibe-card">
-                    <span class="lanyard-source-label on-repeat">★ CURRENT VIBE • ON REPEAT</span>
-                    <img class="lanyard-album-art" src="${escapeHtml(artwork)}" alt="${escapeHtml(title)}" onerror="this.src='pacman-pac.gif'">
-                    <div class="lanyard-track-info">
-                        <a class="lanyard-track-link" href="${escapeHtml(trackUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a>
-                        <div class="lanyard-track-details">
-                            <span class="lanyard-track-artists">${escapeHtml(artist)}</span>
-                            ${album ? `<span class="lanyard-track-album-line">${escapeHtml(album)}</span>` : ''}
-                        </div>
-                        <div class="vibe-actions-row">
-                            <a class="vibe-action-btn listen" href="${escapeHtml(trackUrl)}" target="_blank" rel="noopener noreferrer">▶ LISTEN</a>
-                            <button type="button" class="vibe-action-btn next" onclick="cycleNextCuratedVibe()">⏭ NEXT VIBE (${(currentVibeIndex % curatedVibes.length) + 1}/${curatedVibes.length})</button>
-                        </div>
+                <div class="lanyard-music-card standby-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:28px 20px; border:2px dashed rgba(0, 76, 255, 0.45); border-radius:10px; background:rgba(0, 0, 0, 0.55);">
+                    <div style="margin-bottom:12px;">
+                        <span class="live-pulse" style="background:#5577aa; box-shadow:0 0 8px #5577aa;"></span>
                     </div>
+                    <p class="lanyard-activity" style="color:#ffffff; font-size:12px; margin-bottom:10px; letter-spacing:1px;">NO AUDIO CURRENTLY PLAYING</p>
+                    <p style="font-size:10px; color:#9ab7ff; line-height:1.8; max-width:440px; margin:0 auto 16px auto;">
+                        Testing live device audio only (stored profile is disregarded). Start streaming a track in Brave, Zen Browser, Opera GX, LibreWolf, Spotify, YouTube Music, or Apple Music to see it sync live.
+                    </p>
+                    <button type="button" class="stream-check-btn" onclick="fetchLanyardPresence()">CHECK DEVICE AUDIO ⟳</button>
                 </div>
                 <div class="now-playing-footer">
-                    <span class="stream-status-pill"><span class="status-dot standby"></span> STANDBY (SHOWING ON REPEAT)</span>
-                    <button type="button" class="stream-check-btn" onclick="fetchLanyardPresence()">CHECK LIVE ⟳</button>
+                    <span class="stream-status-pill"><span class="status-dot standby"></span> STANDBY (TESTING LIVE PLAYBACK ONLY)</span>
+                    <button type="button" class="stream-check-btn" onclick="fetchLanyardPresence()">REFRESH ⟳</button>
                 </div>
             `;
             musicList.hidden = false;

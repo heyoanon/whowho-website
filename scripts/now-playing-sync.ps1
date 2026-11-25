@@ -189,8 +189,8 @@ while ($true) {
                 $jsonBody = $payload | ConvertTo-Json
 
                 Invoke-RestMethod -Uri $ApiUrl -Method POST -Body $jsonBody -ContentType "application/json" -TimeoutSec 5 | Out-Null
-                $stateIcon = if ($isPlaying) { "▶ PLAYING" } else { "⏸ PAUSED" }
-                Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] Track Changed -> $stateIcon: $title by $artist on $source ($device)" -ForegroundColor Green
+                $stateIcon = if ($isPlaying) { "PLAYING" } else { "PAUSED" }
+                Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] Track Changed -> [$stateIcon] $title by $artist on $source ($device)" -ForegroundColor Green
             }
         } else {
             # If playback was active but session is now closed, broadcast paused state
