@@ -20,13 +20,8 @@
     }
   ],
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/server.js" },
-    { "source": "/admin", "destination": "/server.js" },
-    { "source": "/admin.html", "destination": "/server.js" }
-  ],
-  "functions": {
-    "server.js": {
-      "includeFiles": "{*.gif,*.jpg,*.html,*.css,css/**,*.json}"
-    }
-  }
+    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/admin", "destination": "/api" },
+    { "source": "/admin.html", "destination": "/api" }
+  ]
 }

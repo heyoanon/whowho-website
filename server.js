@@ -664,7 +664,13 @@ app.get('/api/now-playing', async (req, res) => {
 
   // 4. Lanyard Discord API fallback
   try {
-    const discordRes = await fetch('https://api.lanyard.rest/v1/users/772073053097033741', { cache: 'no-store' });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3000);
+    const discordRes = await fetch('https://api.lanyard.rest/v1/users/772073053097033741', {
+      cache: 'no-store',
+      signal: controller.signal
+    });
+    clearTimeout(timer);
     if (discordRes.ok) {
       const discordData = await discordRes.json();
       if (discordData.success && discordData.data) {

@@ -894,7 +894,7 @@
                     inputs.forEach((input, idx) => {
                         const text = input.value.trim();
                         if (text) {
-                            const existing = previousQuests.find(q => q.text.toLowerCase() === text.toLowerCase());
+                            const existing = previousQuests.find(q => String(q.text || '').toLowerCase() === String(text || '').toLowerCase());
                             newQuests.push({
                                 id: existing ? existing.id : `sq-${Date.now()}-${idx}`,
                                 text: text,
@@ -1384,7 +1384,6 @@
                 return { url: `https://i.ytimg.com/vi/${assetId.slice('youtube:'.length)}/hqdefault.jpg`, fallback: null };
             }
             if (assetId.startsWith('mp:external/')) {
-                const proxyUrl = `https://media.discordapp.net/external/${assetId.slice('mp:external/'.length)}`;
                 let directUrl = null;
                 const match = assetId.match(/^mp:external\/[^/]+\/(https?)\/(.+)$/);
                 if (match) {
@@ -1394,7 +1393,8 @@
                         directUrl = `${match[1]}://${match[2]}`;
                     }
                 }
-                return { url: proxyUrl, fallback: directUrl };
+                const proxyUrl = `https://media.discordapp.net/external/${assetId.slice('mp:external/'.length)}`;
+                return { url: directUrl || proxyUrl, fallback: directUrl ? proxyUrl : null };
             }
             if (assetId.startsWith('http://') || assetId.startsWith('https://')) {
                 return { url: assetId, fallback: null };
@@ -1425,7 +1425,7 @@
             const buttonUrls = [];
             for (const b of buttons) {
                 if (typeof b === 'string') {
-                    buttonTexts.push(b.toLowerCase());
+                    buttonTexts.push(String(b).toLowerCase());
                 } else if (b && typeof b === 'object') {
                     if (b.label) buttonTexts.push(String(b.label).toLowerCase());
                     if (b.url) buttonUrls.push(String(b.url).toLowerCase());
@@ -1529,13 +1529,13 @@
 
             const sourceLabel = document.createElement('span');
             sourceLabel.className = 'lanyard-source-label';
-            sourceLabel.textContent = `PLAYING IN ${track.source.toUpperCase()}`;
+            sourceLabel.textContent = `PLAYING IN ${String(track.source || 'Music').toUpperCase()}`;
             card.appendChild(sourceLabel);
 
             if (track.artworkUrl) {
                 const albumArt = document.createElement('img');
                 albumArt.className = 'lanyard-album-art';
-                albumArt.alt = `${track.source} album art`;
+                albumArt.alt = `${track.source || 'Music'} album art`;
                 albumArt.src = track.artworkUrl;
                 albumArt.onerror = () => {
                     if (track.fallbackArtworkUrl && albumArt.src !== track.fallbackArtworkUrl) {
@@ -1544,7 +1544,7 @@
                     }
                     albumArt.hidden = true;
                     card.classList.add('no-art');
-                    console.error(`Unable to load ${track.source} album artwork.`);
+                    console.warn(`Unable to load ${track.source || 'Music'} album artwork.`);
                 };
                 card.appendChild(albumArt);
             }
@@ -1646,17 +1646,19 @@
             musicList.innerHTML = `
                 <div class="lanyard-empty-card">
                     <span class="lanyard-source-label">NOW PLAYING</span>
-                    <p class="lanyard-activity-title">${customMessage || 'NOT CURRENTLY PLAYING'}</p>
+                    <p class="lanyard-activity-title">${escapeHtml(customMessage || 'NOT CURRENTLY PLAYING')}</p>
                     <p class="lanyard-hint">Listening to Spotify, YouTube Music, or BitChord? Make sure Discord is active and playback sharing is enabled.</p>
                     <div class="lanyard-status-badge">
                         <span class="lanyard-status-dot ${(presence ? presence.discord_status : 'offline') || 'offline'}"></span>
-                        <span>DISCORD: ${discordStatus} (${discordDevice})</span>
+                        <span>DISCORD: ${escapeHtml(discordStatus)} (${escapeHtml(discordDevice)})</span>
                     </div>
                     <button type="button" class="lanyard-refresh-button" onclick="fetchLanyardPresence()">REFRESH STATUS</button>
                 </div>
             `;
             musicList.hidden = false;
         }
+
+        window.fetchLanyardPresence = fetchLanyardPresence;
 
         function renderUnifiedMusic() {
             const musicList = document.getElementById('lanyard-music-list');
@@ -1684,8 +1686,8 @@
             if (latestLanyardPresence && latestLanyardPresence.spotify && (latestLanyardPresence.listening_to_spotify || latestLanyardPresence.spotify.song)) {
                 const spotify = latestLanyardPresence.spotify;
                 const isDup = tracks.some(t =>
-                    t.source.toLowerCase() === 'spotify' &&
-                    t.title.toLowerCase() === spotify.song.toLowerCase()
+                    String(t.source || '').toLowerCase() === 'spotify' &&
+                    String(t.title || '').toLowerCase() === String(spotify.song || '').toLowerCase()
                 );
                 if (!isDup) {
                     tracks.push({
@@ -1709,13 +1711,13 @@
                     const parsed = parseMusicActivity(activity);
                     if (!parsed) continue;
 
-                    if (parsed.source.toLowerCase() === 'spotify' && tracks.some(t => t.source.toLowerCase() === 'spotify')) {
+                    if (String(parsed.source || '').toLowerCase() === 'spotify' && tracks.some(t => String(t.source || '').toLowerCase() === 'spotify')) {
                         continue;
                     }
 
                     const isDuplicate = tracks.some(t =>
-                        t.source.toLowerCase() === parsed.source.toLowerCase() &&
-                        t.title.toLowerCase() === parsed.title.toLowerCase()
+                        String(t.source || '').toLowerCase() === String(parsed.source || '').toLowerCase() &&
+                        String(t.title || '').toLowerCase() === String(parsed.title || '').toLowerCase()
                     );
                     if (!isDuplicate) {
                         tracks.push(parsed);
