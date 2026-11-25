@@ -221,6 +221,15 @@ app.get(['/admin', '/admin.html', '/admin/*'], requireAdmin, (_req, res) => {
   res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
+app.use('/css', express.static(path.join(__dirname, 'css')));
+app.get(['/css/style.css', '/style.css'], (_req, res) => {
+  res.setHeader('Content-Type', 'text/css');
+  const cssFile = path.join(__dirname, 'css', 'style.css');
+  if (fs.existsSync(cssFile)) {
+    return res.sendFile(cssFile);
+  }
+  return res.sendFile(path.join(__dirname, 'style.css'));
+});
 app.use(express.static(__dirname));
 
 app.post('/api/message', async (req, res) => {
