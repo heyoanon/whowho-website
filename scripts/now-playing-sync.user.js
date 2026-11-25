@@ -32,14 +32,52 @@
         return 'Music';
     }
 
+    function detectBrowserName() {
+        const ua = navigator.userAgent || '';
+        const uaLower = ua.toLowerCase();
+
+        // 1. Zen Browser
+        if (uaLower.includes('zen') || (window.navigator?.userAgentData?.brands?.some(b => /zen/i.test(b.brand)))) {
+            return 'Zen Browser';
+        }
+        // 2. LibreWolf
+        if (uaLower.includes('librewolf')) {
+            return 'LibreWolf Browser';
+        }
+        // 3. Opera / Opera GX
+        if (uaLower.includes('opr/') || uaLower.includes('opera')) {
+            return uaLower.includes('gx') ? 'Opera GX' : 'Opera Browser';
+        }
+        // 4. Brave
+        if (navigator.brave || (window.navigator?.userAgentData?.brands?.some(b => /brave/i.test(b.brand))) || uaLower.includes('brave')) {
+            return 'Brave Browser';
+        }
+        // 5. Vivaldi
+        if (uaLower.includes('vivaldi')) {
+            return 'Vivaldi Browser';
+        }
+        // 6. Arc
+        if (window.arc || uaLower.includes('arc/')) {
+            return 'Arc Browser';
+        }
+        // 7. Waterfox / Floorp
+        if (uaLower.includes('waterfox')) return 'Waterfox Browser';
+        if (uaLower.includes('floorp')) return 'Floorp Browser';
+        // 8. Edge
+        if (uaLower.includes('edg/')) return 'Edge Browser';
+        // 9. Firefox
+        if (uaLower.includes('firefox/')) return 'Firefox Browser';
+        // 10. Chrome / Chromium
+        if (uaLower.includes('chrome/')) return 'Chrome Browser';
+        // 11. Safari
+        if (uaLower.includes('safari/')) return 'Safari Browser';
+
+        return 'Web Browser';
+    }
+
     function getDeviceLocation() {
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        const browser = navigator.userAgent.includes('Brave') ? 'Brave' :
-                        navigator.userAgent.includes('Edg') ? 'Edge' :
-                        navigator.userAgent.includes('Chrome') ? 'Chrome' :
-                        navigator.userAgent.includes('Firefox') ? 'Firefox' :
-                        navigator.userAgent.includes('Safari') ? 'Safari' : 'Web Browser';
-        const platform = detectStreamingPlatform();
+        const browser = detectBrowserName();
         return {
             device: isMobile ? `Mobile Phone • ${browser}` : `Desktop PC • ${browser}`,
             deviceType: isMobile ? 'mobile' : 'desktop'

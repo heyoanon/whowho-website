@@ -1776,6 +1776,23 @@
         }
         window.selectStreamingService = selectStreamingService;
 
+        function detectCurrentBrowserName() {
+            const ua = (navigator.userAgent || '').toLowerCase();
+            if (ua.includes('zen') || (window.navigator?.userAgentData?.brands?.some(b => /zen/i.test(b.brand)))) return 'Zen Browser';
+            if (ua.includes('librewolf')) return 'LibreWolf';
+            if (ua.includes('opr/') || ua.includes('opera')) return ua.includes('gx') ? 'Opera GX' : 'Opera';
+            if (navigator.brave || (window.navigator?.userAgentData?.brands?.some(b => /brave/i.test(b.brand))) || ua.includes('brave')) return 'Brave';
+            if (ua.includes('vivaldi')) return 'Vivaldi';
+            if (window.arc || ua.includes('arc/')) return 'Arc';
+            if (ua.includes('waterfox')) return 'Waterfox';
+            if (ua.includes('floorp')) return 'Floorp';
+            if (ua.includes('edg/')) return 'Edge';
+            if (ua.includes('firefox/')) return 'Firefox';
+            if (ua.includes('chrome/')) return 'Chrome';
+            if (ua.includes('safari/')) return 'Safari';
+            return 'Browser';
+        }
+
         async function submitLiveStreamBroadcast() {
             playArcadeBeep();
             const service = selectedStreamingService || 'Spotify';
@@ -1791,7 +1808,8 @@
             }
 
             const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-            const devName = isMobile ? 'Mobile Phone' : 'Desktop PC';
+            const browserName = detectCurrentBrowserName();
+            const devName = isMobile ? `Mobile Phone • ${browserName}` : `Desktop PC • ${browserName}`;
             const devType = isMobile ? 'mobile' : 'desktop';
 
             const token = getStoredAdminToken();
@@ -1866,6 +1884,8 @@
                     if (host.includes('youtube')) source = 'YouTube Music';
                     else if (host.includes('apple')) source = 'Apple Music';
 
+                    const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+                    const browserName = detectCurrentBrowserName();
                     return {
                         source,
                         title,
@@ -1873,8 +1893,8 @@
                         album,
                         artworkUrl,
                         url: '',
-                        device: /Android|iPhone|iPad/i.test(navigator.userAgent) ? 'Mobile Phone' : 'Desktop PC',
-                        deviceType: /Android|iPhone|iPad/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+                        device: isMobile ? `Mobile Phone • ${browserName}` : `Desktop PC • ${browserName}`,
+                        deviceType: isMobile ? 'mobile' : 'desktop'
                     };
                 }
             }
@@ -2193,7 +2213,7 @@
                 devIcon = '📱';
                 isMobileDev = true;
                 devLabel = deviceRaw ? `PLAYING ON ${deviceRaw.toUpperCase()}` : 'PLAYING ON MOBILE PHONE';
-            } else if (deviceType === 'desktop' || /desktop|pc|windows|mac|brave|chrome|firefox|edge/i.test(deviceRaw)) {
+            } else if (deviceType === 'desktop' || /desktop|pc|windows|mac|linux|brave|zen|opera|librewolf|vivaldi|arc|waterfox|floorp|thorium|chromium|chrome|firefox|edge/i.test(deviceRaw)) {
                 devIcon = '💻';
                 devLabel = deviceRaw ? `PLAYING ON ${deviceRaw.toUpperCase()}` : 'PLAYING ON DESKTOP PC';
             } else if (deviceRaw) {

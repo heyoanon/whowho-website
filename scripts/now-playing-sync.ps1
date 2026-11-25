@@ -1,4 +1,4 @@
-# Windows Now Playing Broadcast Script for Whoami
+﻿# Windows Now Playing Broadcast Script for Whoami
 # Automatically detects current audio playback from Spotify, YouTube Music, Apple Music, and any browser/desktop app
 # and syncs it in real-time to your Whoami website whenever a track changes or pauses, including device location.
 
@@ -65,7 +65,9 @@ while ($true) {
                 $titleLower = if ($title) { $title.ToLower() } else { "" }
 
                 # Determine friendly device info ("where it plays")
-                $deviceApp = "Desktop"
+                $deviceApp = "Desktop Audio"
+                $isBrowser = $false
+
                 if ($appLower -match "spotify") {
                     $source = "Spotify"
                     $deviceApp = "Spotify App"
@@ -78,32 +80,96 @@ while ($true) {
                 } elseif ($appLower -match "bitchord") {
                     $source = "BitChord"
                     $deviceApp = "BitChord"
+                } elseif ($appLower -match "tidal") {
+                    $source = "Tidal"
+                    $deviceApp = "Tidal App"
+                } elseif ($appLower -match "deezer") {
+                    $source = "Deezer"
+                    $deviceApp = "Deezer App"
+                } elseif ($appLower -match "foobar2000") {
+                    $source = "Music"
+                    $deviceApp = "foobar2000"
+                } elseif ($appLower -match "vlc") {
+                    $source = "Music"
+                    $deviceApp = "VLC Media Player"
+                } elseif ($appLower -match "musicbee") {
+                    $source = "Music"
+                    $deviceApp = "MusicBee"
+                } elseif ($appLower -match "aimp") {
+                    $source = "Music"
+                    $deviceApp = "AIMP"
+                } elseif ($appLower -match "winamp") {
+                    $source = "Music"
+                    $deviceApp = "Winamp"
+                # --- Multi-Browser Detection ---
+                } elseif ($appLower -match "zen") {
+                    $deviceApp = "Zen Browser"
+                    $isBrowser = $true
+                } elseif ($appLower -match "librewolf") {
+                    $deviceApp = "LibreWolf Browser"
+                    $isBrowser = $true
+                } elseif ($appLower -match "operagx") {
+                    $deviceApp = "Opera GX"
+                    $isBrowser = $true
+                } elseif ($appLower -match "opera") {
+                    $deviceApp = "Opera Browser"
+                    $isBrowser = $true
                 } elseif ($appLower -match "brave") {
                     $deviceApp = "Brave Browser"
-                    if ($titleLower -match "youtube music") { $source = "YouTube Music" }
-                    elseif ($titleLower -match "apple music") { $source = "Apple Music" }
-                    elseif ($titleLower -match "spotify") { $source = "Spotify" }
-                    else { $source = "YouTube Music" }
+                    $isBrowser = $true
+                } elseif ($appLower -match "vivaldi") {
+                    $deviceApp = "Vivaldi Browser"
+                    $isBrowser = $true
+                } elseif ($appLower -match "arc") {
+                    $deviceApp = "Arc Browser"
+                    $isBrowser = $true
+                } elseif ($appLower -match "waterfox") {
+                    $deviceApp = "Waterfox Browser"
+                    $isBrowser = $true
+                } elseif ($appLower -match "floorp") {
+                    $deviceApp = "Floorp Browser"
+                    $isBrowser = $true
+                } elseif ($appLower -match "thorium") {
+                    $deviceApp = "Thorium Browser"
+                    $isBrowser = $true
+                } elseif ($appLower -match "chromium") {
+                    $deviceApp = "Chromium Browser"
+                    $isBrowser = $true
                 } elseif ($appLower -match "chrome") {
                     $deviceApp = "Chrome Browser"
-                    if ($titleLower -match "youtube music") { $source = "YouTube Music" }
-                    elseif ($titleLower -match "apple music") { $source = "Apple Music" }
-                    elseif ($titleLower -match "spotify") { $source = "Spotify" }
-                    else { $source = "YouTube Music" }
-                } elseif ($appLower -match "msedge") {
+                    $isBrowser = $true
+                } elseif ($appLower -match "msedge|edge") {
                     $deviceApp = "Edge Browser"
-                    if ($titleLower -match "youtube music") { $source = "YouTube Music" }
-                    elseif ($titleLower -match "apple music") { $source = "Apple Music" }
-                    elseif ($titleLower -match "spotify") { $source = "Spotify" }
-                    else { $source = "YouTube Music" }
+                    $isBrowser = $true
                 } elseif ($appLower -match "firefox") {
                     $deviceApp = "Firefox Browser"
-                    if ($titleLower -match "youtube music") { $source = "YouTube Music" }
-                    elseif ($titleLower -match "apple music") { $source = "Apple Music" }
-                    elseif ($titleLower -match "spotify") { $source = "Spotify" }
-                    else { $source = "YouTube Music" }
+                    $isBrowser = $true
+                } elseif ($appLower -match "tor") {
+                    $deviceApp = "Tor Browser"
+                    $isBrowser = $true
                 } else {
-                    $deviceApp = if ($sourceApp) { $sourceApp } else { "Desktop Audio" }
+                    $cleanName = $sourceApp -replace '\.exe$', '' -replace '^.*\\', ''
+                    $deviceApp = if ($cleanName) { $cleanName } else { "Desktop Audio" }
+                    if ($deviceApp -match "browser|web") { $isBrowser = $true }
+                }
+
+                # If playing in any browser, infer streaming platform
+                if ($isBrowser) {
+                    if ($titleLower -match "spotify" -or $sourceApp -match "spotify") {
+                        $source = "Spotify"
+                    } elseif ($titleLower -match "apple music|itunes" -or $sourceApp -match "apple") {
+                        $source = "Apple Music"
+                    } elseif ($titleLower -match "youtube music|yt music" -or $sourceApp -match "youtube") {
+                        $source = "YouTube Music"
+                    } elseif ($titleLower -match "soundcloud") {
+                        $source = "SoundCloud"
+                    } elseif ($titleLower -match "tidal") {
+                        $source = "Tidal"
+                    } elseif ($titleLower -match "deezer") {
+                        $source = "Deezer"
+                    } else {
+                        $source = "YouTube Music"
+                    }
                 }
 
                 $device = "Desktop PC • $deviceApp"

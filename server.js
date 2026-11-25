@@ -758,24 +758,41 @@ app.post('/api/now-playing', async (req, res) => {
   // Infer device info if not provided
   if (!device) {
     const ua = (req.headers['user-agent'] || '').toLowerCase();
+    let browserName = 'Browser';
+    if (ua.includes('zen')) browserName = 'Zen Browser';
+    else if (ua.includes('librewolf')) browserName = 'LibreWolf';
+    else if (ua.includes('opr/') || ua.includes('opera')) browserName = ua.includes('gx') ? 'Opera GX' : 'Opera';
+    else if (ua.includes('brave')) browserName = 'Brave';
+    else if (ua.includes('vivaldi')) browserName = 'Vivaldi';
+    else if (ua.includes('arc/')) browserName = 'Arc';
+    else if (ua.includes('waterfox')) browserName = 'Waterfox';
+    else if (ua.includes('floorp')) browserName = 'Floorp';
+    else if (ua.includes('edg/')) browserName = 'Edge';
+    else if (ua.includes('firefox')) browserName = 'Firefox';
+    else if (ua.includes('chrome')) browserName = 'Chrome';
+    else if (ua.includes('safari')) browserName = 'Safari';
+
     if (ua.includes('iphone')) {
-      device = 'iPhone';
+      device = `iPhone • ${browserName}`;
       deviceType = 'mobile';
     } else if (ua.includes('ipad')) {
-      device = 'iPad';
+      device = `iPad • ${browserName}`;
       deviceType = 'mobile';
     } else if (ua.includes('android')) {
-      device = 'Android Device';
+      device = `Android • ${browserName}`;
       deviceType = 'mobile';
     } else if (ua.includes('windows')) {
-      device = 'Windows PC';
+      device = `Desktop PC • ${browserName}`;
       deviceType = 'desktop';
     } else if (ua.includes('macintosh') || ua.includes('mac os')) {
-      device = 'Mac Desktop';
+      device = `Mac • ${browserName}`;
+      deviceType = 'desktop';
+    } else if (ua.includes('linux')) {
+      device = `Linux • ${browserName}`;
       deviceType = 'desktop';
     } else {
-      device = 'Desktop / Mobile';
-      deviceType = 'device';
+      device = `Desktop PC • ${browserName}`;
+      deviceType = 'desktop';
     }
   }
 
