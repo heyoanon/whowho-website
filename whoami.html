@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=2.4">
+    <link rel="stylesheet" href="css/style.css?v=2.5">
 </head>
 
 <body>
@@ -82,8 +82,63 @@
                 { id: 'sq-1', text: 'Expand my knowledge in coding and designing.', done: false },
                 { id: 'sq-2', text: 'Make a website based on what it needs.', done: true },
                 { id: 'sq-3', text: 'Keep learning unexpectedly.', done: false }
-            ]
+            ],
+            onRepeat: {
+                title: 'Supernova',
+                artist: 'aespa',
+                album: 'Armageddon - The 1st Album',
+                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b2734107e0e7a8e8f85f34177f1f',
+                url: 'https://open.spotify.com/track/712roG90pcuZ9mQdrwUojT',
+                source: 'On Repeat'
+            },
+            lastfmUser: ''
         };
+
+        const curatedVibes = [
+            {
+                title: 'Supernova',
+                artist: 'aespa',
+                album: 'Armageddon - The 1st Album',
+                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b2734107e0e7a8e8f85f34177f1f',
+                url: 'https://open.spotify.com/track/712roG90pcuZ9mQdrwUojT'
+            },
+            {
+                title: 'Whiplash',
+                artist: 'aespa',
+                album: 'Whiplash - The 5th Mini Album',
+                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b2737ceca1aebe42b6a03b54728d',
+                url: 'https://open.spotify.com/track/3FPuk3O0b3s9Z6kE6w0tqG'
+            },
+            {
+                title: 'Cosmic',
+                artist: 'Red Velvet',
+                album: 'Cosmic',
+                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b273cb8a0fa61957c5881bbdf06f',
+                url: 'https://open.spotify.com/track/4l4K3N82jR8q4H8Q03l7vG'
+            },
+            {
+                title: 'DASH',
+                artist: 'NMIXX',
+                album: 'Fe3O4: BREAK',
+                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b273ce96f7c87cbb517f8646b9a2',
+                url: 'https://open.spotify.com/track/2Z1w4Fz1x4j1k4y4k4m4m4'
+            },
+            {
+                title: 'Talk that Talk',
+                artist: 'TWICE',
+                album: 'BETWEEN 1&2',
+                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b27394d0799309ec903cb6d318e8',
+                url: 'https://open.spotify.com/track/0wODX2g6d6s4x8o6y8p6y8'
+            },
+            {
+                title: 'RUN2U',
+                artist: 'STAYC',
+                album: 'YOUNG-LUV.COM',
+                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b273e86f8bf7a1bf64c9d32d0c27',
+                url: 'https://open.spotify.com/track/0x9x8y7w6v5u4t3s2r1q0p'
+            }
+        ];
+        let currentVibeIndex = 0;
 
         let currentProfileData = JSON.parse(JSON.stringify(defaultProfileData));
         let editingSection = null;
@@ -447,8 +502,26 @@
             playArcadeBeep();
             editingSection = null;
             isEditingSideQuests = false;
-            renderDetail(sectionKey, false);
+            if (sectionKey === 'nowPlaying') {
+                renderPage('nowPlaying', false);
+            } else {
+                renderDetail(sectionKey, false);
+            }
         }
+
+        function toggleEditNowPlaying() {
+            playArcadeBeep();
+            if (!isAdminLoggedIn) {
+                showAdminPasswordModal('Only the owner of the website can edit Now Playing settings.', () => {
+                    editingSection = 'nowPlaying';
+                    renderPage('nowPlaying', false);
+                });
+                return;
+            }
+            editingSection = 'nowPlaying';
+            renderPage('nowPlaying', false);
+        }
+        window.toggleEditNowPlaying = toggleEditNowPlaying;
 
         function switchUltTab(targetSection) {
             playArcadeBeep();
@@ -464,7 +537,7 @@
 
             showConfirmationModal(
                 'SAVE CHANGES?',
-                'Are you sure you want to save your updated profile information?',
+                'Are you sure you want to save your updated information?',
                 () => {
                     const formData = new FormData(form);
 
@@ -499,6 +572,16 @@
                             stanGroups: (formData.get('stanGroups') || '').trim(),
                             boyGroups: (formData.get('boyGroups') || '').trim()
                         };
+                    } else if (sectionKey === 'nowPlaying') {
+                        currentProfileData.onRepeat = {
+                            title: (formData.get('title') || '').trim(),
+                            artist: (formData.get('artist') || '').trim(),
+                            album: (formData.get('album') || '').trim(),
+                            url: (formData.get('url') || '').trim(),
+                            artworkUrl: (formData.get('artworkUrl') || '').trim(),
+                            source: 'On Repeat'
+                        };
+                        currentProfileData.lastfmUser = (formData.get('lastfmUser') || '').trim();
                     }
 
                     try {
@@ -507,11 +590,75 @@
 
                     saveProfileToServer(currentProfileData);
                     editingSection = null;
-            isEditingSideQuests = false;
-                    showToast('PROFILE UPDATED SUCCESSFULLY!');
-                    renderDetail(sectionKey, false);
+                    isEditingSideQuests = false;
+                    showToast('UPDATED SUCCESSFULLY!');
+                    if (sectionKey === 'nowPlaying') {
+                        renderPage('nowPlaying', false);
+                    } else {
+                        renderDetail(sectionKey, false);
+                    }
                 }
             );
+        }
+
+        function getNowPlayingContent() {
+            const isEditing = editingSection === 'nowPlaying';
+            if (isEditing) {
+                const currentVibe = currentProfileData.onRepeat || curatedVibes[0];
+                return `
+                    <div class="panel-content now-playing-panel">
+                        <div class="profile-header-row">
+                            <h2>EDIT NOW PLAYING</h2>
+                        </div>
+                        <div class="fact-box scrollable-facts-box">
+                            <form class="profile-edit-form" id="form-nowPlaying" onsubmit="event.preventDefault(); promptSaveProfile('nowPlaying');">
+                                <div class="profile-form-group">
+                                    <label class="profile-form-label">SONG TITLE</label>
+                                    <input class="profile-input-field" name="title" value="${escapeHtml(currentVibe.title || '')}" placeholder="e.g. Supernova" required autocomplete="off">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label class="profile-form-label">ARTIST</label>
+                                    <input class="profile-input-field" name="artist" value="${escapeHtml(currentVibe.artist || '')}" placeholder="e.g. aespa" required autocomplete="off">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label class="profile-form-label">ALBUM</label>
+                                    <input class="profile-input-field" name="album" value="${escapeHtml(currentVibe.album || '')}" placeholder="e.g. Armageddon - The 1st Album" autocomplete="off">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label class="profile-form-label">SONG LINK (SPOTIFY, YOUTUBE, ETC.)</label>
+                                    <input class="profile-input-field" name="url" value="${escapeHtml(currentVibe.url || '')}" placeholder="https://open.spotify.com/track/..." autocomplete="off">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label class="profile-form-label">ALBUM ARTWORK URL</label>
+                                    <input class="profile-input-field" name="artworkUrl" value="${escapeHtml(currentVibe.artworkUrl || '')}" placeholder="https://i.scdn.co/image/..." autocomplete="off">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label class="profile-form-label">LAST.FM USERNAME (OPTIONAL • SCROBBLES 24/7 WITHOUT DISCORD)</label>
+                                    <input class="profile-input-field" name="lastfmUser" value="${escapeHtml(currentProfileData.lastfmUser || '')}" placeholder="e.g. your_lastfm_user" autocomplete="off">
+                                </div>
+                                <div class="profile-edit-actions">
+                                    <button type="submit" class="btn-save-profile">SAVE CHANGES</button>
+                                    <button type="button" class="btn-cancel-profile" onclick="cancelEditProfile('nowPlaying')">CANCEL</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="panel-content now-playing-panel">
+                    <div class="profile-header-row">
+                        <h2>NOW PLAYING</h2>
+                        <button type="button" class="edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}" onclick="toggleEditNowPlaying()" title="${isAdminLoggedIn ? 'Set on-repeat song & music settings' : 'Owner access required'}">${isAdminLoggedIn ? '✎ EDIT VIBE' : '🔒 OWNER EDIT'}</button>
+                    </div>
+                    <div class="fact-box lanyard-box">
+                        <div id="lanyard-music-list" class="lanyard-music-list">
+                            <p class="lanyard-activity">CONNECTING TO AUDIO STREAM...</p>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
         window.toggleEditProfile = toggleEditProfile;
@@ -1289,9 +1436,10 @@
                     }
                 };
 
+                const lastFmParam = currentProfileData.lastfmUser ? `?lastfm=${encodeURIComponent(currentProfileData.lastfmUser)}` : '';
                 const [lanyardData, directData] = await Promise.all([
                     fetchWithTimeout(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`, 4000),
-                    fetchWithTimeout('/api/now-playing', 4000)
+                    fetchWithTimeout('/api/now-playing' + lastFmParam, 4000)
                 ]);
 
                 if (lanyardData && lanyardData.success && lanyardData.data) {
@@ -1300,6 +1448,9 @@
                 }
                 if (directData) {
                     latestDirectTrack = directData.isPlaying ? directData : null;
+                    if (directData.onRepeat && (!currentProfileData.onRepeat || !currentProfileData.onRepeat.title)) {
+                        currentProfileData.onRepeat = directData.onRepeat;
+                    }
                 }
 
                 const musicList = document.getElementById('lanyard-music-list');
@@ -1551,8 +1702,8 @@
             }
 
             const sourceLabel = document.createElement('span');
-            sourceLabel.className = 'lanyard-source-label';
-            sourceLabel.textContent = `PLAYING IN ${String(track.source || 'Music').toUpperCase()}`;
+            sourceLabel.className = 'lanyard-source-label live';
+            sourceLabel.innerHTML = `<span class="live-pulse"></span> LIVE NOW • ${escapeHtml(String(track.source || 'Music').toUpperCase())}`;
             card.appendChild(sourceLabel);
 
             if (track.artworkUrl) {
@@ -1654,32 +1805,50 @@
         function renderNoMusic(musicList, presence, customMessage) {
             if (!musicList) return;
 
-            let discordStatus = 'OFFLINE';
-            let discordDevice = 'DISCONNECTED';
+            const onRepeat = currentProfileData.onRepeat;
+            const currentVibe = (onRepeat && onRepeat.title)
+                ? onRepeat
+                : curatedVibes[currentVibeIndex % curatedVibes.length];
 
-            if (presence) {
-                discordStatus = (presence.discord_status || 'offline').toUpperCase();
-                const devices = [];
-                if (presence.active_on_discord_desktop) devices.push('DESKTOP');
-                if (presence.active_on_discord_mobile) devices.push('MOBILE');
-                if (presence.active_on_discord_web) devices.push('WEB');
-                discordDevice = devices.length ? devices.join(' & ') : 'STANDBY';
-            }
+            const title = currentVibe.title || 'Supernova';
+            const artist = currentVibe.artist || 'aespa';
+            const album = currentVibe.album || '';
+            const artwork = currentVibe.artworkUrl || 'pacman-pac.gif';
+            const trackUrl = currentVibe.url || `https://www.google.com/search?q=${encodeURIComponent(title + ' ' + artist)}`;
 
             musicList.innerHTML = `
-                <div class="lanyard-empty-card">
-                    <span class="lanyard-source-label">NOW PLAYING</span>
-                    <p class="lanyard-activity-title">${escapeHtml(customMessage || 'NOT CURRENTLY PLAYING')}</p>
-                    <p class="lanyard-hint">Listening to Spotify, YouTube Music, or BitChord? Make sure Discord is active and playback sharing is enabled.</p>
-                    <div class="lanyard-status-badge">
-                        <span class="lanyard-status-dot ${(presence ? presence.discord_status : 'offline') || 'offline'}"></span>
-                        <span>DISCORD: ${escapeHtml(discordStatus)} (${escapeHtml(discordDevice)})</span>
+                <div class="lanyard-music-card vibe-card">
+                    <span class="lanyard-source-label on-repeat">★ CURRENT VIBE • ON REPEAT</span>
+                    <img class="lanyard-album-art" src="${escapeHtml(artwork)}" alt="${escapeHtml(title)}" onerror="this.src='pacman-pac.gif'">
+                    <div class="lanyard-track-info">
+                        <a class="lanyard-track-link" href="${escapeHtml(trackUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a>
+                        <div class="lanyard-track-details">
+                            <span class="lanyard-track-artists">${escapeHtml(artist)}</span>
+                            ${album ? `<span class="lanyard-track-album-line">${escapeHtml(album)}</span>` : ''}
+                        </div>
+                        <div class="vibe-actions-row">
+                            <a class="vibe-action-btn listen" href="${escapeHtml(trackUrl)}" target="_blank" rel="noopener noreferrer">▶ LISTEN</a>
+                            <button type="button" class="vibe-action-btn next" onclick="cycleNextCuratedVibe()">⏭ NEXT VIBE (${(currentVibeIndex % curatedVibes.length) + 1}/${curatedVibes.length})</button>
+                        </div>
                     </div>
-                    <button type="button" class="lanyard-refresh-button" onclick="fetchLanyardPresence()">REFRESH STATUS</button>
+                </div>
+                <div class="now-playing-footer">
+                    <span class="stream-status-pill"><span class="status-dot standby"></span> STANDBY (SHOWING ON REPEAT)</span>
+                    <button type="button" class="stream-check-btn" onclick="fetchLanyardPresence()">CHECK LIVE ⟳</button>
                 </div>
             `;
             musicList.hidden = false;
         }
+
+        function cycleNextCuratedVibe() {
+            playArcadeBeep();
+            currentVibeIndex = (currentVibeIndex + 1) % curatedVibes.length;
+            const musicList = document.getElementById('lanyard-music-list');
+            if (musicList) {
+                renderNoMusic(musicList, latestLanyardPresence);
+            }
+        }
+        window.cycleNextCuratedVibe = cycleNextCuratedVibe;
 
         window.fetchLanyardPresence = fetchLanyardPresence;
 
@@ -1782,9 +1951,10 @@
                     }
                 };
 
+                const lastFmParam = currentProfileData.lastfmUser ? `?lastfm=${encodeURIComponent(currentProfileData.lastfmUser)}` : '';
                 const [lanyardData, directData] = await Promise.all([
                     fetchWithTimeout(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`, 4000),
-                    fetchWithTimeout('/api/now-playing', 4000)
+                    fetchWithTimeout('/api/now-playing' + lastFmParam, 4000)
                 ]);
 
                 if (lanyardData && lanyardData.success && lanyardData.data) {
@@ -1793,6 +1963,9 @@
                 }
                 if (directData) {
                     latestDirectTrack = directData.isPlaying ? directData : null;
+                    if (directData.onRepeat && (!currentProfileData.onRepeat || !currentProfileData.onRepeat.title)) {
+                        currentProfileData.onRepeat = directData.onRepeat;
+                    }
                 }
 
                 renderUnifiedMusic();
@@ -3031,6 +3204,30 @@
                 return;
             }
 
+            if (pageName === 'nowPlaying') {
+                const content = getNowPlayingContent();
+                rightPanel.innerHTML = `
+                    <div class="panel-content-only">
+                        <div class="top-row">
+                            <button class="back-button" aria-label="Go back to main menu">←</button>
+                        </div>
+                        ${content}
+                    </div>
+                `;
+
+                const backButton = document.querySelector('.back-button');
+                if (backButton) {
+                    backButton.addEventListener('click', () => {
+                        navigateBack('menu');
+                    });
+                }
+
+                if (editingSection !== 'nowPlaying') {
+                    startLanyardMonitoring();
+                }
+                return;
+            }
+
             const content = profileSections[pageName] || '';
             rightPanel.innerHTML = `
                 <div class="panel-content-only">
@@ -3053,10 +3250,6 @@
                 if (submitButton) {
                     submitButton.addEventListener('click', sendMessageToCreator);
                 }
-            }
-
-            if (pageName === 'nowPlaying') {
-                startLanyardMonitoring();
             }
 
         }

@@ -649,8 +649,16 @@ app.get('/api/now-playing', async (req, res) => {
     }
   }
 
-  // 3. Last.fm API (if configured or passed as ?lastfm=username)
-  const lastFmUser = req.query.lastfm || req.query.lastfm_user || process.env.LASTFM_USER;
+  // 3. Last.fm API (if configured in env, query param, or saved in profile)
+  let lastFmUser = req.query.lastfm || req.query.lastfm_user || process.env.LASTFM_USER;
+  if (!lastFmUser) {
+    try {
+      const stored = await loadStoredProfile();
+      if (stored && stored.lastfmUser) {
+        lastFmUser = String(stored.lastfmUser).trim();
+      }
+    } catch {}
+  }
   if (lastFmUser) {
     const lastFmTrack = await fetchLastFmCurrentlyPlaying(lastFmUser);
     if (lastFmTrack && lastFmTrack.isPlaying) {
@@ -729,10 +737,21 @@ app.get('/api/now-playing', async (req, res) => {
     // ignore
   }
 
+  // 5. Standby fallback with stored on-repeat vibe
+  let onRepeatTrack = null;
+  try {
+    const profile = await loadStoredProfile();
+    if (profile && profile.onRepeat && profile.onRepeat.title) {
+      onRepeatTrack = profile.onRepeat;
+    }
+  } catch {}
+
   return res.json({
     isPlaying: false,
-    message: 'Not currently playing on Spotify, YouTube Music, or BitChord',
-    supportedSources: ['Spotify', 'YouTube Music', 'BitChord'],
+    status: 'standby',
+    message: 'No live stream actively broadcasting. Showing on-repeat rotation.',
+    onRepeat: onRepeatTrack || null,
+    supportedSources: ['Spotify Web API', 'Last.fm Scrobbler', 'Direct Broadcast', 'Discord Rich Presence'],
     endpoints: {
       postUpdate: 'POST /api/now-playing',
       directGet: 'GET /api/now-playing'

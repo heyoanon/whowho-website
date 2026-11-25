@@ -454,6 +454,126 @@ h3 {
     text-align: center;
 }
 
+.lanyard-source-label.live {
+    color: #00ffaa;
+    text-shadow: 0 0 8px rgba(0, 255, 170, 0.6);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.live-pulse {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background-color: #00ffaa;
+    box-shadow: 0 0 8px #00ffaa;
+    display: inline-block;
+    animation: livePulseAnim 1.6s infinite ease-in-out;
+}
+
+@keyframes livePulseAnim {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.45; }
+}
+
+.lanyard-source-label.on-repeat {
+    color: #ffd700;
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.55);
+    letter-spacing: 1px;
+}
+
+.vibe-actions-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.vibe-action-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid #004cff;
+    background: rgba(0, 76, 255, 0.18);
+    color: #ffffff;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+
+.vibe-action-btn:hover {
+    background: rgba(0, 255, 255, 0.28);
+    color: #00ffff;
+    box-shadow: 0 0 8px #00ffff;
+    transform: translateY(-1px);
+}
+
+.vibe-action-btn.listen {
+    border-color: #00ffaa;
+    color: #00ffaa;
+    background: rgba(0, 255, 170, 0.12);
+}
+
+.vibe-action-btn.listen:hover {
+    background: rgba(0, 255, 170, 0.28);
+    box-shadow: 0 0 8px #00ffaa;
+    color: #ffffff;
+}
+
+.now-playing-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(0, 76, 255, 0.35);
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.stream-status-pill {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    color: #8faec9;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-dot.standby {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ffd700;
+    box-shadow: 0 0 6px #ffd700;
+    display: inline-block;
+}
+
+.stream-check-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    padding: 6px 12px;
+    border: 1px solid #004cff;
+    border-radius: 4px;
+    background: rgba(0, 76, 255, 0.15);
+    color: #9ab7ff;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.stream-check-btn:hover {
+    color: #00ffff;
+    border-color: #00ffff;
+    box-shadow: 0 0 8px #00ffff;
+}
+
 .now-playing-panel {
     text-align: center;
 }
@@ -1898,6 +2018,24 @@ h3 {
     .lanyard-refresh-button {
         font-size: 11px;
         padding: 5px 12px;
+    }
+
+    .vibe-actions-row {
+        justify-content: center;
+        width: 100%;
+        gap: 8px;
+    }
+
+    .vibe-action-btn {
+        font-size: 9px;
+        padding: 7px 10px;
+    }
+
+    .now-playing-footer {
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        text-align: center;
     }
 
     .menu-item,
