@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <title>Creator Messages | Admin</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 28px 16px;
+      background: #050813;
+      color: #fff;
+      font-family: 'Press Start 2P', monospace;
+      position: relative;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 50% 20%, rgba(0, 76, 255, 0.12), transparent 75%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .admin-shell {
+      position: relative;
+      z-index: 1;
+      width: min(980px, 100%);
+      margin: 0 auto;
+      padding: 28px 24px;
+      border: 3px solid #004cff;
+      border-radius: 12px;
+      background: rgba(10, 15, 30, 0.95);
+      box-shadow: 0 0 16px rgba(0, 76, 255, 0.5), 0 0 32px rgba(0, 76, 255, 0.25);
+    }
+    .empty, .message-meta { font-size: 10px; line-height: 1.7; }
+    button {
+      font: inherit;
+      color: #fff;
+      background: rgba(0, 76, 255, 0.15);
+      border: 2px solid #004cff;
+      border-radius: 8px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-size: 10px;
+      transition: all 0.2s ease;
+    }
+    button:hover, button:focus {
+      color: #00f0ff;
+      border-color: #00f0ff;
+      background: rgba(0, 240, 255, 0.2);
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.6);
+    }
+    .header, .message-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .header { margin-bottom: 20px; border-bottom: 2px dashed rgba(0, 76, 255, 0.4); padding-bottom: 16px; }
+    h1 {
+      margin: 0;
+      font-size: clamp(16px, 3vw, 26px);
+      color: #00f0ff;
+      text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+      letter-spacing: 1px;
+    }
+    .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .toolbar a {
+      color: #9ab7ff;
+      align-self: center;
+      font-size: 10px;
+      text-decoration: none;
+      padding: 8px 10px;
+      border: 1px solid rgba(154, 183, 255, 0.3);
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+    .toolbar a:hover, .toolbar a:focus {
+      color: #00f0ff;
+      border-color: #00f0ff;
+      box-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+    }
+    .lock-btn { border-color: #ffaa00; color: #ffdd88; }
+    .lock-btn:hover { border-color: #ffc400; color: #fff; box-shadow: 0 0 10px rgba(255, 170, 0, 0.6); }
+    .message-list { display: flex; flex-direction: column; gap: 16px; }
+    .sync-status {
+      margin-bottom: 16px;
+      color: #9ab7ff;
+      font-size: 10px;
+      line-height: 1.7;
+      min-height: 20px;
+    }
+    .message-card {
+      padding: 16px;
+      border: 2px solid #004cff;
+      border-radius: 10px;
+      background: rgba(13, 20, 42, 0.85);
+      box-shadow: inset 0 0 12px rgba(0, 76, 255, 0.2);
+    }
+    .message-meta { color: #9ab7ff; margin-bottom: 12px; font-size: 9px; }
+    .message-text {
+      white-space: pre-wrap;
+      font-size: 11px;
+      line-height: 1.9;
+      overflow-wrap: anywhere;
+      color: #e6f0ff;
+    }
+    .delete-btn { border-color: #ff4d4d; color: #ffb1b1; background: rgba(255, 77, 77, 0.1); }
+    .delete-btn:hover { border-color: #ff2a6d; color: #fff; background: rgba(255, 42, 109, 0.3); box-shadow: 0 0 12px rgba(255, 42, 109, 0.7); }
+    .empty { padding: 24px; border: 2px dashed #004cff; color: #cfe0ff; text-align: center; border-radius: 8px; }
+    
+    /* Retro Unlock Card */
+    .auth-card {
+      padding: 28px 20px;
+      border: 2px solid #00f0ff;
+      border-radius: 10px;
+      background: rgba(10, 20, 40, 0.95);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.35);
+      text-align: center;
+      max-width: 520px;
+      margin: 20px auto;
+    }
+    .auth-title { font-size: 14px; color: #00f0ff; margin-bottom: 14px; text-shadow: 0 0 8px rgba(0, 240, 255, 0.6); }
+    .auth-desc { font-size: 10px; color: #9ab7ff; line-height: 1.8; margin-bottom: 18px; }
+    .admin-input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #004cff;
+      border-radius: 8px;
+      background: #000;
+      color: #00f0ff;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 11px;
+      text-align: center;
+      letter-spacing: 2px;
+      margin-bottom: 14px;
+      outline: none;
+    }
+    .admin-input:focus {
+      border-color: #00f0ff;
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+    }
+    .auth-error {
+      color: #ff4d4d;
+      font-size: 10px;
+      margin-bottom: 14px;
+      line-height: 1.6;
+    }
+    .unlock-btn {
+      width: 100%;
+      border-color: #00f0ff;
+      color: #00f0ff;
+      font-size: 11px;
+      padding: 12px;
+    }
+    @media (max-width: 600px) {
+      body { padding: 14px 8px; }
+      .admin-shell { padding: 18px 12px; }
+      h1 { font-size: 14px; }
+      .message-text { font-size: 10px; }
+      .toolbar { width: 100%; justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <main class="admin-shell">
+    <section id="inbox-panel">
+      <div class="header">
+        <h1>👑 CREATOR MESSAGES</h1>
+        <div class="toolbar">
+          <button id="lockToggleBtn" type="button" class="lock-btn">UNLOCK</button>
+          <button id="refreshBtn" type="button">REFRESH</button>
+          <a href="/">← BACK TO SITE</a>
+        </div>
+      </div>
+      <div id="sync-status" class="sync-status" role="status" aria-live="polite">Checking authorization...</div>
+      <div id="messages" class="message-list"></div>
+    </section>
+  </main>
+  <script>
+    const messagesList = document.getElementById('messages');
+    const syncStatus = document.getElementById('sync-status');
+    const lockToggleBtn = document.getElementById('lockToggleBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const refreshInterval = 5000;
+    let timerId = null;
+    let isLoading = false;
+    let audioCtx = null;
+
+    function playArcadeBeep(freq = 600, duration = 0.08) {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch {}
+    }
+
+    function getAdminToken() {
+      return sessionStorage.getItem('whowho_admin_token') || localStorage.getItem('whowho_admin_token') || '';
+    }
+
+    function setAdminToken(token) {
+      if (token) {
+        sessionStorage.setItem('whowho_admin_token', token);
+        localStorage.setItem('whowho_admin_token', token);
+        lockToggleBtn.textContent = '🔒 LOCK';
+        lockToggleBtn.title = 'Lock admin access';
+      } else {
+        sessionStorage.removeItem('whowho_admin_token');
+        localStorage.removeItem('whowho_admin_token');
+        lockToggleBtn.textContent = '🔑 UNLOCK';
+        lockToggleBtn.title = 'Unlock admin access';
+      }
+    }
+
+    function getAuthHeaders() {
+      const token = getAdminToken();
+      const headers = { 'Accept': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+        headers['x-admin-token'] = token;
+        headers['x-admin-password'] = token;
+      }
+      return headers;
+    }
+
+    function renderAuthCard(errorMessage = '') {
+      messagesList.innerHTML = `
+        <div class="auth-card">
+          <div class="auth-title">👑 OWNER / ADMIN ACCESS</div>
+          <p class="auth-desc">Enter admin password to view and manage Creator Messages:</p>
+          <form id="adminLoginForm" onsubmit="event.preventDefault(); submitAdminLogin();">
+            <input type="password" id="adminPasswordInput" class="admin-input" placeholder="Password (default: admin123)" autocomplete="current-password" required autofocus />
+            <div id="adminLoginError" class="auth-error" style="${errorMessage ? 'display:block' : 'display:none'}">${errorMessage || ''}</div>
+            <button type="submit" id="adminLoginSubmit" class="unlock-btn">UNLOCK INBOX</button>
+          </form>
+        </div>
+      `;
+      syncStatus.textContent = 'Inbox locked. Admin authentication required.';
+      lockToggleBtn.textContent = '🔑 UNLOCK';
+      const input = document.getElementById('adminPasswordInput');
+      if (input) input.focus();
+    }
+
+    async function submitAdminLogin() {
+      playArcadeBeep(750, 0.1);
+      const input = document.getElementById('adminPasswordInput');
+      const errorEl = document.getElementById('adminLoginError');
+      const submitBtn = document.getElementById('adminLoginSubmit');
+      const pwd = (input && input.value ? input.value : '').trim();
+
+      if (!pwd) return;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'CHECKING...';
+      if (errorEl) errorEl.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/admin/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pwd })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || 'Invalid admin password.');
+        }
+
+        const data = await res.json();
+        setAdminToken(data.token || pwd);
+        playArcadeBeep(900, 0.15);
+        syncStatus.textContent = 'Access granted! Loading inbox...';
+        await fetchMessages();
+      } catch (err) {
+        if (errorEl) {
+          errorEl.textContent = err.message || 'Invalid admin password.';
+          errorEl.style.display = 'block';
+        }
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'UNLOCK INBOX';
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      }
+    }
+
+    window.submitAdminLogin = submitAdminLogin;
+
+    async function fetchMessages() {
+      if (isLoading) return;
+      isLoading = true;
+      syncStatus.textContent = 'Syncing messages...';
+
+      try {
+        const response = await fetch('/api/messages', {
+          headers: getAuthHeaders(),
+          credentials: 'same-origin'
+        });
+
+        if (response.status === 401 || response.status === 403) {
+          setAdminToken(null);
+          renderAuthCard('Admin authorization required. Please enter password.');
+          return;
+        }
+
+        if (response.status === 503) {
+          const errJson = await response.json().catch(() => ({}));
+          syncStatus.textContent = errJson.error || 'Message storage is unavailable.';
+          messagesList.innerHTML = `<div class="empty">${errJson.error || 'Message storage is currently unavailable.'}</div>`;
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error(`Inbox request failed (${response.status}).`);
+        }
+
+        const messages = await response.json();
+        if (!Array.isArray(messages)) {
+          throw new Error('Inbox returned an invalid response format.');
+        }
+
+        lockToggleBtn.textContent = '🔒 LOCK';
+        messagesList.innerHTML = messages.length ? messages.map(message => `
+          <article class="message-card">
+            <div class="message-meta">
+              <span>📅 ${new Date(message.createdAt).toLocaleString()}</span>
+              <button class="delete-btn" type="button" data-id="${message.id}">DELETE</button>
+            </div>
+            <div class="message-text"></div>
+          </article>`).join('') : '<div class="empty">NO MESSAGES YET IN INBOX.</div>';
+
+        messages.forEach((message, index) => {
+          const card = messagesList.children[index];
+          if (card) {
+            const textEl = card.querySelector('.message-text');
+            if (textEl) textEl.textContent = message.text;
+          }
+        });
+
+        messagesList.querySelectorAll('.delete-btn').forEach(button => {
+          button.addEventListener('click', async () => {
+            playArcadeBeep(450, 0.1);
+            if (!confirm('Are you sure you want to delete this message?')) return;
+            button.disabled = true;
+            button.textContent = 'DELETING...';
+            try {
+              const res = await fetch(`/api/messages/${encodeURIComponent(button.dataset.id)}`, {
+                method: 'DELETE',
+                headers: getAuthHeaders(),
+                credentials: 'same-origin'
+              });
+              if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || `Delete failed (${res.status}).`);
+              }
+              playArcadeBeep(800, 0.12);
+              await fetchMessages();
+            } catch (error) {
+              syncStatus.textContent = error.message || 'Unable to delete message.';
+              button.disabled = false;
+              button.textContent = 'DELETE';
+            }
+          });
+        });
+
+        syncStatus.textContent = `Synced ${messages.length} message${messages.length === 1 ? '' : 's'} at ${new Date().toLocaleTimeString()}. Auto-refreshes every 5s.`;
+      } catch (error) {
+        syncStatus.textContent = error.message || 'Unable to sync messages. Please try again.';
+      } finally {
+        isLoading = false;
+      }
+    }
+
+    lockToggleBtn.addEventListener('click', () => {
+      playArcadeBeep(500, 0.08);
+      if (getAdminToken()) {
+        setAdminToken(null);
+        renderAuthCard();
+      } else {
+        renderAuthCard();
+      }
+    });
+
+    refreshBtn.addEventListener('click', () => {
+      playArcadeBeep(650, 0.08);
+      fetchMessages();
+    });
+
+    if (getAdminToken()) {
+      lockToggleBtn.textContent = '🔒 LOCK';
+    } else {
+      lockToggleBtn.textContent = '🔑 UNLOCK';
+    }
+
+    timerId = setInterval(() => {
+      if (getAdminToken()) {
+        fetchMessages();
+      }
+    }, refreshInterval);
+
+    fetchMessages();
+  </script>
+</body>
+</html>

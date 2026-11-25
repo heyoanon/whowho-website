@@ -11,7 +11,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 const RECIPIENT_EMAIL = process.env.EMAIL_TO || 'danyaellap@gmail.com';
-const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || '').trim();
+const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || 'admin123').trim();
 const messagesFile = path.join(__dirname, 'messages.json');
 const profileFile = path.join(__dirname, 'profile.json');
 const database = process.env.DATABASE_URL ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }) : null;
@@ -121,7 +121,7 @@ app.use(express.json({ limit: '1mb' }));
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-admin-password, x-admin-token, x-api-key');
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
@@ -143,28 +143,28 @@ function isValidAdminPassword(password) {
 }
 
 function requireAdmin(req, res, next) {
-  const authHeader = req.headers.authorization || '';
-
-  if (!authHeader.startsWith('Basic ')) {
-    res.setHeader('WWW-Authenticate', 'Basic realm="Creator Messages"');
-    return res.status(401).json({ error: 'Admin access required.' });
+  if (isAuthorizedAdmin(req)) {
+    return next();
   }
 
-  try {
-    const decoded = Buffer.from(authHeader.replace('Basic ', ''), 'base64').toString('utf8');
-    const separator = decoded.indexOf(':');
-    const username = separator === -1 ? '' : decoded.slice(0, separator);
-    const password = separator === -1 ? '' : decoded.slice(separator + 1);
+  const authHeader = (req.headers.authorization || '').trim();
+  if (authHeader.startsWith('Basic ')) {
+    try {
+      const decoded = Buffer.from(authHeader.replace('Basic ', ''), 'base64').toString('utf8');
+      const separator = decoded.indexOf(':');
+      const username = separator === -1 ? '' : decoded.slice(0, separator);
+      const password = separator === -1 ? decoded : decoded.slice(separator + 1);
 
-    if (username === 'admin' && isValidAdminPassword(password)) {
-      return next();
+      if ((!username || username === 'admin') && isValidAdminPassword(password)) {
+        return next();
+      }
+    } catch {
+      // Invalid authorization headers are rejected below.
     }
-  } catch {
-    // Invalid authorization headers are rejected below.
   }
 
   res.setHeader('WWW-Authenticate', 'Basic realm="Creator Messages"');
-  return res.status(401).json({ error: 'Invalid admin credentials.' });
+  return res.status(401).json({ error: 'Admin access required.' });
 }
 
 function getProvidedAdminToken(req) {
@@ -218,7 +218,18 @@ if (!ADMIN_PASSWORD) {
 }
 
 app.get(['/admin', '/admin.html', '/admin/*'], requireAdmin, (_req, res) => {
-  res.sendFile(path.join(__dirname, 'admin.html'));
+  const candidatePaths = [
+    path.join(__dirname, 'admin.html'),
+    path.join(process.cwd(), 'admin.html'),
+    path.join(__dirname, '..', 'admin.html'),
+    path.join(__dirname, 'api', 'admin.html')
+  ];
+  for (const candidate of candidatePaths) {
+    if (fs.existsSync(candidate)) {
+      return res.sendFile(candidate);
+    }
+  }
+  return res.status(404).send('admin.html not found');
 });
 
 app.use('/css', express.static(path.join(__dirname, 'css')));
@@ -551,9 +562,9 @@ async function fetchLastFmCurrentlyPlaying(userParam) {
 
 app.post('/api/now-playing', async (req, res) => {
   const secret = req.headers['x-api-key'] || req.body?.secret || req.query?.secret;
-  const configuredSecret = process.env.NOW_PLAYING_SECRET || process.env.ADMIN_PASSWORD;
+  const configuredSecret = process.env.NOW_PLAYING_SECRET || ADMIN_PASSWORD;
 
-  if (configuredSecret && secret !== configuredSecret) {
+  if (configuredSecret && secret !== configuredSecret && !isAuthorizedAdmin(req)) {
     return res.status(401).json({ error: 'Unauthorized. Provide valid secret or API key.' });
   }
 
@@ -593,9 +604,9 @@ app.post('/api/now-playing', async (req, res) => {
 
 app.delete('/api/now-playing', async (req, res) => {
   const secret = req.headers['x-api-key'] || req.body?.secret || req.query?.secret;
-  const configuredSecret = process.env.NOW_PLAYING_SECRET || process.env.ADMIN_PASSWORD;
+  const configuredSecret = process.env.NOW_PLAYING_SECRET || ADMIN_PASSWORD;
 
-  if (configuredSecret && secret !== configuredSecret) {
+  if (configuredSecret && secret !== configuredSecret && !isAuthorizedAdmin(req)) {
     return res.status(401).json({ error: 'Unauthorized.' });
   }
 
