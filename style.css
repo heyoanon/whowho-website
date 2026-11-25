@@ -647,6 +647,43 @@ h3 {
     line-height: 1.4;
 }
 
+.streaming-service-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    margin-top: 6px;
+    border-radius: 4px;
+    font-size: 8.5px;
+    font-family: 'Press Start 2P', monospace;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffd700;
+    letter-spacing: 0.5px;
+    max-width: fit-content;
+}
+
+.streaming-service-badge.spotify {
+    border-color: rgba(30, 215, 96, 0.6);
+    background: rgba(30, 215, 96, 0.12);
+    color: #1ed760;
+    box-shadow: 0 0 6px rgba(30, 215, 96, 0.2);
+}
+
+.streaming-service-badge.ytm {
+    border-color: rgba(255, 77, 77, 0.6);
+    background: rgba(255, 77, 77, 0.12);
+    color: #ff4d4d;
+    box-shadow: 0 0 6px rgba(255, 77, 77, 0.2);
+}
+
+.streaming-service-badge.apple {
+    border-color: rgba(252, 60, 68, 0.6);
+    background: rgba(252, 60, 68, 0.12);
+    color: #fc3c44;
+    box-shadow: 0 0 6px rgba(252, 60, 68, 0.2);
+}
+
 /* Retro Animated Audio Equalizer Bars */
 .retro-eq-bars {
     display: inline-flex;

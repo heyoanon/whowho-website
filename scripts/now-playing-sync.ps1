@@ -1,6 +1,6 @@
 ﻿# Windows Now Playing Broadcast Script for Whoami
 # Automatically detects current audio playback from Spotify, YouTube Music, Apple Music, and any browser/desktop app
-# and syncs it in real-time to your Whoami website whenever a track changes or pauses, including device location.
+# and syncs it in real-time to your Whoami website whenever a track changes or pauses, including streaming service & device location.
 
 param(
     [string]$ApiUrl = "https://whowho-website.vercel.app/api/now-playing",
@@ -34,6 +34,61 @@ try {
 } catch {
     Write-Host "[ERROR] Unable to access Windows Media Session: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
+}
+
+# Automatically detects which streaming service is active in the user's web browsers
+Function Detect-BrowserStreamingService {
+    $paths = @(
+        "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data\Default\IndexedDB",
+        "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data\*\IndexedDB",
+        "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\IndexedDB",
+        "$env:LOCALAPPDATA\Google\Chrome\User Data\*\IndexedDB",
+        "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\IndexedDB",
+        "$env:LOCALAPPDATA\Microsoft\Edge\User Data\*\IndexedDB",
+        "$env:APPDATA\Opera Software\Opera GX Stable\IndexedDB",
+        "$env:APPDATA\Opera Software\Opera Stable\IndexedDB",
+        "$env:LOCALAPPDATA\Vivaldi\User Data\Default\IndexedDB",
+        "$env:APPDATA\zen\Profiles\*\storage\default",
+        "$env:APPDATA\LibreWolf\Profiles\*\storage\default",
+        "$env:APPDATA\Mozilla\Firefox\Profiles\*\storage\default",
+        "$env:APPDATA\Waterfox\Profiles\*\storage\default",
+        "$env:APPDATA\Floorp\Profiles\*\storage\default"
+    )
+    $bestService = $null
+    $latestTime = [DateTime]::MinValue
+    foreach ($p in $paths) {
+        if (Test-Path $p) {
+            $spotify = Get-ChildItem $p -Filter "*spotify*" -ErrorAction SilentlyContinue
+            foreach ($d in $spotify) {
+                if ($d.LastWriteTime -gt $latestTime) {
+                    $latestTime = $d.LastWriteTime
+                    $bestService = "Spotify"
+                }
+            }
+            $ytm = Get-ChildItem $p -Filter "*music.youtube*" -ErrorAction SilentlyContinue
+            foreach ($d in $ytm) {
+                if ($d.LastWriteTime -gt $latestTime) {
+                    $latestTime = $d.LastWriteTime
+                    $bestService = "YouTube Music"
+                }
+            }
+            $apple = Get-ChildItem $p -Filter "*apple*" -ErrorAction SilentlyContinue
+            foreach ($d in $apple) {
+                if ($d.LastWriteTime -gt $latestTime) {
+                    $latestTime = $d.LastWriteTime
+                    $bestService = "Apple Music"
+                }
+            }
+            $sc = Get-ChildItem $p -Filter "*soundcloud*" -ErrorAction SilentlyContinue
+            foreach ($d in $sc) {
+                if ($d.LastWriteTime -gt $latestTime) {
+                    $latestTime = $d.LastWriteTime
+                    $bestService = "SoundCloud"
+                }
+            }
+        }
+    }
+    return $bestService
 }
 
 $lastTrack = ""
@@ -174,7 +229,7 @@ while ($true) {
                     if ($deviceApp -match "browser|web") { $isBrowser = $true }
                 }
 
-                # If playing in any browser, infer streaming platform
+                # If playing in any browser, accurately detect streaming platform
                 if ($isBrowser) {
                     if ($titleLower -match "spotify" -or $sourceApp -match "spotify") {
                         $source = "Spotify"
@@ -189,11 +244,17 @@ while ($true) {
                     } elseif ($titleLower -match "deezer") {
                         $source = "Deezer"
                     } else {
-                        $source = "YouTube Music"
+                        # Auto-detect which streaming platform is actively open/active in the browser
+                        $detectedBrowserService = Detect-BrowserStreamingService
+                        if ($detectedBrowserService) {
+                            $source = $detectedBrowserService
+                        } else {
+                            $source = "Spotify"
+                        }
                     }
                 }
 
-                $device = "Desktop PC • $deviceApp"
+                $device = "Desktop PC • $deviceApp ($source)"
 
                 $payload = @{
                     source = $source

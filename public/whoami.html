@@ -583,7 +583,7 @@
                             album: (formData.get('album') || '').trim(),
                             url: (formData.get('url') || '').trim(),
                             artworkUrl: (formData.get('artworkUrl') || '').trim(),
-                            source: 'On Repeat'
+                            source: (formData.get('source') || 'Spotify').trim() || 'Spotify'
                         };
                         currentProfileData.lastfmUser = (formData.get('lastfmUser') || '').trim();
                     }
@@ -686,6 +686,10 @@
                                 <div class="profile-form-group">
                                     <label class="profile-form-label">ALBUM</label>
                                     <input class="profile-input-field" name="album" value="${escapeHtml(currentVibe.album || '')}" placeholder="e.g. Armageddon - The 1st Album" autocomplete="off">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label class="profile-form-label">STREAMING SERVICE (WHERE IT'S STREAMED FROM)</label>
+                                    <input class="profile-input-field" name="source" value="${escapeHtml(currentVibe.source || 'Spotify')}" placeholder="e.g. Spotify, YouTube Music, Apple Music" autocomplete="off">
                                 </div>
                                 <div class="profile-form-group">
                                     <label class="profile-form-label">SONG LINK (SPOTIFY, YOUTUBE, APPLE MUSIC, ETC.)</label>
@@ -2003,7 +2007,7 @@
             if (statusTitle) statusTitle.textContent = `DETECTED: ${track.title.toUpperCase()}`;
             if (detectedInfo) {
                 const devText = track.device ? ` • Playing on ${track.device}` : '';
-                detectedInfo.innerHTML = `🎵 <b>${escapeHtml(track.title)}</b> by <b>${escapeHtml(track.artist || 'Unknown')}</b> (${escapeHtml(track.source || 'Music')}${escapeHtml(devText)})`;
+                detectedInfo.innerHTML = `🎵 <b>${escapeHtml(track.title)}</b> by <b>${escapeHtml(track.artist || 'Unknown')}</b><br><span style="color:#00ffaa; font-weight:bold;">📡 STREAMED FROM: ${escapeHtml((track.source || 'Music').toUpperCase())}</span>${escapeHtml(devText ? ' (' + devText + ')' : '')}`;
             }
             if (pulse) pulse.style.backgroundColor = '#00ffaa';
 
@@ -2020,12 +2024,14 @@
                 const titleEl = formNowPlaying.querySelector('input[name="title"]');
                 const artistEl = formNowPlaying.querySelector('input[name="artist"]');
                 const albumEl = formNowPlaying.querySelector('input[name="album"]');
+                const sourceEl = formNowPlaying.querySelector('input[name="source"]');
                 const urlEl = formNowPlaying.querySelector('input[name="url"]');
                 const artworkEl = formNowPlaying.querySelector('input[name="artworkUrl"]');
 
                 if (titleEl) titleEl.value = track.title;
                 if (artistEl) artistEl.value = track.artist || '';
                 if (albumEl) albumEl.value = track.album || '';
+                if (sourceEl) sourceEl.value = track.source || 'Spotify';
                 if (urlEl) urlEl.value = track.url || '';
                 if (artworkEl) artworkEl.value = track.artworkUrl || '';
             }
@@ -2114,21 +2120,32 @@
 
             if (sourceLower.includes('spotify')) {
                 sourceClass += ' source-spotify';
-                sourceLabelHtml = '<span class="live-pulse spotify-pulse"></span> 🟢 LIVE ON SPOTIFY';
+                sourceLabelHtml = '<span class="live-pulse spotify-pulse"></span> 🟢 STREAMING ON SPOTIFY';
                 listenBtnClass += ' spotify';
                 listenBtnText = '▶ OPEN ON SPOTIFY';
             } else if (sourceLower.includes('youtube') || sourceLower.includes('ytm')) {
                 sourceClass += ' source-ytm';
-                sourceLabelHtml = '<span class="live-pulse ytm-pulse"></span> 🔴 LIVE ON YOUTUBE MUSIC';
+                sourceLabelHtml = '<span class="live-pulse ytm-pulse"></span> 🔴 STREAMING ON YOUTUBE MUSIC';
                 listenBtnClass += ' ytm';
                 listenBtnText = '▶ OPEN ON YOUTUBE MUSIC';
             } else if (sourceLower.includes('apple') || sourceLower.includes('itunes')) {
                 sourceClass += ' source-apple';
-                sourceLabelHtml = '<span class="live-pulse apple-pulse"></span> 🍎 LIVE ON APPLE MUSIC';
+                sourceLabelHtml = '<span class="live-pulse apple-pulse"></span> 🍎 STREAMING ON APPLE MUSIC';
                 listenBtnClass += ' apple';
                 listenBtnText = '▶ OPEN ON APPLE MUSIC';
+            } else if (sourceLower.includes('soundcloud')) {
+                sourceClass += ' source-soundcloud';
+                sourceLabelHtml = '<span class="live-pulse"></span> ☁️ STREAMING ON SOUNDCLOUD';
+                listenBtnClass += ' soundcloud';
+                listenBtnText = '▶ OPEN ON SOUNDCLOUD';
+            } else if (sourceLower.includes('tidal')) {
+                sourceLabelHtml = '<span class="live-pulse"></span> 🌊 STREAMING ON TIDAL';
+                listenBtnText = '▶ OPEN ON TIDAL';
+            } else if (sourceLower.includes('deezer')) {
+                sourceLabelHtml = '<span class="live-pulse"></span> 🟣 STREAMING ON DEEZER';
+                listenBtnText = '▶ OPEN ON DEEZER';
             } else {
-                sourceLabelHtml = `<span class="live-pulse"></span> LIVE NOW • ${escapeHtml(sourceStr.toUpperCase())}`;
+                sourceLabelHtml = `<span class="live-pulse"></span> STREAMING LIVE • ${escapeHtml(sourceStr.toUpperCase())}`;
             }
 
             const sourceLabel = document.createElement('span');
@@ -2166,35 +2183,40 @@
             }
             trackInfo.appendChild(trackTitle);
 
-            if (track.artist || track.album) {
-                const trackDetails = document.createElement('div');
-                trackDetails.className = 'lanyard-track-details';
-                if (track.artist) {
-                    const artist = document.createElement('span');
-                    artist.className = 'lanyard-track-artists';
-                    artist.textContent = track.artist;
-                    trackDetails.appendChild(artist);
-                }
-                if (track.album) {
-                    const album = document.createElement('span');
-                    album.className = 'lanyard-track-album-line';
-                    album.textContent = track.album;
-                    trackDetails.appendChild(album);
-                } else if (track.artist && track.title) {
-                    fetchAlbumForTrack(track.artist, track.title).then(albumName => {
-                        if (albumName && !trackDetails.querySelector('.lanyard-track-album-line')) {
-                            track.album = albumName;
-                            const album = document.createElement('span');
-                            album.className = 'lanyard-track-album-line';
-                            album.textContent = albumName;
-                            trackDetails.appendChild(album);
-                        }
-                    });
-                }
-                trackInfo.appendChild(trackDetails);
+            const trackDetails = document.createElement('div');
+            trackDetails.className = 'lanyard-track-details';
+            if (track.artist) {
+                const artist = document.createElement('span');
+                artist.className = 'lanyard-track-artists';
+                artist.textContent = track.artist;
+                trackDetails.appendChild(artist);
+            }
+            if (track.album) {
+                const album = document.createElement('span');
+                album.className = 'lanyard-track-album-line';
+                album.textContent = track.album;
+                trackDetails.appendChild(album);
+            } else if (track.artist && track.title) {
+                fetchAlbumForTrack(track.artist, track.title).then(albumName => {
+                    if (albumName && !trackDetails.querySelector('.lanyard-track-album-line')) {
+                        track.album = albumName;
+                        const album = document.createElement('span');
+                        album.className = 'lanyard-track-album-line';
+                        album.textContent = albumName;
+                        trackDetails.appendChild(album);
+                    }
+                });
             }
 
-            // Where it plays badge (Device Location Indicator)
+            // Explicit Streaming Service Origin Badge
+            const serviceBadge = document.createElement('span');
+            serviceBadge.className = `streaming-service-badge ${sourceLower.includes('spotify') ? 'spotify' : sourceLower.includes('youtube') || sourceLower.includes('ytm') ? 'ytm' : sourceLower.includes('apple') ? 'apple' : ''}`;
+            serviceBadge.innerHTML = `📡 <b>STREAMED FROM:</b> ${escapeHtml(sourceStr.toUpperCase())}`;
+            trackDetails.appendChild(serviceBadge);
+
+            trackInfo.appendChild(trackDetails);
+
+            // Where it plays badge (Device & Streaming Platform Indicator)
             const deviceRaw = (track.device || '').trim();
             const deviceType = (track.deviceType || '').toLowerCase();
             let devIcon = '🎧';
@@ -2204,12 +2226,12 @@
             if (deviceType === 'mobile' || /mobile|phone|iphone|android|ipad/i.test(deviceRaw)) {
                 devIcon = '📱';
                 isMobileDev = true;
-                devLabel = deviceRaw ? `PLAYING ON ${deviceRaw.toUpperCase()}` : 'PLAYING ON MOBILE PHONE';
+                devLabel = deviceRaw ? `PLAYING VIA ${sourceStr.toUpperCase()} • ${deviceRaw.toUpperCase()}` : `PLAYING VIA ${sourceStr.toUpperCase()} ON MOBILE PHONE`;
             } else if (deviceType === 'desktop' || /desktop|pc|windows|mac|linux|brave|zen|opera|librewolf|vivaldi|arc|waterfox|floorp|thorium|chromium|chrome|firefox|edge/i.test(deviceRaw)) {
                 devIcon = '💻';
-                devLabel = deviceRaw ? `PLAYING ON ${deviceRaw.toUpperCase()}` : 'PLAYING ON DESKTOP PC';
+                devLabel = deviceRaw ? `PLAYING VIA ${sourceStr.toUpperCase()} • ${deviceRaw.toUpperCase()}` : `PLAYING VIA ${sourceStr.toUpperCase()} ON DESKTOP PC`;
             } else if (deviceRaw) {
-                devLabel = `PLAYING ON ${deviceRaw.toUpperCase()}`;
+                devLabel = `PLAYING VIA ${sourceStr.toUpperCase()} • ${deviceRaw.toUpperCase()}`;
             }
 
             if (devLabel) {
