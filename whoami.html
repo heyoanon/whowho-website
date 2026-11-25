@@ -1330,6 +1330,57 @@
             });
         }
 
+        function isAdvertisementTrack(title, artist, album) {
+            const t = String(title || '').trim().toLowerCase();
+            const a = String(artist || '').trim().toLowerCase();
+            const alb = String(album || '').trim().toLowerCase();
+
+            if (/^(advertisement|audio ad|commercial|sponsored|promo|ad|spotify ad)$/i.test(t)) return true;
+            if (/^advertisement\b|\badvertisement$/i.test(t)) return true;
+            if (t === 'spotify' && (!a || a === 'spotify')) return true;
+            if (t === 'spotify free' || a === 'advertisement' || a === 'spotify advertisement') return true;
+            if (/^(advertisement|commercial)$/i.test(alb)) return true;
+            return false;
+        }
+
+        let directPollTimer = null;
+        let isPollingDirectTrack = false;
+
+        async function pollDirectNowPlaying() {
+            if (isPollingDirectTrack) return;
+            isPollingDirectTrack = true;
+            try {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 1500);
+                const res = await fetch('/api/now-playing', { cache: 'no-store', signal: controller.signal });
+                clearTimeout(timer);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data) {
+                        if (data.isPlaying && isAdvertisementTrack(data.title, data.artist, data.album)) {
+                            return;
+                        }
+                        const prevKey = latestDirectTrack ? `${latestDirectTrack.title}:::${latestDirectTrack.artist}:::${latestDirectTrack.isPlaying}` : '__NONE__';
+                        const newKey = (data.isPlaying && data.title) ? `${data.title}:::${data.artist}:::${data.isPlaying}` : '__NONE__';
+                        
+                        latestDirectTrack = data.isPlaying ? data : null;
+
+                        if (prevKey !== newKey) {
+                            if (editingSection === 'nowPlaying') {
+                                if (typeof triggerAutofillCurrentTrack === 'function') {
+                                    triggerAutofillCurrentTrack(false, false);
+                                }
+                            } else {
+                                renderUnifiedMusic();
+                            }
+                        }
+                    }
+                }
+            } catch {} finally {
+                isPollingDirectTrack = false;
+            }
+        }
+
         function stopLanyardRefresh() {
             isMonitoringNowPlaying = false;
             currentlyRenderedTrackKey = '';
@@ -1340,6 +1391,10 @@
             if (lanyardReconnectTimer) {
                 clearTimeout(lanyardReconnectTimer);
                 lanyardReconnectTimer = null;
+            }
+            if (directPollTimer) {
+                clearInterval(directPollTimer);
+                directPollTimer = null;
             }
             disconnectLanyardSocket();
             stopTrackProgress();
@@ -1499,8 +1554,8 @@
 
                 const lastFmParam = currentProfileData.lastfmUser ? `?lastfm=${encodeURIComponent(currentProfileData.lastfmUser)}` : '';
                 const [lanyardData, directData] = await Promise.all([
-                    fetchWithTimeout(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`, 4000),
-                    fetchWithTimeout('/api/now-playing' + lastFmParam, 4000)
+                    fetchWithTimeout(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`, 2500),
+                    fetchWithTimeout('/api/now-playing' + lastFmParam, 1500)
                 ]);
 
                 if (lanyardData && lanyardData.success && lanyardData.data) {
@@ -1541,7 +1596,10 @@
             fetchLanyardPresence();
             connectLanyardSocket();
             connectDirectStream();
-            lanyardRefreshTimer = setInterval(() => fetchLanyardPresence(false), 1000);
+            if (directPollTimer) clearInterval(directPollTimer);
+            directPollTimer = setInterval(pollDirectNowPlaying, 750);
+            pollDirectNowPlaying();
+            lanyardRefreshTimer = setInterval(() => fetchLanyardPresence(false), 2000);
         }
 
         function stopTrackProgress() {
@@ -1936,7 +1994,7 @@
                 const hasLocalPlaying = mediaElements.some(el => !el.paused && !el.ended && el.currentTime > 0) ||
                                         navigator.mediaSession.playbackState === 'playing';
 
-                if (title && hasLocalPlaying) {
+                if (title && hasLocalPlaying && !isAdvertisementTrack(title, artist, album)) {
                     const host = window.location.hostname.toLowerCase();
                     let source = 'Spotify';
                     if (host.includes('youtube')) source = 'YouTube Music';
@@ -1958,7 +2016,7 @@
             }
 
             // 2. Direct broadcast track (from Windows sync script, userscript, mobile shortcuts, or live SSE)
-            if (latestDirectTrack && latestDirectTrack.isPlaying && latestDirectTrack.title) {
+            if (latestDirectTrack && latestDirectTrack.isPlaying && latestDirectTrack.title && !isAdvertisementTrack(latestDirectTrack.title, latestDirectTrack.artist, latestDirectTrack.album)) {
                 return {
                     source: latestDirectTrack.source || 'Spotify',
                     title: latestDirectTrack.title,
@@ -1973,7 +2031,7 @@
 
             // 3. Discord Lanyard presence (Spotify & listening activities)
             if (latestLanyardPresence) {
-                if (latestLanyardPresence.spotify && latestLanyardPresence.spotify.song) {
+                if (latestLanyardPresence.spotify && latestLanyardPresence.spotify.song && !isAdvertisementTrack(latestLanyardPresence.spotify.song, latestLanyardPresence.spotify.artist, latestLanyardPresence.spotify.album)) {
                     const s = latestLanyardPresence.spotify;
                     return {
                         source: 'Spotify',
@@ -2459,28 +2517,27 @@
 
             // 1. Direct Cloud API track (/api/now-playing: Spotify, YouTube Music, or BitChord without Discord)
             if (latestDirectTrack && latestDirectTrack.isPlaying && latestDirectTrack.title) {
-                tracks.push({
-                    source: latestDirectTrack.source || 'Music',
-                    title: latestDirectTrack.title,
-                    artist: latestDirectTrack.artist || '',
-                    album: latestDirectTrack.album || '',
-                    artworkUrl: latestDirectTrack.artworkUrl || null,
-                    fallbackArtworkUrl: null,
-                    url: latestDirectTrack.url || '',
-                    timestamps: latestDirectTrack.timestamps || null,
-                    device: latestDirectTrack.device || '',
-                    deviceType: latestDirectTrack.deviceType || ''
-                });
+                if (!isAdvertisementTrack(latestDirectTrack.title, latestDirectTrack.artist, latestDirectTrack.album)) {
+                    tracks.push({
+                        source: latestDirectTrack.source || 'Music',
+                        title: latestDirectTrack.title,
+                        artist: latestDirectTrack.artist || '',
+                        album: latestDirectTrack.album || '',
+                        artworkUrl: latestDirectTrack.artworkUrl || null,
+                        fallbackArtworkUrl: null,
+                        url: latestDirectTrack.url || '',
+                        timestamps: latestDirectTrack.timestamps || null,
+                        device: latestDirectTrack.device || '',
+                        deviceType: latestDirectTrack.deviceType || ''
+                    });
+                }
             }
 
-            // 2. Native Spotify integration from Discord
-            if (latestLanyardPresence && latestLanyardPresence.spotify && (latestLanyardPresence.listening_to_spotify || latestLanyardPresence.spotify.song)) {
+            // 2. Native Spotify integration from Discord (suppressed if direct device stream is actively playing Spotify)
+            const hasDirectSpotify = tracks.some(t => String(t.source || '').toLowerCase() === 'spotify');
+            if (!hasDirectSpotify && latestLanyardPresence && latestLanyardPresence.spotify && (latestLanyardPresence.listening_to_spotify || latestLanyardPresence.spotify.song)) {
                 const spotify = latestLanyardPresence.spotify;
-                const isDup = tracks.some(t =>
-                    String(t.source || '').toLowerCase() === 'spotify' &&
-                    String(t.title || '').toLowerCase() === String(spotify.song || '').toLowerCase()
-                );
-                if (!isDup) {
+                if (!isAdvertisementTrack(spotify.song, spotify.artist, spotify.album)) {
                     tracks.push({
                         source: 'Spotify',
                         title: spotify.song,
@@ -2502,7 +2559,7 @@
             if (latestLanyardPresence && Array.isArray(latestLanyardPresence.activities)) {
                 for (const activity of latestLanyardPresence.activities) {
                     const parsed = parseMusicActivity(activity);
-                    if (!parsed) continue;
+                    if (!parsed || isAdvertisementTrack(parsed.title, parsed.artist, parsed.album)) continue;
 
                     if (String(parsed.source || '').toLowerCase() === 'spotify' && tracks.some(t => String(t.source || '').toLowerCase() === 'spotify')) {
                         continue;
@@ -2582,8 +2639,8 @@
 
                 const lastFmParam = currentProfileData.lastfmUser ? `?lastfm=${encodeURIComponent(currentProfileData.lastfmUser)}` : '';
                 const [lanyardData, directData] = await Promise.all([
-                    fetchWithTimeout(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`, 4000),
-                    fetchWithTimeout('/api/now-playing' + lastFmParam, 4000)
+                    fetchWithTimeout(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`, 2500),
+                    fetchWithTimeout('/api/now-playing' + lastFmParam, 1500)
                 ]);
 
                 if (lanyardData && lanyardData.success && lanyardData.data) {
@@ -3855,6 +3912,9 @@
                     startLanyardMonitoring();
                 } else {
                     connectDirectStream();
+                    if (directPollTimer) clearInterval(directPollTimer);
+                    directPollTimer = setInterval(pollDirectNowPlaying, 750);
+                    pollDirectNowPlaying();
                     setTimeout(() => {
                         if (typeof triggerAutofillCurrentTrack === 'function') {
                             triggerAutofillCurrentTrack(true, false);

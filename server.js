@@ -75,7 +75,7 @@ async function initializeDatabase() {
       ALTER TABLE now_playing ADD COLUMN IF NOT EXISTS device TEXT;
       ALTER TABLE now_playing ADD COLUMN IF NOT EXISTS device_type TEXT;
     `);
-  } catch {}
+  } catch { }
 
   await database.query(`
     CREATE TABLE IF NOT EXISTS profile_data (
@@ -172,7 +172,7 @@ function isValidAdminPassword(password) {
       if (expected.length === provided.length && crypto.timingSafeEqual(expected, provided)) {
         return true;
       }
-    } catch {}
+    } catch { }
   }
 
   return false;
@@ -669,6 +669,19 @@ function getPrimaryArtist(artistStr) {
   return cleanMusicString(first);
 }
 
+function isAdvertisementTrack(title, artist, album) {
+  const t = String(title || '').trim().toLowerCase();
+  const a = String(artist || '').trim().toLowerCase();
+  const alb = String(album || '').trim().toLowerCase();
+
+  if (/^(advertisement|audio ad|commercial|sponsored|promo|ad|spotify ad)$/i.test(t)) return true;
+  if (/^advertisement\b|\badvertisement$/i.test(t)) return true;
+  if (t === 'spotify' && (!a || a === 'spotify')) return true;
+  if (t === 'spotify free' || a === 'advertisement' || a === 'spotify advertisement') return true;
+  if (/^(advertisement|commercial)$/i.test(alb)) return true;
+  return false;
+}
+
 async function resolveTrackArtwork(artist, title, album = '') {
   if (!title) return { artworkUrl: '', album: album || '', url: '' };
 
@@ -724,7 +737,7 @@ async function resolveTrackArtwork(artist, title, album = '') {
           }
         }
       }
-    } catch {}
+    } catch { }
   }
 
   // 2. Try iTunes Search API with candidate artist verification
@@ -770,7 +783,7 @@ async function resolveTrackArtwork(artist, title, album = '') {
           }
         }
       }
-    } catch {}
+    } catch { }
   }
 
   return { artworkUrl: '', album: rawAlbum, url: '' };
@@ -805,7 +818,7 @@ async function fetchLastFmCurrentlyPlaying(userParam) {
     let album = (current.album && current.album['#text'] ? current.album['#text'] : '').trim();
     const images = current.image || [];
     let artworkUrl = (images.find(img => img.size === 'extralarge') || images.find(img => img.size === 'large') || images[images.length - 1] || {})['#text'] || '';
-    
+
     // If Last.fm does not provide artwork, fetch high-res artwork from iTunes
     if (!artworkUrl && title) {
       const itunesInfo = await fetchArtworkFromItunes(artist, title);
@@ -854,6 +867,11 @@ app.post('/api/now-playing', async (req, res) => {
 
   if (isPlaying && !title) {
     return res.status(400).json({ error: 'Track title is required when isPlaying is true.' });
+  }
+
+  // Filter advertisements from being broadcast
+  if (isAdvertisementTrack(title, artist, album)) {
+    return res.json({ success: true, ignored: true, message: 'Advertisement ignored.' });
   }
 
   // Infer device info if not provided
@@ -956,7 +974,7 @@ app.post('/api/now-playing', async (req, res) => {
         };
         await saveNowPlaying(enriched);
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }
 });
 
@@ -998,16 +1016,16 @@ app.get('/api/now-playing/stream', async (req, res) => {
 app.get('/api/now-playing', async (req, res) => {
   // 1. Direct broadcast (from POST /api/now-playing)
   const directTrack = await getStoredNowPlaying();
-  if (directTrack && directTrack.isPlaying) {
+  if (directTrack && directTrack.isPlaying && !isAdvertisementTrack(directTrack.title, directTrack.artist, directTrack.album)) {
     if (!directTrack.artworkUrl && directTrack.title) {
       try {
         const resolved = await resolveTrackArtwork(directTrack.artist, directTrack.title, directTrack.album);
         if (resolved.artworkUrl) {
           directTrack.artworkUrl = resolved.artworkUrl;
           if (!directTrack.album && resolved.album) directTrack.album = resolved.album;
-          saveNowPlaying({ ...directTrack, isPlaying: true }).catch(() => {});
+          saveNowPlaying({ ...directTrack, isPlaying: true }).catch(() => { });
         }
-      } catch {}
+      } catch { }
     }
     return res.json({
       isPlaying: true,
@@ -1036,7 +1054,7 @@ app.get('/api/now-playing', async (req, res) => {
       if (stored && stored.lastfmUser) {
         lastFmUser = String(stored.lastfmUser).trim();
       }
-    } catch {}
+    } catch { }
   }
   if (lastFmUser) {
     const lastFmTrack = await fetchLastFmCurrentlyPlaying(lastFmUser);
@@ -1071,7 +1089,7 @@ app.get('/api/now-playing', async (req, res) => {
               const resArt = await resolveTrackArtwork(sp.artist, sp.song, album);
               if (resArt.artworkUrl) artworkUrl = resArt.artworkUrl;
               if (!album && resArt.album) album = resArt.album;
-            } catch {}
+            } catch { }
           }
           return res.json({
             isPlaying: true,
@@ -1111,7 +1129,7 @@ app.get('/api/now-playing', async (req, res) => {
                   const resArt = await resolveTrackArtwork(artist, title, resolvedAlbum);
                   if (resArt.artworkUrl) artworkUrl = resArt.artworkUrl;
                   if (!resolvedAlbum && resArt.album) resolvedAlbum = resArt.album;
-                } catch {}
+                } catch { }
               }
 
               return res.json({
@@ -1141,7 +1159,7 @@ app.get('/api/now-playing', async (req, res) => {
     if (profile && profile.onRepeat && profile.onRepeat.title) {
       onRepeatTrack = profile.onRepeat;
     }
-  } catch {}
+  } catch { }
 
   return res.json({
     isPlaying: false,

@@ -187,6 +187,26 @@ Function Get-TrackArtwork {
     return $res
 }
 
+Function Test-IsAdvertisement {
+    param(
+        [string]$title = "",
+        [string]$artist = "",
+        [string]$album = "",
+        [string]$app = ""
+    )
+    $t = if ($title) { $title.Trim().ToLower() } else { "" }
+    $a = if ($artist) { $artist.Trim().ToLower() } else { "" }
+    $alb = if ($album) { $album.Trim().ToLower() } else { "" }
+    $ap = if ($app) { $app.Trim().ToLower() } else { "" }
+
+    if ($t -match '^(advertisement|audio ad|commercial|sponsored|promo|ad|spotify ad)$') { return $true }
+    if ($t.StartsWith("advertisement") -or $t.EndsWith("advertisement")) { return $true }
+    if ($t -eq "spotify" -and (-not $a -or $a -eq "spotify")) { return $true }
+    if ($t -eq "spotify free" -or $a -eq "advertisement" -or $a -eq "spotify advertisement") { return $true }
+    if ($alb -match '^(advertisement|commercial)$') { return $true }
+    return $false
+}
+
 while ($true) {
     try {
         $session = $manager.GetCurrentSession()
@@ -221,6 +241,12 @@ while ($true) {
             $artist = $mediaInfo.Artist
             $album = $mediaInfo.AlbumTitle
             $sourceApp = $session.SourceAppUserModelId
+
+            # Filter advertisements (Spotify, YouTube, browser ads)
+            if (Test-IsAdvertisement -title $title -artist $artist -album $album -app $sourceApp) {
+                Start-Sleep -Milliseconds 200
+                continue
+            }
 
             # PlaybackStatus: 4 = Playing, 5 = Paused, 3 = Stopped
             $isPlaying = ($status -eq 4 -or $status -eq "Playing")

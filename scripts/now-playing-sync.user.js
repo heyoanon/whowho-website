@@ -108,6 +108,25 @@
         }
     }
 
+    function isAdvertisement(title, artist, album) {
+        const t = (title || '').trim().toLowerCase();
+        const a = (artist || '').trim().toLowerCase();
+        const alb = (album || '').trim().toLowerCase();
+
+        if (/^(advertisement|audio ad|commercial|sponsored|promo|ad|spotify ad)$/i.test(t)) return true;
+        if (/^advertisement\b|\badvertisement$/i.test(t)) return true;
+        if (t === 'spotify' && (!a || a === 'spotify')) return true;
+        if (t === 'spotify free' || a === 'advertisement' || a === 'spotify advertisement') return true;
+        if (/^(advertisement|commercial)$/i.test(alb)) return true;
+
+        if (document.querySelector('[data-testid="ad-banner"]') ||
+            document.querySelector('.ad-showing') ||
+            document.querySelector('.ad-interrupting')) {
+            return true;
+        }
+        return false;
+    }
+
     function checkNowPlaying() {
         const platform = detectStreamingPlatform();
 
@@ -117,6 +136,8 @@
             const title = (meta.title || '').trim();
             const artist = (meta.artist || '').trim();
             const album = (meta.album || '').trim();
+
+            if (isAdvertisement(title, artist, album)) return;
             const artworkUrl = meta.artwork && meta.artwork.length ? meta.artwork[meta.artwork.length - 1].src : '';
 
             const mediaElements = Array.from(document.querySelectorAll('audio, video'));
