@@ -141,12 +141,10 @@ Function Get-TrackArtwork {
                     $itemTitle = if ($_.title) { $_.title.ToLower() } else { "" }
                     $primaryLower = $primaryArtist.ToLower()
                     $titleLower = $cleanTitle.ToLower()
-                    ($primaryLower -and ($itemArtist.Contains($primaryLower) -or $primaryLower.Contains($itemArtist))) -and ($titleLower -and ($itemTitle.Contains($titleLower) -or $titleLower.Contains($itemTitle)))
+                    $artistOk = (-not $primaryLower) -or $itemArtist.Contains($primaryLower) -or $primaryLower.Contains($itemArtist)
+                    $titleOk = (-not $titleLower) -or $itemTitle.Contains($titleLower) -or $titleLower.Contains($itemTitle)
+                    $artistOk -and $titleOk
                 } | Select-Object -First 1
-
-                if (-not $match) {
-                    $match = $resp.data[0]
-                }
 
                 if ($match -and $match.album) {
                     $art = if ($match.album.cover_xl) { $match.album.cover_xl } elseif ($match.album.cover_big) { $match.album.cover_big } else { $match.album.cover_medium }
@@ -158,6 +156,31 @@ Function Get-TrackArtwork {
             }
         } catch {}
     }
+
+    # 2. Try iTunes Search API as secondary fallback
+    try {
+        $term = [System.Uri]::EscapeDataString("$primaryArtist $cleanTitle")
+        $itUrl = "https://itunes.apple.com/search?term=$term&entity=song&limit=5"
+        $itResp = Invoke-RestMethod -Uri $itUrl -Method GET -TimeoutSec 3 -ErrorAction SilentlyContinue
+        if ($itResp -and $itResp.results -and $itResp.results.Count -gt 0) {
+            $itMatch = $itResp.results | Where-Object {
+                $a = if ($_.artistName) { $_.artistName.ToLower() } else { "" }
+                $t = if ($_.trackName) { $_.trackName.ToLower() } else { "" }
+                $p = $primaryArtist.ToLower()
+                $c = $cleanTitle.ToLower()
+                ((-not $p) -or $a.Contains($p) -or $p.Contains($a)) -and ((-not $c) -or $t.Contains($c) -or $c.Contains($t))
+            } | Select-Object -First 1
+
+            if ($itMatch) {
+                $rawArt = if ($itMatch.artworkUrl100) { $itMatch.artworkUrl100 } else { $itMatch.artworkUrl60 }
+                $art = if ($rawArt) { $rawArt -replace '\/\d+x\d+bb\.', '/600x600bb.' } else { "" }
+                $alb = if ($album) { $album } else { $itMatch.collectionName }
+                $res = @{ artworkUrl = $art; album = $alb }
+                $artworkCache[$cacheKey] = $res
+                return $res
+            }
+        }
+    } catch {}
 
     $res = @{ artworkUrl = ""; album = $album }
     $artworkCache[$cacheKey] = $res
@@ -330,7 +353,8 @@ while ($true) {
                 }
 
                 $bullet = [char]0x2022
-                $device = "Desktop PC $bullet $deviceApp ($source)"
+                $rawDev = "Desktop PC $bullet $deviceApp ($source)"
+                $device = ($rawDev -replace '[\uFFFD\?]', ' • ' -replace '(?:\s*•\s*)+', ' • ').Trim()
 
                 $artInfo = Get-TrackArtwork -artist $artist -title $title -album $album
                 $artworkUrl = if ($artInfo.artworkUrl) { $artInfo.artworkUrl } else { "" }

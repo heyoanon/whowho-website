@@ -87,7 +87,7 @@
                 title: 'Supernova',
                 artist: 'aespa',
                 album: 'Armageddon - The 1st Album',
-                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b2734107e0e7a8e8f85f34177f1f',
+                artworkUrl: 'https://cdn-images.dzcdn.net/images/cover/185323bb418693348a930cc4ea80e61d/1000x1000-000000-80-0-0.jpg',
                 url: 'https://open.spotify.com/track/712roG90pcuZ9mQdrwUojT',
                 source: 'On Repeat'
             },
@@ -99,42 +99,42 @@
                 title: 'Supernova',
                 artist: 'aespa',
                 album: 'Armageddon - The 1st Album',
-                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b2734107e0e7a8e8f85f34177f1f',
+                artworkUrl: 'https://cdn-images.dzcdn.net/images/cover/185323bb418693348a930cc4ea80e61d/1000x1000-000000-80-0-0.jpg',
                 url: 'https://open.spotify.com/track/712roG90pcuZ9mQdrwUojT'
             },
             {
                 title: 'Whiplash',
                 artist: 'aespa',
                 album: 'Whiplash - The 5th Mini Album',
-                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b2737ceca1aebe42b6a03b54728d',
+                artworkUrl: 'https://cdn-images.dzcdn.net/images/cover/b62a48fd60d20e78af31bc1677c16114/1000x1000-000000-80-0-0.jpg',
                 url: 'https://open.spotify.com/track/3FPuk3O0b3s9Z6kE6w0tqG'
             },
             {
                 title: 'Cosmic',
                 artist: 'Red Velvet',
                 album: 'Cosmic',
-                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b273cb8a0fa61957c5881bbdf06f',
+                artworkUrl: 'https://cdn-images.dzcdn.net/images/cover/7031325f5693a709234aef2d5fb924ba/1000x1000-000000-80-0-0.jpg',
                 url: 'https://open.spotify.com/track/4l4K3N82jR8q4H8Q03l7vG'
             },
             {
                 title: 'DASH',
                 artist: 'NMIXX',
                 album: 'Fe3O4: BREAK',
-                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b273ce96f7c87cbb517f8646b9a2',
+                artworkUrl: 'https://cdn-images.dzcdn.net/images/cover/b1163cf61f2591b309037aabdfede590/1000x1000-000000-80-0-0.jpg',
                 url: 'https://open.spotify.com/track/2Z1w4Fz1x4j1k4y4k4m4m4'
             },
             {
                 title: 'Talk that Talk',
                 artist: 'TWICE',
                 album: 'BETWEEN 1&2',
-                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b27394d0799309ec903cb6d318e8',
+                artworkUrl: 'https://cdn-images.dzcdn.net/images/cover/0824c80571e9cee63eaacc5a52a8e6d8/1000x1000-000000-80-0-0.jpg',
                 url: 'https://open.spotify.com/track/0wODX2g6d6s4x8o6y8p6y8'
             },
             {
                 title: 'RUN2U',
                 artist: 'STAYC',
                 album: 'YOUNG-LUV.COM',
-                artworkUrl: 'https://i.scdn.co/image/ab67616d0000b273e86f8bf7a1bf64c9d32d0c27',
+                artworkUrl: 'https://cdn-images.dzcdn.net/images/cover/854e85f55093e7bad0e6883cbee61da0/1000x1000-000000-80-0-0.jpg',
                 url: 'https://open.spotify.com/track/0x9x8y7w6v5u4t3s2r1q0p'
             }
         ];
@@ -1544,7 +1544,7 @@
             fetchLanyardPresence();
             connectLanyardSocket();
             connectDirectStream();
-            lanyardRefreshTimer = setInterval(() => fetchLanyardPresence(false), 3000);
+            lanyardRefreshTimer = setInterval(() => fetchLanyardPresence(false), 1500);
         }
 
         function stopTrackProgress() {
@@ -1592,30 +1592,44 @@
         }
 
         async function fetchArtworkAndAlbumForTrack(artist, title, album = '') {
-            const cleanTitle = (title || '').replace(/[\(\[\{].*?[\)\]\}]/g, '').replace(/[?!,.:;]/g, ' ').replace(/\s+/g, ' ').trim();
-            const primaryArtist = (artist || '').split(/[,&/]|feat\.|ft\./i)[0].replace(/[?!,.:;]/g, ' ').replace(/\s+/g, ' ').trim();
+            const cleanTitle = (title || '')
+                .replace(/\s*[\(\[\{][^\)\]\}]*(?:remaster|deluxe|version|edition|mix|feat|ft|live|bonus|explicit|official|audio|video|lyric)[^\)\]\}]*[\)\]\}]/gi, '')
+                .replace(/[?!,.:;"'`~@#$%^&*_+=\/\\|<>]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+            const primaryArtist = (artist || '').split(/[,&/]|feat\.|ft\.|with\s+/i)[0]
+                .replace(/[?!,.:;"'`~@#$%^&*_+=\/\\|<>]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
             if (!cleanTitle) return null;
             const key = `${primaryArtist.toLowerCase()}:::${cleanTitle.toLowerCase()}`;
             if (albumCache.has(key)) return albumCache.get(key);
 
+            const pLower = primaryArtist.toLowerCase();
+            const tLower = cleanTitle.toLowerCase();
+            const cAlbum = (album || '').toLowerCase().replace(/[?!,.:;"'`~@#$%^&*_+=\/\\|<>]/g, ' ').replace(/\s+/g, ' ').trim();
+
             // 1. Try Deezer API
             try {
-                const q = encodeURIComponent(`${primaryArtist} ${cleanTitle}`);
+                const q = encodeURIComponent(`${primaryArtist} ${cleanTitle}`.trim());
                 const res = await fetch(`https://api.deezer.com/search?q=${q}&limit=5`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.data && data.data.length > 0) {
-                        const best = data.data.find(item => {
+                        const match = data.data.find(item => {
                             const a = (item.artist?.name || '').toLowerCase();
                             const t = (item.title || item.title_short || '').toLowerCase();
-                            return (a.includes(primaryArtist.toLowerCase()) || primaryArtist.toLowerCase().includes(a)) &&
-                                   (t.includes(cleanTitle.toLowerCase()) || cleanTitle.toLowerCase().includes(t));
-                        }) || data.data[0];
+                            const alb = (item.album?.title || '').toLowerCase();
+                            const artistMatches = !pLower || a.includes(pLower) || pLower.includes(a);
+                            const titleMatches = !tLower || t.includes(tLower) || tLower.includes(t);
+                            const albumMatches = cAlbum && (alb.includes(cAlbum) || cAlbum.includes(alb));
+                            return (artistMatches && (titleMatches || albumMatches)) || (!pLower && titleMatches);
+                        });
 
-                        if (best && best.album) {
+                        if (match && match.album) {
                             const resObj = {
-                                artworkUrl: best.album.cover_xl || best.album.cover_big || best.album.cover_medium,
-                                album: best.album.title || album
+                                artworkUrl: match.album.cover_xl || match.album.cover_big || match.album.cover_medium,
+                                album: match.album.title || album
                             };
                             albumCache.set(key, resObj);
                             return resObj;
@@ -1626,7 +1640,7 @@
 
             // 2. Try iTunes API
             try {
-                const query = encodeURIComponent(`${primaryArtist} ${cleanTitle}`);
+                const query = encodeURIComponent(`${primaryArtist} ${cleanTitle}`.trim());
                 const response = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=5`);
                 if (response.ok) {
                     const result = await response.json();
@@ -1634,9 +1648,12 @@
                         const match = result.results.find(item => {
                             const a = (item.artistName || '').toLowerCase();
                             const t = (item.trackName || '').toLowerCase();
-                            return (a.includes(primaryArtist.toLowerCase()) || primaryArtist.toLowerCase().includes(a)) &&
-                                   (t.includes(cleanTitle.toLowerCase()) || cleanTitle.toLowerCase().includes(t));
-                        }) || result.results[0];
+                            const alb = (item.collectionName || '').toLowerCase();
+                            const artistMatches = !pLower || a.includes(pLower) || pLower.includes(a);
+                            const titleMatches = !tLower || t.includes(tLower) || tLower.includes(t);
+                            const albumMatches = cAlbum && (alb.includes(cAlbum) || cAlbum.includes(alb));
+                            return (artistMatches && (titleMatches || albumMatches)) || (!pLower && titleMatches);
+                        });
 
                         if (match) {
                             const rawArt = match.artworkUrl100 || match.artworkUrl60 || '';
@@ -2030,18 +2047,10 @@
             // High-resolution metadata enrichment if missing
             if ((!track.artworkUrl || !track.album) && track.artist && track.title) {
                 try {
-                    const query = encodeURIComponent(`${track.artist} ${track.title}`);
-                    const itunesRes = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`);
-                    if (itunesRes.ok) {
-                        const itunesData = await itunesRes.json();
-                        const item = itunesData.results?.[0];
-                        if (item) {
-                            if (!track.album && item.collectionName) track.album = item.collectionName;
-                            if (!track.artworkUrl && item.artworkUrl100) {
-                                track.artworkUrl = item.artworkUrl100.replace('100x100bb', '600x600bb');
-                            }
-                            if (!track.url && item.trackViewUrl) track.url = item.trackViewUrl;
-                        }
+                    const resolved = await fetchArtworkAndAlbumForTrack(track.artist, track.title, track.album || '');
+                    if (resolved) {
+                        if (!track.album && resolved.album) track.album = resolved.album;
+                        if (!track.artworkUrl && resolved.artworkUrl) track.artworkUrl = resolved.artworkUrl;
                     }
                 } catch {}
             }
@@ -2228,7 +2237,31 @@
                 }
             }
 
+            let hasAttemptedHeal = false;
             albumArt.onerror = () => {
+                if (!hasAttemptedHeal && track.artist && track.title) {
+                    hasAttemptedHeal = true;
+                    fetchArtworkAndAlbumForTrack(track.artist, track.title, track.album).then(res => {
+                        if (res && res.artworkUrl && res.artworkUrl !== albumArt.src) {
+                            albumArt.src = res.artworkUrl;
+                            track.artworkUrl = res.artworkUrl;
+                            if (res.album && !track.album) {
+                                track.album = res.album;
+                                const albEl = card.querySelector('.lanyard-track-album-line');
+                                if (albEl) albEl.textContent = res.album;
+                            }
+                            return;
+                        }
+                        if (track.fallbackArtworkUrl && albumArt.src !== track.fallbackArtworkUrl) {
+                            albumArt.src = track.fallbackArtworkUrl;
+                            return;
+                        }
+                        albumArt.src = fallbackVinylSvg;
+                    }).catch(() => {
+                        albumArt.src = fallbackVinylSvg;
+                    });
+                    return;
+                }
                 if (track.fallbackArtworkUrl && albumArt.src !== track.fallbackArtworkUrl) {
                     albumArt.src = track.fallbackArtworkUrl;
                     return;
@@ -2297,7 +2330,7 @@
                 devIcon = '💻';
             }
 
-            const cleanDev = deviceRaw.replace(/[\uFFFD\?]/g, '•').replace(/\s*•\s*/g, ' • ').trim();
+            const cleanDev = deviceRaw.replace(/[\uFFFD\?]/g, ' • ').replace(/(?:\s*•\s*)+/g, ' • ').replace(/^•\s*|\s*•$/g, '').trim();
             if (cleanDev) {
                 if (/^playing\s+(on|via)/i.test(cleanDev)) {
                     devLabel = cleanDev.toUpperCase();

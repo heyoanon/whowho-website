@@ -706,14 +706,14 @@ async function resolveTrackArtwork(artist, title, album = '') {
             const cTitle = cleanTitle.toLowerCase();
             const cAlbum = cleanAlbum.toLowerCase();
 
-            const artistMatches = pArtist && (itemArtist.includes(pArtist) || pArtist.includes(itemArtist));
-            const titleMatches = cTitle && (itemTitle.includes(cTitle) || cTitle.includes(itemTitle));
+            const artistMatches = !pArtist || itemArtist.includes(pArtist) || pArtist.includes(itemArtist);
+            const titleMatches = !cTitle || itemTitle.includes(cTitle) || cTitle.includes(itemTitle);
             const albumMatches = cAlbum && (itemAlbum.includes(cAlbum) || cAlbum.includes(itemAlbum));
 
             if (artistMatches && (titleMatches || albumMatches)) return true;
-            if (titleMatches && albumMatches) return true;
+            if (!pArtist && titleMatches) return true;
             return false;
-          }) || json.data[0];
+          });
 
           if (match && match.album && (match.album.cover_xl || match.album.cover_big || match.album.cover_medium)) {
             return {
@@ -752,12 +752,12 @@ async function resolveTrackArtwork(artist, title, album = '') {
             const cTitle = cleanTitle.toLowerCase();
             const cAlbum = cleanAlbum.toLowerCase();
 
-            const artistMatches = pArtist && (itemArtist.includes(pArtist) || pArtist.includes(itemArtist));
-            const titleMatches = cTitle && (itemTrack.includes(cTitle) || cTitle.includes(itemTrack));
+            const artistMatches = !pArtist || itemArtist.includes(pArtist) || pArtist.includes(itemArtist);
+            const titleMatches = !cTitle || itemTrack.includes(cTitle) || cTitle.includes(itemTrack);
             const albumMatches = cAlbum && (itemAlbum.includes(cAlbum) || cAlbum.includes(itemAlbum));
 
-            return (artistMatches && (titleMatches || albumMatches)) || (titleMatches && albumMatches);
-          }) || json.results[0];
+            return (artistMatches && (titleMatches || albumMatches)) || (!pArtist && titleMatches);
+          });
 
           if (match) {
             const rawArt = match.artworkUrl100 || match.artworkUrl60 || '';
@@ -932,7 +932,7 @@ app.post('/api/now-playing', async (req, res) => {
 
   const durationMs = Number(duration) > 0 ? Number(duration) * 1000 : 0;
   const now = Date.now();
-  const sanitizedDevice = String(device || '').replace(/[\uFFFD\?]/g, '•').replace(/\s*•\s*/g, ' • ').trim();
+  const sanitizedDevice = String(device || '').replace(/[\uFFFD\?]/g, ' • ').replace(/(?:\s*•\s*)+/g, ' • ').replace(/^•\s*|\s*•$/g, '').trim();
   const trackData = {
     isPlaying: Boolean(isPlaying),
     source: normalizedSource,
@@ -1056,14 +1056,23 @@ app.get('/api/now-playing', async (req, res) => {
         const presence = discordData.data;
         if (presence.listening_to_spotify && presence.spotify) {
           const sp = presence.spotify;
+          let artworkUrl = sp.album_art_url || '';
+          let album = sp.album || '';
+          if (!artworkUrl && sp.artist && sp.song) {
+            try {
+              const resArt = await resolveTrackArtwork(sp.artist, sp.song, album);
+              if (resArt.artworkUrl) artworkUrl = resArt.artworkUrl;
+              if (!album && resArt.album) album = resArt.album;
+            } catch {}
+          }
           return res.json({
             isPlaying: true,
             provider: 'discord-lanyard',
             source: 'Spotify',
             title: sp.song,
             artist: sp.artist,
-            album: sp.album,
-            artworkUrl: sp.album_art_url,
+            album,
+            artworkUrl,
             url: sp.track_id ? `https://open.spotify.com/track/${sp.track_id}` : 'https://open.spotify.com/',
             timestamps: sp.timestamps
           });
@@ -1088,13 +1097,22 @@ app.get('/api/now-playing', async (req, res) => {
                 artworkUrl = `https://media.discordapp.net/external/${act.assets.large_image.slice(12)}`;
               }
 
+              let resolvedAlbum = (album && album !== title && album !== artist) ? album : '';
+              if (!artworkUrl && title) {
+                try {
+                  const resArt = await resolveTrackArtwork(artist, title, resolvedAlbum);
+                  if (resArt.artworkUrl) artworkUrl = resArt.artworkUrl;
+                  if (!resolvedAlbum && resArt.album) resolvedAlbum = resArt.album;
+                } catch {}
+              }
+
               return res.json({
                 isPlaying: true,
                 provider: 'discord-lanyard',
                 source: isBitChord ? 'BitChord' : (isYtm ? 'YouTube Music' : (isSpotifyAct ? 'Spotify' : (act.name || 'Music'))),
                 title,
                 artist,
-                album: (album && album !== title && album !== artist) ? album : '',
+                album: resolvedAlbum,
                 artworkUrl,
                 url: act.details_url || '',
                 timestamps: act.timestamps || null
