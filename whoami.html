@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=2.2">
+    <link rel="stylesheet" href="css/style.css?v=2.4">
 </head>
 
 <body>
@@ -1056,6 +1056,29 @@
             } catch {}
         }
 
+        function navigateBack(target = 'menu') {
+            playArcadeBeep();
+            editingSection = null;
+            isEditingSideQuests = false;
+            stopArcadeGame();
+            stopLanyardRefresh();
+
+            const currentState = window.history.state;
+            if (currentState && typeof currentState.depth === 'number' && currentState.depth > 0) {
+                history.back();
+            } else if (window.history.length > 1 && currentState) {
+                history.back();
+            } else {
+                if (target === 'profile') {
+                    history.replaceState({ screen: 'page', page: 'profile', depth: 1 }, '', '#profile');
+                    renderPage('profile', false);
+                } else {
+                    history.replaceState({ screen: 'menu', depth: 0 }, '', '#menu');
+                    renderMainMenu(false);
+                }
+            }
+        }
+
         function renderMainMenu(updateHistory = true) {
             stopLanyardRefresh();
             stopArcadeGame();
@@ -1063,9 +1086,9 @@
             isEditingSideQuests = false;
             if (updateHistory) {
                 if (window.location.hash !== '' && window.location.hash !== '#menu') {
-                    history.pushState({ screen: 'menu' }, '', '#menu');
+                    history.pushState({ screen: 'menu', depth: 0 }, '', '#menu');
                 } else if (!history.state || history.state.screen !== 'menu') {
-                    history.replaceState({ screen: 'menu' }, '', '#menu');
+                    history.replaceState({ screen: 'menu', depth: 0 }, '', '#menu');
                 }
             }
             rightPanel.innerHTML = `
@@ -2928,7 +2951,7 @@
             stopLanyardRefresh();
             stopArcadeGame();
             if (updateHistory) {
-                history.pushState({ screen: 'page', page: pageName }, '', `#${pageName}`);
+                history.pushState({ screen: 'page', page: pageName, depth: 1 }, '', `#${pageName}`);
             }
 
             if (pageName === 'profile') {
@@ -2950,12 +2973,7 @@
                 const backBtn = document.querySelector('.back-button');
                 if (backBtn) {
                     backBtn.addEventListener('click', () => {
-                        playArcadeBeep();
-                        if (window.history.length > 1) {
-                            history.back();
-                        } else {
-                            renderMainMenu(true);
-                        }
+                        navigateBack('menu');
                     });
                 }
 
@@ -2982,13 +3000,7 @@
                 const backButton = document.querySelector('.back-button');
                 if (backButton) {
                     backButton.addEventListener('click', () => {
-                        playArcadeBeep();
-                        isEditingSideQuests = false;
-                        if (window.history.length > 1) {
-                            history.back();
-                        } else {
-                            renderMainMenu(true);
-                        }
+                        navigateBack('menu');
                     });
                 }
                 return;
@@ -3011,12 +3023,7 @@
                 const backButton = document.querySelector('.back-button');
                 if (backButton) {
                     backButton.addEventListener('click', () => {
-                        playArcadeBeep();
-                        if (window.history.length > 1) {
-                            history.back();
-                        } else {
-                            renderMainMenu(true);
-                        }
+                        navigateBack('menu');
                     });
                 }
 
@@ -3037,12 +3044,7 @@
             const backButton = document.querySelector('.back-button');
             if (backButton) {
                 backButton.addEventListener('click', () => {
-                    playArcadeBeep();
-                    if (window.history.length > 1) {
-                        history.back();
-                    } else {
-                        renderMainMenu(true);
-                    }
+                    navigateBack('menu');
                 });
             }
 
@@ -3062,7 +3064,7 @@
         function renderDetail(pageName, updateHistory = true) {
             stopLanyardRefresh();
             if (updateHistory) {
-                history.pushState({ screen: 'detail', detail: pageName }, '', `#${pageName}`);
+                history.pushState({ screen: 'detail', detail: pageName, depth: 2 }, '', `#${pageName}`);
             }
 
             if (pageName === 'whoIUlt') {
@@ -3081,19 +3083,14 @@
                 const backButton = document.querySelector('.back-button');
                 if (backButton) {
                     backButton.addEventListener('click', () => {
-                        playArcadeBeep();
-                        if (window.history.length > 1) {
-                            history.back();
-                        } else {
-                            renderPage('profile', true);
-                        }
+                        navigateBack('profile');
                     });
                 }
 
                 document.querySelectorAll('.who-i-ult-menu-panel .sub-menu .menu-item').forEach(button => {
                     button.addEventListener('click', () => {
                         playArcadeBeep();
-                        history.replaceState({ screen: 'detail', detail: button.dataset.page }, '', `#${button.dataset.page}`);
+                        history.replaceState({ screen: 'detail', detail: button.dataset.page, depth: 2 }, '', `#${button.dataset.page}`);
                         renderDetail(button.dataset.page, false);
                     });
                 });
@@ -3104,7 +3101,7 @@
             rightPanel.innerHTML = `
                 <div class="panel-content-only">
                     <div class="top-row">
-                        <button class="back-button" aria-label="Go back">←</button>
+                        <button class="back-button" aria-label="Go back to profile menu">←</button>
                     </div>
                     ${content}
                 </div>
@@ -3113,10 +3110,7 @@
             const backButton = document.querySelector('.back-button');
             if (backButton) {
                 backButton.addEventListener('click', () => {
-                    playArcadeBeep();
-                    editingSection = null;
-                    isEditingSideQuests = false;
-                    renderPage('profile', true);
+                    navigateBack('profile');
                 });
             }
         }
@@ -3124,13 +3118,13 @@
         function restoreNavigation() {
             const hash = (window.location.hash || '').replace(/^#/, '').trim();
             if (DETAIL_PAGES.includes(hash)) {
-                history.replaceState({ screen: 'detail', detail: hash }, '', `#${hash}`);
+                history.replaceState({ screen: 'detail', detail: hash, depth: 0 }, '', `#${hash}`);
                 renderDetail(hash, false);
             } else if (TOP_PAGES.includes(hash)) {
-                history.replaceState({ screen: 'page', page: hash }, '', `#${hash}`);
+                history.replaceState({ screen: 'page', page: hash, depth: 0 }, '', `#${hash}`);
                 renderPage(hash, false);
             } else {
-                history.replaceState({ screen: 'menu' }, '', '#menu');
+                history.replaceState({ screen: 'menu', depth: 0 }, '', '#menu');
                 renderMainMenu(false);
             }
         }
@@ -3141,6 +3135,8 @@
             const hash = (window.location.hash || '').replace(/^#/, '').trim();
             editingSection = null;
             isEditingSideQuests = false;
+            stopArcadeGame();
+            stopLanyardRefresh();
 
             if (state && state.screen === 'detail') {
                 if (state.detail === 'whoIUlt') {

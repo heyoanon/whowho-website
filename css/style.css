@@ -1733,6 +1733,10 @@ h3 {
         min-height: 100dvh;
         height: auto;
         flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 10px;
+        box-sizing: border-box;
         overflow: visible;
         background: transparent;
     }
@@ -1754,38 +1758,51 @@ h3 {
     }
 
     .right-half {
-        height: auto;
-        min-height: 100dvh;
-        flex: 1 1 auto;
         width: 100%;
-        min-width: 0;
-        max-width: 100%;
-        margin: 0;
-        padding: 18px 14px;
-        border: none;
-        box-shadow: none;
-        border-radius: 0;
-        align-self: stretch;
+        max-width: 480px;
+        min-height: calc(100dvh - 24px);
+        height: auto;
+        margin: 0 auto;
+        padding: 20px 16px;
+        border: 2px solid #004cff;
+        box-shadow: 0 0 10px #004cff, 0 0 20px rgba(0, 76, 255, 0.35), inset 0 0 10px rgba(0, 76, 255, 0.2);
+        border-radius: 12px;
+        align-self: center;
         align-items: stretch;
-        background: rgba(0, 0, 0, 0.72);
+        background: rgba(0, 0, 0, 0.88);
         overflow-y: auto;
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
-    }
-
-    .menu-panel,
-    .panel-content-only {
-        align-items: flex-start;
-        text-align: left;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
     }
 
     .menu-panel {
+        width: 100%;
         min-height: 100%;
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
         justify-content: center;
+        align-items: flex-start;
+        text-align: left;
+        gap: 14px;
+        padding: 10px 4px;
+        box-sizing: border-box;
     }
 
     .panel-content-only {
+        align-items: flex-start;
+        text-align: left;
         position: relative;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: visible;
     }
 
     .lanyard-box {
@@ -1898,12 +1915,12 @@ h3 {
     .who-i-ult-menu-panel {
         width: 100% !important;
         min-height: 100% !important;
-        height: 100% !important;
+        height: auto !important;
         flex: 1 1 auto !important;
         display: flex !important;
         flex-direction: column !important;
-        justify-content: center !important;
-        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        align-items: stretch !important;
         overflow-y: auto !important;
         overflow-x: hidden !important;
         -webkit-overflow-scrolling: touch !important;
@@ -1918,9 +1935,11 @@ h3 {
         left: auto !important;
         transform: none !important;
         width: 100% !important;
+        flex: 1 1 auto !important;
         display: flex !important;
         flex-direction: column !important;
         gap: 14px !important;
+        justify-content: center !important;
         align-items: flex-start !important;
         padding: 10px 0 !important;
         margin: 0 !important;
@@ -1930,33 +1949,81 @@ h3 {
         display: flex !important;
         align-self: stretch !important;
         justify-content: flex-start !important;
-        margin-bottom: 8px !important;
+        align-items: center !important;
+        margin-bottom: 12px !important;
+        padding-bottom: 6px !important;
+        min-height: 38px !important;
+        border-bottom: 1px dashed rgba(0, 76, 255, 0.35) !important;
     }
 
     .back-button {
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
+        font-size: 20px !important;
+        line-height: 1 !important;
+        width: 36px !important;
+        height: 36px !important;
+        padding: 0 !important;
+        color: #00ffff !important;
+        background: rgba(0, 76, 255, 0.22) !important;
+        border: 1px solid #004cff !important;
+        border-radius: 6px !important;
+        cursor: pointer !important;
+        transition: all 0.15s ease !important;
+        flex-shrink: 0 !important;
+    }
+
+    .back-button:hover,
+    .back-button:active {
+        background: rgba(0, 255, 255, 0.3) !important;
+        color: #ffffff !important;
+        box-shadow: 0 0 8px #00ffff !important;
+        transform: scale(1.05) !important;
     }
 
     h1 {
-        font-size: 28px;
+        font-size: clamp(24px, 7vw, 32px);
         margin-bottom: 14px;
+        text-align: center;
+        align-self: center;
+        letter-spacing: 2px;
     }
 
     h2 {
-        font-size: 22px;
+        font-size: 20px;
         margin-bottom: 12px;
     }
 
     .menu-panel,
     .sub-menu {
-        gap: 12px;
+        gap: 14px;
     }
 
     .menu-item {
-        font-size: clamp(14px, 4.3vw, 19px);
-        line-height: 1.7;
+        font-size: clamp(13px, 4.2vw, 17px);
+        line-height: 1.8;
+        white-space: normal;
+        word-break: break-word;
+        text-align: left;
+        width: 100%;
+        padding: 6px 8px;
+        border-radius: 6px;
+        color: #ffffff;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        box-sizing: border-box;
+    }
+
+    .menu-item:hover,
+    .menu-item:focus,
+    .menu-item:active {
+        color: #00ffff;
+        text-shadow: 0 0 8px #00ffff;
+        background: rgba(0, 76, 255, 0.18);
+        transform: translateX(4px);
     }
 
     .fact-box p,
@@ -1964,7 +2031,7 @@ h3 {
     .panel-content .fact-box li,
     .panel-content .fact-box ul,
     .panel-content .fact-box p {
-        font-size: clamp(12px, 3.2vw, 15px);
+        font-size: clamp(11px, 3.2vw, 13px);
         line-height: 1.65;
         word-break: break-word;
         overflow-wrap: break-word;
@@ -1991,13 +2058,21 @@ h3 {
     }
 
     .know-me-box {
-        padding-right: 150px;
+        position: relative;
+        padding-right: 80px;
+        overflow: visible;
     }
 
     .blue-cat-cap-image {
-        width: 105px;
-        height: 105px;
-        right: 6px;
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 70px;
+        height: 70px;
+        object-fit: contain;
+        opacity: 0.95;
+        filter: drop-shadow(0 0 6px rgba(0, 76, 255, 0.4));
+        pointer-events: none;
     }
 
     .social-link {
