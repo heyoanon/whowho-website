@@ -1332,6 +1332,7 @@
 
         function stopLanyardRefresh() {
             isMonitoringNowPlaying = false;
+            currentlyRenderedTrackKey = '';
             if (lanyardRefreshTimer) {
                 clearInterval(lanyardRefreshTimer);
                 lanyardRefreshTimer = null;
@@ -1543,7 +1544,7 @@
             fetchLanyardPresence();
             connectLanyardSocket();
             connectDirectStream();
-            lanyardRefreshTimer = setInterval(fetchLanyardPresence, 2000);
+            lanyardRefreshTimer = setInterval(() => fetchLanyardPresence(false), 5000);
         }
 
         function stopTrackProgress() {
@@ -2310,11 +2311,11 @@
                     <p style="font-size:10px; color:#9ab7ff; line-height:1.8; max-width:440px; margin:0 auto 16px auto;">
                         Testing live device audio only (stored profile is disregarded). Start streaming a track in Brave, Zen Browser, Opera GX, LibreWolf, Spotify, YouTube Music, or Apple Music to see it sync live.
                     </p>
-                    <button type="button" class="stream-check-btn" onclick="fetchLanyardPresence()">CHECK DEVICE AUDIO ⟳</button>
+                    <button type="button" class="stream-check-btn" onclick="fetchLanyardPresence(true)">CHECK DEVICE AUDIO ⟳</button>
                 </div>
                 <div class="now-playing-footer">
                     <span class="stream-status-pill"><span class="status-dot standby"></span> STANDBY (TESTING LIVE PLAYBACK ONLY)</span>
-                    <button type="button" class="stream-check-btn" onclick="fetchLanyardPresence()">REFRESH ⟳</button>
+                    <button type="button" class="stream-check-btn" onclick="fetchLanyardPresence(true)">REFRESH ⟳</button>
                 </div>
             `;
             musicList.hidden = false;
@@ -2332,11 +2333,11 @@
 
         window.fetchLanyardPresence = fetchLanyardPresence;
 
-        function renderUnifiedMusic() {
+        let currentlyRenderedTrackKey = '';
+
+        function renderUnifiedMusic(force = false) {
             const musicList = document.getElementById('lanyard-music-list');
             if (!musicList) return;
-
-            stopTrackProgress();
 
             const tracks = [];
 
@@ -2417,7 +2418,26 @@
             }
 
             if (tracks.length > 0) {
-                checkAndNotifyTrackChange(tracks[0]);
+                const primaryTrack = tracks[0];
+                const newKey = tracks.map(t => `${t.source || ''}:::${t.title || ''}:::${t.artist || ''}:::${t.album || ''}:::${t.device || ''}:::${t.artworkUrl || ''}`).join('|||');
+
+                // ONLY REFRESH / RE-RENDER WHEN THE NOW PLAYING TRACK CHANGES!
+                if (!force && newKey === currentlyRenderedTrackKey && musicList.children.length > 0 && !musicList.querySelector('.standby-card')) {
+                    // Track has NOT changed: keep existing DOM intact so animations/equalizers don't reset or flicker!
+                    if (primaryTrack.timestamps && (primaryTrack.timestamps.start !== undefined || primaryTrack.timestamps.end !== undefined)) {
+                        const timing = musicList.querySelector('.lanyard-track-timing');
+                        if (timing) {
+                            timing.dataset.start = String(primaryTrack.timestamps.start || 0);
+                            timing.dataset.end = String(primaryTrack.timestamps.end || 0);
+                        }
+                    }
+                    return;
+                }
+
+                currentlyRenderedTrackKey = newKey;
+                stopTrackProgress();
+                checkAndNotifyTrackChange(primaryTrack);
+
                 const cards = tracks.map(createMusicCard);
                 musicList.replaceChildren(...cards.map(card => card.element));
                 musicList.hidden = false;
@@ -2426,12 +2446,17 @@
                     trackProgressTimer = setInterval(updateTrackProgress, 1000);
                 }
             } else {
+                if (!force && currentlyRenderedTrackKey === '__EMPTY__' && musicList.querySelector('.standby-card')) {
+                    return; // Already showing standby, do not recreate DOM
+                }
+                currentlyRenderedTrackKey = '__EMPTY__';
                 lastPlayedTrackKey = '';
+                stopTrackProgress();
                 renderNoMusic(musicList, latestLanyardPresence);
             }
         }
 
-        async function fetchLanyardPresence() {
+        async function fetchLanyardPresence(force = false) {
             const musicList = document.getElementById('lanyard-music-list');
             if (!musicList) return;
 
@@ -2469,7 +2494,7 @@
                     }
                 }
 
-                renderUnifiedMusic();
+                renderUnifiedMusic(force);
             } catch (error) {
                 stopTrackProgress();
                 if (!musicList.children.length || musicList.querySelector('.lanyard-empty-card') || musicList.querySelector('.lanyard-activity')) {
