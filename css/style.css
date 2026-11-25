@@ -972,14 +972,36 @@ h3 {
 }
 
 .lanyard-track-album-line {
-    display: block;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 6px;
     max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     color: #9ab7ff;
     font-size: 13px;
     line-height: 1.4;
+}
+
+.lanyard-album-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.lanyard-track-time-range {
+    display: inline-flex;
+    align-items: center;
+    color: #00ffcc;
+    font-family: 'Press Start 2P', monospace, monospace;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    vertical-align: baseline;
+}
+
+.lanyard-track-time-range .time-sep {
+    color: #ffd700;
+    margin-right: 5px;
 }
 
 .lanyard-track-link {

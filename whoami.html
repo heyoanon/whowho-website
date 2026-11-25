@@ -1644,6 +1644,20 @@
                     }
                 }
             });
+
+            // Real-time ticking for start-to-finish track duration after album name
+            document.querySelectorAll('.lanyard-track-time-range[data-start][data-end]').forEach(el => {
+                const startedAt = Number(el.dataset.start);
+                const endsAt = Number(el.dataset.end);
+                const durationSeconds = Math.floor((endsAt - startedAt) / 1000);
+                if (durationSeconds <= 0) return;
+                const elapsedSeconds = Math.min(durationSeconds, Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
+                const elapsedEl = el.querySelector('[data-elapsed-time]');
+                const totalEl = el.querySelector('[data-total-time]');
+                if (elapsedEl) elapsedEl.textContent = formatTrackTime(elapsedSeconds);
+                if (totalEl) totalEl.textContent = formatTrackTime(durationSeconds);
+                el.style.display = 'inline-flex';
+            });
         }
 
         async function fetchArtworkAndAlbumForTrack(artist, title, album = '') {
@@ -1684,7 +1698,8 @@
                         if (match && match.album) {
                             const resObj = {
                                 artworkUrl: match.album.cover_xl || match.album.cover_big || match.album.cover_medium,
-                                album: match.album.title || album
+                                album: match.album.title || album,
+                                durationMs: match.duration ? (match.duration * 1000) : 0
                             };
                             albumCache.set(key, resObj);
                             return resObj;
@@ -1715,7 +1730,8 @@
                             const artworkUrl = rawArt ? rawArt.replace(/\/\d+x\d+bb\./, '/600x600bb.') : '';
                             const resObj = {
                                 artworkUrl,
-                                album: match.collectionName || album
+                                album: match.collectionName || album,
+                                durationMs: match.trackTimeMillis || 0
                             };
                             albumCache.set(key, resObj);
                             return resObj;
@@ -2221,9 +2237,6 @@
         function createMusicCard(track) {
             const card = document.createElement('article');
             card.className = 'lanyard-music-card';
-            if (!track.artworkUrl) {
-                card.classList.add('no-art');
-            }
 
             const sourceStr = String(track.source || 'Music').trim();
             const sourceLower = sourceStr.toLowerCase();
@@ -2277,19 +2290,6 @@
                 albumArt.src = track.artworkUrl;
             } else {
                 albumArt.src = fallbackVinylSvg;
-                if (track.artist && track.title) {
-                    fetchArtworkAndAlbumForTrack(track.artist, track.title, track.album).then(res => {
-                        if (res && res.artworkUrl) {
-                            albumArt.src = res.artworkUrl;
-                            track.artworkUrl = res.artworkUrl;
-                            if (res.album && !track.album) {
-                                track.album = res.album;
-                                const albEl = card.querySelector('.lanyard-track-album-line');
-                                if (albEl) albEl.textContent = res.album;
-                            }
-                        }
-                    });
-                }
             }
 
             let hasAttemptedHeal = false;
@@ -2302,8 +2302,8 @@
                             track.artworkUrl = res.artworkUrl;
                             if (res.album && !track.album) {
                                 track.album = res.album;
-                                const albEl = card.querySelector('.lanyard-track-album-line');
-                                if (albEl) albEl.textContent = res.album;
+                                const albTitle = card.querySelector('.lanyard-album-title');
+                                if (albTitle) albTitle.textContent = res.album;
                             }
                             return;
                         }
@@ -2346,21 +2346,42 @@
                 artist.textContent = track.artist;
                 trackDetails.appendChild(artist);
             }
-            if (track.album) {
-                const album = document.createElement('span');
-                album.className = 'lanyard-track-album-line';
-                album.textContent = track.album;
-                trackDetails.appendChild(album);
-            } else if (track.artist && track.title) {
-                fetchAlbumForTrack(track.artist, track.title).then(albumName => {
-                    if (albumName && !trackDetails.querySelector('.lanyard-track-album-line')) {
-                        track.album = albumName;
-                        const album = document.createElement('span');
-                        album.className = 'lanyard-track-album-line';
-                        album.textContent = albumName;
-                        trackDetails.appendChild(album);
-                    }
-                });
+
+            // Construct album line with live start-to-finish track time
+            const albumContainer = document.createElement('div');
+            albumContainer.className = 'lanyard-track-album-line';
+
+            const albumTitleSpan = document.createElement('span');
+            albumTitleSpan.className = 'lanyard-album-title';
+            albumTitleSpan.textContent = track.album || '';
+            albumContainer.appendChild(albumTitleSpan);
+
+            // Determine track time range (start to finish)
+            let startMs = track.timestamps ? Number(track.timestamps.start) : 0;
+            let endMs = track.timestamps ? Number(track.timestamps.end) : 0;
+            if ((!startMs || !endMs) && track.durationMs > 0) {
+                startMs = Date.now();
+                endMs = startMs + Number(track.durationMs);
+                track.timestamps = { start: startMs, end: endMs };
+            }
+
+            const timeRangeSpan = document.createElement('span');
+            timeRangeSpan.className = 'lanyard-track-time-range';
+
+            if (endMs > startMs) {
+                const durationSec = Math.floor((endMs - startMs) / 1000);
+                const elapsedSec = Math.min(durationSec, Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
+                timeRangeSpan.dataset.start = String(startMs);
+                timeRangeSpan.dataset.end = String(endMs);
+                timeRangeSpan.innerHTML = `<span class="time-sep">•</span> <span class="time-elapsed" data-elapsed-time>${formatTrackTime(elapsedSec)}</span> / <span class="time-total" data-total-time>${formatTrackTime(durationSec)}</span>`;
+                timeRangeSpan.style.display = 'inline-flex';
+            } else {
+                timeRangeSpan.style.display = 'none';
+            }
+            albumContainer.appendChild(timeRangeSpan);
+
+            if (track.album || endMs > startMs) {
+                trackDetails.appendChild(albumContainer);
             }
 
             // Explicit Streaming Service Origin Badge
@@ -2368,6 +2389,39 @@
             serviceBadge.className = `streaming-service-badge ${sourceLower.includes('spotify') ? 'spotify' : sourceLower.includes('youtube') || sourceLower.includes('ytm') ? 'ytm' : sourceLower.includes('apple') ? 'apple' : ''}`;
             serviceBadge.innerHTML = `📡 <b>STREAMED FROM:</b> ${escapeHtml(sourceStr.toUpperCase())}`;
             trackDetails.appendChild(serviceBadge);
+
+            // Asynchronous enrichment for missing artwork, album, or duration
+            if (track.artist && track.title && (!track.artworkUrl || !track.album || !track.durationMs)) {
+                fetchArtworkAndAlbumForTrack(track.artist, track.title, track.album).then(res => {
+                    if (res) {
+                        if (res.artworkUrl && (!track.artworkUrl || albumArt.src === fallbackVinylSvg)) {
+                            albumArt.src = res.artworkUrl;
+                            track.artworkUrl = res.artworkUrl;
+                        }
+                        if (res.album && !track.album) {
+                            track.album = res.album;
+                            albumTitleSpan.textContent = res.album;
+                            if (!albumContainer.parentElement) {
+                                trackDetails.insertBefore(albumContainer, serviceBadge);
+                            }
+                        }
+                        if (res.durationMs > 0 && (!track.timestamps || !track.timestamps.end)) {
+                            const s = Date.now();
+                            const e = s + Number(res.durationMs);
+                            track.timestamps = { start: s, end: e };
+                            track.durationMs = res.durationMs;
+                            const durSec = Math.floor(res.durationMs / 1000);
+                            timeRangeSpan.dataset.start = String(s);
+                            timeRangeSpan.dataset.end = String(e);
+                            timeRangeSpan.innerHTML = `<span class="time-sep">•</span> <span class="time-elapsed" data-elapsed-time>00:00</span> / <span class="time-total" data-total-time>${formatTrackTime(durSec)}</span>`;
+                            timeRangeSpan.style.display = 'inline-flex';
+                            if (!albumContainer.parentElement) {
+                                trackDetails.insertBefore(albumContainer, serviceBadge);
+                            }
+                        }
+                    }
+                });
+            }
 
             trackInfo.appendChild(trackDetails);
 
@@ -2385,7 +2439,11 @@
                 devIcon = '💻';
             }
 
-            const cleanDev = deviceRaw.replace(/[\uFFFD\?]/g, ' • ').replace(/(?:\s*•\s*)+/g, ' • ').replace(/^•\s*|\s*•$/g, '').trim();
+            const cleanDev = String(deviceRaw || '')
+                .replace(/[\uFFFD\?]+/g, ' • ')
+                .replace(/\s*[\.\•\-]\s*(?:[\.\•\-]\s*)*/g, ' • ')
+                .replace(/^\s*•\s*|\s*•\s*$/g, '')
+                .trim();
             if (cleanDev) {
                 if (/^playing\s+(on|via)/i.test(cleanDev)) {
                     devLabel = cleanDev.toUpperCase();

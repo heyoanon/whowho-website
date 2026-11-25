@@ -144,6 +144,7 @@
             const activeMedia = mediaElements.find(el => !el.paused && !el.ended && el.currentTime > 0);
             const isPlaying = Boolean(activeMedia || (navigator.mediaSession.playbackState === 'playing'));
             const duration = activeMedia && Number.isFinite(activeMedia.duration) ? Math.round(activeMedia.duration) : 0;
+            const position = activeMedia && Number.isFinite(activeMedia.currentTime) ? Math.round(activeMedia.currentTime) : 0;
 
             const trackKey = `${platform}:${title}:${artist}:${album}:${isPlaying}`;
             if (title && trackKey !== lastTrackKey) {
@@ -157,6 +158,7 @@
                     artworkUrl,
                     url: window.location.href,
                     duration,
+                    position,
                     isPlaying
                 });
                 return;

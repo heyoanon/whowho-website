@@ -728,11 +728,12 @@ async function resolveTrackArtwork(artist, title, album = '') {
             return false;
           });
 
-          if (match && match.album && (match.album.cover_xl || match.album.cover_big || match.album.cover_medium)) {
+          if (match && match.album) {
             return {
               artworkUrl: match.album.cover_xl || match.album.cover_big || match.album.cover_medium,
               album: match.album.title || rawAlbum,
-              url: match.link || ''
+              url: match.link || '',
+              durationMs: match.duration ? (match.duration * 1000) : 0
             };
           }
         }
@@ -778,7 +779,8 @@ async function resolveTrackArtwork(artist, title, album = '') {
             return {
               artworkUrl,
               album: match.collectionName || rawAlbum,
-              url: match.trackViewUrl || ''
+              url: match.trackViewUrl || '',
+              durationMs: match.trackTimeMillis || 0
             };
           }
         }
@@ -940,9 +942,16 @@ app.post('/api/now-playing', async (req, res) => {
     }
   }
 
-  const durationMs = Number(duration) > 0 ? Number(duration) * 1000 : 0;
+  const durationMs = Number(duration) > 0 ? Number(duration) * 1000 : (Number(req.body.durationMs) || 0);
+  const positionMs = Number(position) > 0 ? Number(position) * 1000 : (Number(req.body.positionMs) || 0);
   const now = Date.now();
-  const sanitizedDevice = String(device || '').replace(/[\uFFFD\?]/g, ' • ').replace(/(?:\s*•\s*)+/g, ' • ').replace(/^•\s*|\s*•$/g, '').trim();
+  const start = now - positionMs;
+  const end = durationMs > 0 ? (start + durationMs) : 0;
+  const sanitizedDevice = String(device || '')
+    .replace(/[\uFFFD\?]+/g, ' • ')
+    .replace(/\s*[\.\•\-]\s*(?:[\.\•\-]\s*)*/g, ' • ')
+    .replace(/^\s*•\s*|\s*•\s*$/g, '')
+    .trim();
   const trackData = {
     isPlaying: Boolean(isPlaying),
     source: normalizedSource,
@@ -954,7 +963,7 @@ app.post('/api/now-playing', async (req, res) => {
     device: sanitizedDevice,
     deviceType: String(deviceType || 'device').trim(),
     durationMs,
-    timestamps: (durationMs > 0 && isPlaying) ? { start: now, end: now + durationMs } : null,
+    timestamps: (durationMs > 0 && isPlaying) ? { start, end } : null,
     updatedAtMs: now
   };
 
@@ -963,13 +972,19 @@ app.post('/api/now-playing', async (req, res) => {
   res.json({ success: true, track: trackData });
 
   // Background artwork & album resolution: enriches artwork without blocking track detection
-  if (isPlaying && (!trackData.artworkUrl || !trackData.album)) {
+  if (isPlaying && (!trackData.artworkUrl || !trackData.album || !trackData.durationMs)) {
     resolveTrackArtwork(trackData.artist, trackData.title, trackData.album).then(async (resolved) => {
-      if (resolved && (resolved.artworkUrl || resolved.album)) {
+      if (resolved && (resolved.artworkUrl || resolved.album || resolved.durationMs)) {
+        const enrichedDuration = trackData.durationMs || resolved.durationMs || 0;
+        const enrichedTimestamps = enrichedDuration > 0
+          ? (trackData.timestamps || { start: now, end: now + enrichedDuration })
+          : null;
         const enriched = {
           ...trackData,
           artworkUrl: resolved.artworkUrl || trackData.artworkUrl,
           album: resolved.album || trackData.album,
+          durationMs: enrichedDuration,
+          timestamps: enrichedTimestamps,
           url: (!trackData.url && resolved.url && normalizedSource === 'Apple Music') ? resolved.url : trackData.url
         };
         await saveNowPlaying(enriched);

@@ -149,7 +149,8 @@ Function Get-TrackArtwork {
                 if ($match -and $match.album) {
                     $art = if ($match.album.cover_xl) { $match.album.cover_xl } elseif ($match.album.cover_big) { $match.album.cover_big } else { $match.album.cover_medium }
                     $alb = if ($album) { $album } else { $match.album.title }
-                    $res = @{ artworkUrl = $art; album = $alb }
+                    $dur = if ($match.duration -and $match.duration -gt 0) { [int]$match.duration } else { 0 }
+                    $res = @{ artworkUrl = $art; album = $alb; durationSec = $dur }
                     $artworkCache[$cacheKey] = $res
                     return $res
                 }
@@ -175,14 +176,15 @@ Function Get-TrackArtwork {
                 $rawArt = if ($itMatch.artworkUrl100) { $itMatch.artworkUrl100 } else { $itMatch.artworkUrl60 }
                 $art = if ($rawArt) { $rawArt -replace '\/\d+x\d+bb\.', '/600x600bb.' } else { "" }
                 $alb = if ($album) { $album } else { $itMatch.collectionName }
-                $res = @{ artworkUrl = $art; album = $alb }
+                $dur = if ($itMatch.trackTimeMillis -and $itMatch.trackTimeMillis -gt 0) { [Math]::Round($itMatch.trackTimeMillis / 1000) } else { 0 }
+                $res = @{ artworkUrl = $art; album = $alb; durationSec = $dur }
                 $artworkCache[$cacheKey] = $res
                 return $res
             }
         }
     } catch {}
 
-    $res = @{ artworkUrl = ""; album = $album }
+    $res = @{ artworkUrl = ""; album = $album; durationSec = 0 }
     $artworkCache[$cacheKey] = $res
     return $res
 }
@@ -247,6 +249,21 @@ while ($true) {
                 Start-Sleep -Milliseconds 200
                 continue
             }
+
+            # Retrieve track timeline properties (start to finish duration & live position)
+            $durationSec = 0
+            $positionSec = 0
+            try {
+                $tl = $session.GetTimelineProperties()
+                if ($tl) {
+                    if ($tl.EndTime -and $tl.EndTime.TotalSeconds -gt 0) {
+                        $durationSec = [Math]::Round($tl.EndTime.TotalSeconds)
+                    }
+                    if ($tl.Position -and $tl.Position.TotalSeconds -ge 0) {
+                        $positionSec = [Math]::Round($tl.Position.TotalSeconds)
+                    }
+                }
+            } catch {}
 
             # PlaybackStatus: 4 = Playing, 5 = Paused, 3 = Stopped
             $isPlaying = ($status -eq 4 -or $status -eq "Playing")
@@ -378,9 +395,8 @@ while ($true) {
                     }
                 }
 
-                $bullet = [char]0x2022
-                $rawDev = "Desktop PC $bullet $deviceApp ($source)"
-                $device = ($rawDev -replace '[\uFFFD\?]', ' • ' -replace '(?:\s*•\s*)+', ' • ').Trim()
+                $rawDev = "Desktop PC • $deviceApp ($source)"
+                $device = ($rawDev -replace '[\uFFFD\?]+', ' • ' -replace '\s*[\.\•\-]\s*(?:[\.\•\-]\s*)*', ' • ' -replace '^\s*•\s*|\s*•\s*$', '').Trim()
 
                 $cacheKey = "$artist - $title - $album"
                 $hasCachedArt = $artworkCache.ContainsKey($cacheKey)
@@ -389,6 +405,7 @@ while ($true) {
                     $artInfo = $artworkCache[$cacheKey]
                     $artworkUrl = if ($artInfo.artworkUrl) { $artInfo.artworkUrl } else { "" }
                     if (-not $album -and $artInfo.album) { $album = $artInfo.album }
+                    if ($durationSec -le 0 -and $artInfo.durationSec -gt 0) { $durationSec = $artInfo.durationSec }
                 } else {
                     $artworkUrl = ""
                 }
@@ -403,11 +420,13 @@ while ($true) {
                     isPlaying = $isPlaying
                     device = $device
                     deviceType = "desktop"
+                    duration = $durationSec
+                    position = $positionSec
                 }
                 if ($Secret) {
                     $payload["secret"] = $Secret
                 }
-                $jsonBody = $payload | ConvertTo-Json
+                $jsonBody = $payload | ConvertTo-Json -Compress
                 $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($jsonBody)
 
                 try {
@@ -415,17 +434,26 @@ while ($true) {
                 } catch {}
 
                 $stateIcon = if ($isPlaying) { "PLAYING" } else { "PAUSED" }
+                $timeSuffix = if ($durationSec -gt 0) {
+                    $m = [Math]::Floor($durationSec / 60)
+                    $s = $durationSec % 60
+                    " [00:00 / {0:D2}:{1:D2}]" -f $m, $s
+                } else { "" }
                 if ($isNewTrack) {
-                    Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] Track Detected Instantly -> [$stateIcon] $title by $artist on $source ($device)" -ForegroundColor Green
+                    Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] Track Detected Instantly -> [$stateIcon] $title by $artist on $source ($device)$timeSuffix" -ForegroundColor Green
                 }
 
                 # If artwork was not cached, resolve it now and send fast enrichment update
                 if (-not $hasCachedArt -and $isPlaying -and $title) {
                     $artInfo = Get-TrackArtwork -artist $artist -title $title -album $album
-                    if ($artInfo.artworkUrl -or ($artInfo.album -and -not $album)) {
-                        $payload["artworkUrl"] = $artInfo.artworkUrl
+                    if ($artInfo.artworkUrl -or ($artInfo.album -and -not $album) -or ($durationSec -le 0 -and $artInfo.durationSec -gt 0)) {
+                        if ($artInfo.artworkUrl) { $payload["artworkUrl"] = $artInfo.artworkUrl }
                         if ($artInfo.album) { $payload["album"] = $artInfo.album }
-                        $enrichBytes = [System.Text.Encoding]::UTF8.GetBytes(($payload | ConvertTo-Json))
+                        if ($durationSec -le 0 -and $artInfo.durationSec -gt 0) {
+                            $durationSec = $artInfo.durationSec
+                            $payload["duration"] = $durationSec
+                        }
+                        $enrichBytes = [System.Text.Encoding]::UTF8.GetBytes(($payload | ConvertTo-Json -Compress))
                         try {
                             Invoke-RestMethod -Uri $ApiUrl -Method POST -Body $enrichBytes -ContentType "application/json; charset=utf-8" -TimeoutSec 3 | Out-Null
                         } catch {}
