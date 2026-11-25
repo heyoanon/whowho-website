@@ -656,27 +656,128 @@ async function fetchSpotifyCurrentlyPlaying() {
   }
 }
 
+function cleanMusicString(str) {
+  return String(str || '')
+    .replace(/\s*[\(\[\{][^\)\]\}]*(?:remaster|deluxe|version|edition|mix|feat|ft|live|bonus|explicit)[^\)\]\}]*[\)\]\}]/gi, '')
+    .replace(/[?!,.:;"'`~@#$%^&*_+=\/\\|<>]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getPrimaryArtist(artistStr) {
+  const first = String(artistStr || '').split(/[,&/]|feat\.|ft\.|with\s+/i)[0];
+  return cleanMusicString(first);
+}
+
+async function resolveTrackArtwork(artist, title, album = '') {
+  if (!title) return { artworkUrl: '', album: album || '', url: '' };
+
+  const rawArtist = String(artist || '').trim();
+  const rawTitle = String(title || '').trim();
+  const rawAlbum = String(album || '').trim();
+
+  const primaryArtist = getPrimaryArtist(rawArtist);
+  const cleanTitle = cleanMusicString(rawTitle);
+  const cleanAlbum = cleanMusicString(rawAlbum);
+
+  // 1. Try Deezer Search API (ultra accurate, verified against artist name and album title)
+  const deezerQueries = [
+    cleanAlbum ? `${primaryArtist} ${cleanTitle} ${cleanAlbum}` : null,
+    `${primaryArtist} ${cleanTitle}`,
+    cleanAlbum ? `${primaryArtist} ${cleanAlbum}` : null,
+    cleanTitle
+  ].filter(Boolean);
+
+  for (const query of deezerQueries) {
+    try {
+      const encoded = encodeURIComponent(query);
+      const res = await fetch(`https://api.deezer.com/search?q=${encoded}&limit=10`, {
+        headers: { 'User-Agent': 'WhoamiMusicResolver/2.0' }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json && json.data && json.data.length > 0) {
+          const match = json.data.find(item => {
+            const itemArtist = (item.artist?.name || '').toLowerCase();
+            const itemTitle = (item.title || item.title_short || '').toLowerCase();
+            const itemAlbum = (item.album?.title || '').toLowerCase();
+
+            const pArtist = primaryArtist.toLowerCase();
+            const cTitle = cleanTitle.toLowerCase();
+            const cAlbum = cleanAlbum.toLowerCase();
+
+            const artistMatches = pArtist && (itemArtist.includes(pArtist) || pArtist.includes(itemArtist));
+            const titleMatches = cTitle && (itemTitle.includes(cTitle) || cTitle.includes(itemTitle));
+            const albumMatches = cAlbum && (itemAlbum.includes(cAlbum) || cAlbum.includes(itemAlbum));
+
+            if (artistMatches && (titleMatches || albumMatches)) return true;
+            if (titleMatches && albumMatches) return true;
+            return false;
+          }) || json.data[0];
+
+          if (match && match.album && (match.album.cover_xl || match.album.cover_big || match.album.cover_medium)) {
+            return {
+              artworkUrl: match.album.cover_xl || match.album.cover_big || match.album.cover_medium,
+              album: match.album.title || rawAlbum,
+              url: match.link || ''
+            };
+          }
+        }
+      }
+    } catch {}
+  }
+
+  // 2. Try iTunes Search API with candidate artist verification
+  const itunesQueries = [
+    `${primaryArtist} ${cleanTitle}`,
+    cleanAlbum ? `${primaryArtist} ${cleanAlbum}` : null,
+    cleanTitle
+  ].filter(Boolean);
+
+  for (const query of itunesQueries) {
+    try {
+      const term = encodeURIComponent(query);
+      const res = await fetch(`https://itunes.apple.com/search?term=${term}&entity=song&limit=5`, {
+        headers: { 'User-Agent': 'WhoamiMusicResolver/2.0' }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json && json.results && json.results.length > 0) {
+          const match = json.results.find(item => {
+            const itemArtist = (item.artistName || '').toLowerCase();
+            const itemTrack = (item.trackName || '').toLowerCase();
+            const itemAlbum = (item.collectionName || '').toLowerCase();
+
+            const pArtist = primaryArtist.toLowerCase();
+            const cTitle = cleanTitle.toLowerCase();
+            const cAlbum = cleanAlbum.toLowerCase();
+
+            const artistMatches = pArtist && (itemArtist.includes(pArtist) || pArtist.includes(itemArtist));
+            const titleMatches = cTitle && (itemTrack.includes(cTitle) || cTitle.includes(itemTrack));
+            const albumMatches = cAlbum && (itemAlbum.includes(cAlbum) || cAlbum.includes(itemAlbum));
+
+            return (artistMatches && (titleMatches || albumMatches)) || (titleMatches && albumMatches);
+          }) || json.results[0];
+
+          if (match) {
+            const rawArt = match.artworkUrl100 || match.artworkUrl60 || '';
+            const artworkUrl = rawArt ? rawArt.replace(/\/\d+x\d+bb\./, '/600x600bb.') : '';
+            return {
+              artworkUrl,
+              album: match.collectionName || rawAlbum,
+              url: match.trackViewUrl || ''
+            };
+          }
+        }
+      }
+    } catch {}
+  }
+
+  return { artworkUrl: '', album: rawAlbum, url: '' };
+}
+
 async function fetchArtworkFromItunes(artist, title) {
-  if (!title) return { artworkUrl: '', album: '', url: '' };
-  try {
-    const term = encodeURIComponent(`${artist || ''} ${title}`.trim());
-    const res = await fetch(`https://itunes.apple.com/search?term=${term}&entity=song&limit=1`, {
-      headers: { 'User-Agent': 'WhoamiWebsite/1.0' }
-    });
-    if (!res.ok) return { artworkUrl: '', album: '', url: '' };
-    const data = await res.json();
-    if (data && data.results && data.results.length > 0) {
-      const match = data.results[0];
-      const rawArt = match.artworkUrl100 || match.artworkUrl60 || '';
-      const artworkUrl = rawArt ? rawArt.replace(/\/\d+x\d+bb\./, '/600x600bb.') : '';
-      return {
-        artworkUrl,
-        album: match.collectionName || '',
-        url: match.trackViewUrl || ''
-      };
-    }
-  } catch {}
-  return { artworkUrl: '', album: '', url: '' };
+  return resolveTrackArtwork(artist, title);
 }
 
 async function fetchLastFmCurrentlyPlaying(userParam) {
@@ -809,10 +910,10 @@ app.post('/api/now-playing', async (req, res) => {
 
   // Auto-resolve artwork and album if missing
   if (isPlaying && (!artworkUrl || !album)) {
-    const itunesInfo = await fetchArtworkFromItunes(artist, title);
-    if (!artworkUrl && itunesInfo.artworkUrl) artworkUrl = itunesInfo.artworkUrl;
-    if (!album && itunesInfo.album) album = itunesInfo.album;
-    if (!url && itunesInfo.url && normalizedSource === 'Apple Music') url = itunesInfo.url;
+    const resolved = await resolveTrackArtwork(artist, title, album);
+    if (!artworkUrl && resolved.artworkUrl) artworkUrl = resolved.artworkUrl;
+    if (!album && resolved.album) album = resolved.album;
+    if (!url && resolved.url && normalizedSource === 'Apple Music') url = resolved.url;
   }
 
   // Generate official streaming link if none provided
@@ -890,6 +991,16 @@ app.get('/api/now-playing', async (req, res) => {
   // 1. Direct broadcast (from POST /api/now-playing)
   const directTrack = await getStoredNowPlaying();
   if (directTrack && directTrack.isPlaying) {
+    if (!directTrack.artworkUrl && directTrack.title) {
+      try {
+        const resolved = await resolveTrackArtwork(directTrack.artist, directTrack.title, directTrack.album);
+        if (resolved.artworkUrl) {
+          directTrack.artworkUrl = resolved.artworkUrl;
+          if (!directTrack.album && resolved.album) directTrack.album = resolved.album;
+          saveNowPlaying({ ...directTrack, isPlaying: true }).catch(() => {});
+        }
+      } catch {}
+    }
     return res.json({
       isPlaying: true,
       provider: 'direct-broadcast',

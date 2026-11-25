@@ -10,7 +10,7 @@ param(
 # Terminate any duplicate previous instance of now-playing-sync to avoid overlapping loops
 $myPid = $PID
 Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object {
-    $_.ProcessId -ne $myPid -and $_.CommandLine -like "*now-playing-sync.ps1*"
+    $_.ProcessId -ne $myPid -and $_.Name -match "powershell" -and $_.CommandLine -match "(-File\s+.*now-playing-sync\.ps1)"
 } | ForEach-Object {
     try { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue } catch {}
 }
@@ -103,6 +103,66 @@ Function Detect-BrowserStreamingService {
 
 $lastTrack = ""
 $lastBroadcastTime = [DateTime]::MinValue
+$artworkCache = @{}
+
+Function Get-TrackArtwork {
+    param(
+        [string]$artist = "",
+        [string]$title = "",
+        [string]$album = ""
+    )
+    if (-not $title) { return @{ artworkUrl = ""; album = $album } }
+    $cacheKey = "$artist - $title - $album"
+    if ($artworkCache.ContainsKey($cacheKey)) {
+        return $artworkCache[$cacheKey]
+    }
+
+    $cleanTitle = $title -replace '[\(\[\{].*?[\)\]\}]', '' -replace '[\?\!\,\.\:\;]', ' ' -replace '\s+', ' '
+    $cleanTitle = $cleanTitle.Trim()
+    $primaryArtist = ($artist -split '[,&/]|feat\.|ft\.')[0] -replace '[\?\!\,\.\:\;]', ' ' -replace '\s+', ' '
+    $primaryArtist = $primaryArtist.Trim()
+
+    $queries = @(
+        "$primaryArtist $cleanTitle $album",
+        "$primaryArtist $cleanTitle",
+        "$cleanTitle"
+    )
+
+    foreach ($q in $queries) {
+        $trimmedQ = $q.Trim()
+        if (-not $trimmedQ) { continue }
+        try {
+            $enc = [System.Uri]::EscapeDataString($trimmedQ)
+            $url = "https://api.deezer.com/search?q=$enc&limit=5"
+            $resp = Invoke-RestMethod -Uri $url -Method GET -TimeoutSec 3 -ErrorAction SilentlyContinue
+            if ($resp -and $resp.data -and $resp.data.Count -gt 0) {
+                $match = $resp.data | Where-Object {
+                    $itemArtist = if ($_.artist -and $_.artist.name) { $_.artist.name.ToLower() } else { "" }
+                    $itemTitle = if ($_.title) { $_.title.ToLower() } else { "" }
+                    $primaryLower = $primaryArtist.ToLower()
+                    $titleLower = $cleanTitle.ToLower()
+                    ($primaryLower -and ($itemArtist.Contains($primaryLower) -or $primaryLower.Contains($itemArtist))) -and ($titleLower -and ($itemTitle.Contains($titleLower) -or $titleLower.Contains($itemTitle)))
+                } | Select-Object -First 1
+
+                if (-not $match) {
+                    $match = $resp.data[0]
+                }
+
+                if ($match -and $match.album) {
+                    $art = if ($match.album.cover_xl) { $match.album.cover_xl } elseif ($match.album.cover_big) { $match.album.cover_big } else { $match.album.cover_medium }
+                    $alb = if ($album) { $album } else { $match.album.title }
+                    $res = @{ artworkUrl = $art; album = $alb }
+                    $artworkCache[$cacheKey] = $res
+                    return $res
+                }
+            }
+        } catch {}
+    }
+
+    $res = @{ artworkUrl = ""; album = $album }
+    $artworkCache[$cacheKey] = $res
+    return $res
+}
 
 while ($true) {
     try {
@@ -272,11 +332,16 @@ while ($true) {
                 $bullet = [char]0x2022
                 $device = "Desktop PC $bullet $deviceApp ($source)"
 
+                $artInfo = Get-TrackArtwork -artist $artist -title $title -album $album
+                $artworkUrl = if ($artInfo.artworkUrl) { $artInfo.artworkUrl } else { "" }
+                if (-not $album -and $artInfo.album) { $album = $artInfo.album }
+
                 $payload = @{
                     source = $source
                     title = $title
                     artist = $artist
                     album = $album
+                    artworkUrl = $artworkUrl
                     isPlaying = $isPlaying
                     device = $device
                     deviceType = "desktop"

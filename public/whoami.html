@@ -1591,24 +1591,73 @@
             });
         }
 
-        async function fetchAlbumForTrack(artist, title) {
-            const cleanArtist = (artist || '').trim();
-            const cleanTitle = (title || '').trim();
-            if (!cleanArtist || !cleanTitle) return null;
-            const key = `${cleanArtist.toLowerCase()} - ${cleanTitle.toLowerCase()}`;
+        async function fetchArtworkAndAlbumForTrack(artist, title, album = '') {
+            const cleanTitle = (title || '').replace(/[\(\[\{].*?[\)\]\}]/g, '').replace(/[?!,.:;]/g, ' ').replace(/\s+/g, ' ').trim();
+            const primaryArtist = (artist || '').split(/[,&/]|feat\.|ft\./i)[0].replace(/[?!,.:;]/g, ' ').replace(/\s+/g, ' ').trim();
+            if (!cleanTitle) return null;
+            const key = `${primaryArtist.toLowerCase()}:::${cleanTitle.toLowerCase()}`;
             if (albumCache.has(key)) return albumCache.get(key);
 
+            // 1. Try Deezer API
             try {
-                const query = encodeURIComponent(`${cleanArtist} ${cleanTitle}`);
-                const response = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`);
-                if (!response.ok) return null;
-                const result = await response.json();
-                const albumName = result.results?.[0]?.collectionName || null;
-                albumCache.set(key, albumName);
-                return albumName;
-            } catch {
-                return null;
-            }
+                const q = encodeURIComponent(`${primaryArtist} ${cleanTitle}`);
+                const res = await fetch(`https://api.deezer.com/search?q=${q}&limit=5`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.data && data.data.length > 0) {
+                        const best = data.data.find(item => {
+                            const a = (item.artist?.name || '').toLowerCase();
+                            const t = (item.title || item.title_short || '').toLowerCase();
+                            return (a.includes(primaryArtist.toLowerCase()) || primaryArtist.toLowerCase().includes(a)) &&
+                                   (t.includes(cleanTitle.toLowerCase()) || cleanTitle.toLowerCase().includes(t));
+                        }) || data.data[0];
+
+                        if (best && best.album) {
+                            const resObj = {
+                                artworkUrl: best.album.cover_xl || best.album.cover_big || best.album.cover_medium,
+                                album: best.album.title || album
+                            };
+                            albumCache.set(key, resObj);
+                            return resObj;
+                        }
+                    }
+                }
+            } catch {}
+
+            // 2. Try iTunes API
+            try {
+                const query = encodeURIComponent(`${primaryArtist} ${cleanTitle}`);
+                const response = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=5`);
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.results && result.results.length > 0) {
+                        const match = result.results.find(item => {
+                            const a = (item.artistName || '').toLowerCase();
+                            const t = (item.trackName || '').toLowerCase();
+                            return (a.includes(primaryArtist.toLowerCase()) || primaryArtist.toLowerCase().includes(a)) &&
+                                   (t.includes(cleanTitle.toLowerCase()) || cleanTitle.toLowerCase().includes(t));
+                        }) || result.results[0];
+
+                        if (match) {
+                            const rawArt = match.artworkUrl100 || match.artworkUrl60 || '';
+                            const artworkUrl = rawArt ? rawArt.replace(/\/\d+x\d+bb\./, '/600x600bb.') : '';
+                            const resObj = {
+                                artworkUrl,
+                                album: match.collectionName || album
+                            };
+                            albumCache.set(key, resObj);
+                            return resObj;
+                        }
+                    }
+                }
+            } catch {}
+
+            return null;
+        }
+
+        async function fetchAlbumForTrack(artist, title) {
+            const res = await fetchArtworkAndAlbumForTrack(artist, title, '');
+            return res ? res.album : null;
         }
 
         function resolveDiscordAssetUrl(applicationId, assetId) {
@@ -2154,22 +2203,39 @@
             sourceLabel.innerHTML = sourceLabelHtml;
             card.appendChild(sourceLabel);
 
+            const fallbackVinylSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230b101d" rx="8"/><circle cx="50" cy="50" r="42" fill="%23111827" stroke="%2300ffcc" stroke-width="2"/><circle cx="50" cy="50" r="30" fill="%23090d16" stroke="%230077ff" stroke-width="1.5"/><circle cx="50" cy="50" r="18" fill="%2300ffcc"/><circle cx="50" cy="50" r="6" fill="%23000"/></svg>';
+
+            const albumArt = document.createElement('img');
+            albumArt.className = 'lanyard-album-art';
+            albumArt.alt = `${track.source || 'Music'} album art`;
+
             if (track.artworkUrl) {
-                const albumArt = document.createElement('img');
-                albumArt.className = 'lanyard-album-art';
-                albumArt.alt = `${track.source || 'Music'} album art`;
                 albumArt.src = track.artworkUrl;
-                albumArt.onerror = () => {
-                    if (track.fallbackArtworkUrl && albumArt.src !== track.fallbackArtworkUrl) {
-                        albumArt.src = track.fallbackArtworkUrl;
-                        return;
-                    }
-                    albumArt.hidden = true;
-                    card.classList.add('no-art');
-                    console.warn(`Unable to load ${track.source || 'Music'} album artwork.`);
-                };
-                card.appendChild(albumArt);
+            } else {
+                albumArt.src = fallbackVinylSvg;
+                if (track.artist && track.title) {
+                    fetchArtworkAndAlbumForTrack(track.artist, track.title, track.album).then(res => {
+                        if (res && res.artworkUrl) {
+                            albumArt.src = res.artworkUrl;
+                            track.artworkUrl = res.artworkUrl;
+                            if (res.album && !track.album) {
+                                track.album = res.album;
+                                const albEl = card.querySelector('.lanyard-track-album-line');
+                                if (albEl) albEl.textContent = res.album;
+                            }
+                        }
+                    });
+                }
             }
+
+            albumArt.onerror = () => {
+                if (track.fallbackArtworkUrl && albumArt.src !== track.fallbackArtworkUrl) {
+                    albumArt.src = track.fallbackArtworkUrl;
+                    return;
+                }
+                albumArt.src = fallbackVinylSvg;
+            };
+            card.appendChild(albumArt);
 
             const trackInfo = document.createElement('div');
             trackInfo.className = 'lanyard-track-info';
