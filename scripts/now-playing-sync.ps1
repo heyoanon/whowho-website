@@ -41,6 +41,27 @@ $lastTrack = ""
 while ($true) {
     try {
         $session = $manager.GetCurrentSession()
+        $isPlayingCurrent = $false
+        if ($session) {
+            $pb = $session.GetPlaybackInfo()
+            if ($pb -and ($pb.PlaybackStatus -eq 4 -or $pb.PlaybackStatus -eq "Playing")) {
+                $isPlayingCurrent = $true
+            }
+        }
+
+        # If current focused session is not playing, check all sessions for any active background playing session
+        if (-not $isPlayingCurrent) {
+            $allSessions = $manager.GetSessions()
+            $playingSession = $allSessions | Where-Object {
+                $pb = $_.GetPlaybackInfo()
+                $pb -and ($pb.PlaybackStatus -eq 4 -or $pb.PlaybackStatus -eq "Playing")
+            } | Select-Object -First 1
+
+            if ($playingSession) {
+                $session = $playingSession
+            }
+        }
+
         if ($session) {
             $propOp = $session.TryGetMediaPropertiesAsync()
             $mediaInfo = Await-WinRT $propOp ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionMediaProperties])
@@ -208,6 +229,6 @@ while ($true) {
         # ignore transient COM or network errors
     }
 
-    # Fast 1-second check for instant track change detection
-    Start-Sleep -Seconds 1
+    # Ultra-responsive 500ms check for instant track change detection
+    Start-Sleep -Milliseconds 500
 }

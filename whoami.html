@@ -515,13 +515,15 @@
                 showAdminPasswordModal('Only the owner of the website can edit Now Playing settings.', () => {
                     editingSection = 'nowPlaying';
                     renderPage('nowPlaying', false);
-                    setTimeout(() => { if (typeof triggerAutofillCurrentTrack === 'function') triggerAutofillCurrentTrack(false); }, 180);
+                    connectDirectStream();
+                    setTimeout(() => { if (typeof triggerAutofillCurrentTrack === 'function') triggerAutofillCurrentTrack(true, false); }, 180);
                 });
                 return;
             }
             editingSection = 'nowPlaying';
             renderPage('nowPlaying', false);
-            setTimeout(() => { if (typeof triggerAutofillCurrentTrack === 'function') triggerAutofillCurrentTrack(false); }, 180);
+            connectDirectStream();
+            setTimeout(() => { if (typeof triggerAutofillCurrentTrack === 'function') triggerAutofillCurrentTrack(true, false); }, 180);
         }
         window.toggleEditNowPlaying = toggleEditNowPlaying;
 
@@ -1364,25 +1366,7 @@
         }
 
         function syncDirectTrackWithLanyard(presence) {
-            if (!presence) return;
-            if (presence.listening_to_spotify && presence.spotify && presence.spotify.song) {
-                if (latestDirectTrack && latestDirectTrack.source && String(latestDirectTrack.source).toLowerCase() === 'spotify') {
-                    if (String(latestDirectTrack.title || '').toLowerCase() !== String(presence.spotify.song || '').toLowerCase()) {
-                        latestDirectTrack = null;
-                    }
-                }
-            }
-            if (Array.isArray(presence.activities)) {
-                for (const act of presence.activities) {
-                    const parsed = parseMusicActivity(act);
-                    if (parsed && latestDirectTrack && latestDirectTrack.source &&
-                        String(latestDirectTrack.source).toLowerCase() === String(parsed.source || '').toLowerCase()) {
-                        if (String(latestDirectTrack.title || '').toLowerCase() !== String(parsed.title || '').toLowerCase()) {
-                            latestDirectTrack = null;
-                        }
-                    }
-                }
-            }
+            // Direct playback from device is authoritative; Discord presence supplements it without wiping live device stream
         }
 
         function connectDirectStream() {
@@ -1396,7 +1380,13 @@
                         const data = JSON.parse(event.data);
                         if (data) {
                             latestDirectTrack = data.isPlaying ? data : null;
-                            renderUnifiedMusic();
+                            if (editingSection === 'nowPlaying') {
+                                if (typeof triggerAutofillCurrentTrack === 'function') {
+                                    triggerAutofillCurrentTrack(true, false);
+                                }
+                            } else {
+                                renderUnifiedMusic();
+                            }
                         }
                     } catch {}
                 };
@@ -1405,9 +1395,9 @@
                         directEventSource.close();
                         directEventSource = null;
                     }
-                    if (isMonitoringNowPlaying) {
+                    if (isMonitoringNowPlaying || editingSection === 'nowPlaying') {
                         setTimeout(() => {
-                            if (isMonitoringNowPlaying && !directEventSource) {
+                            if ((isMonitoringNowPlaying || editingSection === 'nowPlaying') && !directEventSource) {
                                 connectDirectStream();
                             }
                         }, 3000);
@@ -1962,7 +1952,7 @@
         }
         window.detectActiveDevicePlayback = detectActiveDevicePlayback;
 
-        async function triggerAutofillCurrentTrack(saveImmediately = false) {
+        async function triggerAutofillCurrentTrack(saveImmediately = false, exitEditMode = false) {
             const statusTitle = document.getElementById('autofill-status-title');
             const detectedInfo = document.getElementById('autofill-detected-info');
             const pulse = document.getElementById('autofill-pulse');
@@ -1976,7 +1966,7 @@
                 if (statusTitle) statusTitle.textContent = 'STANDBY: NO LIVE STREAM DETECTED';
                 if (detectedInfo) detectedInfo.textContent = 'No track actively streaming right now on your device. You can type details manually or run the sync script.';
                 if (pulse) pulse.style.backgroundColor = '#ffd700';
-                if (saveImmediately) {
+                if (saveImmediately && exitEditMode) {
                     playArcadeBeep();
                     showToast('NO ACTIVE STREAM DETECTED ON DEVICE.');
                 }
@@ -2042,7 +2032,6 @@
 
             // 3. If saveImmediately requested, save to profile & broadcast to live stream
             if (saveImmediately) {
-                playArcadeBeep();
                 currentProfileData.onRepeat = {
                     title: track.title,
                     artist: track.artist || '',
@@ -2079,9 +2068,12 @@
                     })
                 }).catch(() => {});
 
-                showToast(`SAVED "${track.title.toUpperCase()}" AS ON REPEAT!`);
-                editingSection = null;
-                renderPage('nowPlaying', false);
+                playArcadeBeep();
+                showToast(`AUTO-FILLED & SAVED: "${track.title.toUpperCase()}"!`);
+                if (exitEditMode) {
+                    editingSection = null;
+                    renderPage('nowPlaying', false);
+                }
             } else {
                 playArcadeBeep();
                 showToast(`AUTO-FILLED: "${track.title.toUpperCase()}"!`);
@@ -3711,6 +3703,13 @@
 
                 if (editingSection !== 'nowPlaying') {
                     startLanyardMonitoring();
+                } else {
+                    connectDirectStream();
+                    setTimeout(() => {
+                        if (typeof triggerAutofillCurrentTrack === 'function') {
+                            triggerAutofillCurrentTrack(true, false);
+                        }
+                    }, 200);
                 }
                 return;
             }
