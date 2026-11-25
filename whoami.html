@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=2.5">
+    <link rel="stylesheet" href="css/style.css?v=2.6">
 </head>
 
 <body>
@@ -1762,6 +1762,10 @@
                 return;
             }
 
+            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const devName = isMobile ? 'Mobile Phone' : 'Desktop PC';
+            const devType = isMobile ? 'mobile' : 'desktop';
+
             const token = getStoredAdminToken();
             try {
                 const res = await fetch('/api/now-playing', {
@@ -1774,7 +1778,9 @@
                         source: service,
                         title,
                         artist,
-                        isPlaying: true
+                        isPlaying: true,
+                        device: devName,
+                        deviceType: devType
                     })
                 });
 
@@ -1810,6 +1816,23 @@
             }
         }
         window.clearLiveStreamBroadcast = clearLiveStreamBroadcast;
+
+        let lastPlayedTrackKey = '';
+        function checkAndNotifyTrackChange(track) {
+            if (!track || !track.title) return;
+            const currentKey = `${track.source || ''}:::${track.title || ''}:::${track.artist || ''}:::${track.device || ''}`;
+            if (lastPlayedTrackKey && lastPlayedTrackKey !== currentKey) {
+                const musicList = document.getElementById('lanyard-music-list');
+                if (musicList) {
+                    musicList.classList.remove('track-change-flash');
+                    void musicList.offsetWidth;
+                    musicList.classList.add('track-change-flash');
+                }
+                const devSuffix = track.device ? ` on ${track.device}` : '';
+                showToast(`TRACK CHANGED: "${track.title}"${devSuffix}`);
+            }
+            lastPlayedTrackKey = currentKey;
+        }
 
         function createMusicCard(track) {
             const card = document.createElement('article');
@@ -1905,6 +1928,40 @@
                     });
                 }
                 trackInfo.appendChild(trackDetails);
+            }
+
+            // Where it plays badge (Device Location Indicator)
+            const deviceRaw = (track.device || '').trim();
+            const deviceType = (track.deviceType || '').toLowerCase();
+            let devIcon = '🎧';
+            let devLabel = '';
+            let isMobileDev = false;
+
+            if (deviceType === 'mobile' || /mobile|phone|iphone|android|ipad/i.test(deviceRaw)) {
+                devIcon = '📱';
+                isMobileDev = true;
+                devLabel = deviceRaw ? `PLAYING ON ${deviceRaw.toUpperCase()}` : 'PLAYING ON MOBILE PHONE';
+            } else if (deviceType === 'desktop' || /desktop|pc|windows|mac|brave|chrome|firefox|edge/i.test(deviceRaw)) {
+                devIcon = '💻';
+                devLabel = deviceRaw ? `PLAYING ON ${deviceRaw.toUpperCase()}` : 'PLAYING ON DESKTOP PC';
+            } else if (deviceRaw) {
+                devLabel = `PLAYING ON ${deviceRaw.toUpperCase()}`;
+            }
+
+            if (devLabel) {
+                const devBadge = document.createElement('div');
+                devBadge.className = `lanyard-device-pill ${isMobileDev ? 'mobile-device' : 'desktop-device'}`;
+                devBadge.innerHTML = `
+                    <span class="device-pill-icon">${devIcon}</span>
+                    <span class="device-pill-text">${escapeHtml(devLabel)}</span>
+                    <span class="retro-eq-bars" title="Audio playing live">
+                        <span class="retro-bar bar-1"></span>
+                        <span class="retro-bar bar-2"></span>
+                        <span class="retro-bar bar-3"></span>
+                        <span class="retro-bar bar-4"></span>
+                    </span>
+                `;
+                trackInfo.appendChild(devBadge);
             }
 
             const timestamps = track.timestamps || {};
@@ -2013,6 +2070,19 @@
 
             const tracks = [];
 
+            // Determine default Discord active device
+            let discordDevice = 'Desktop PC (Discord)';
+            let discordDeviceType = 'desktop';
+            if (latestLanyardPresence) {
+                if (latestLanyardPresence.active_on_discord_mobile) {
+                    discordDevice = 'Mobile Phone (Discord)';
+                    discordDeviceType = 'mobile';
+                } else if (latestLanyardPresence.active_on_discord_web) {
+                    discordDevice = 'Web Browser (Discord)';
+                    discordDeviceType = 'desktop';
+                }
+            }
+
             // 1. Direct Cloud API track (/api/now-playing: Spotify, YouTube Music, or BitChord without Discord)
             if (latestDirectTrack && latestDirectTrack.isPlaying && latestDirectTrack.title) {
                 tracks.push({
@@ -2023,7 +2093,9 @@
                     artworkUrl: latestDirectTrack.artworkUrl || null,
                     fallbackArtworkUrl: null,
                     url: latestDirectTrack.url || '',
-                    timestamps: latestDirectTrack.timestamps || null
+                    timestamps: latestDirectTrack.timestamps || null,
+                    device: latestDirectTrack.device || '',
+                    deviceType: latestDirectTrack.deviceType || ''
                 });
             }
 
@@ -2045,7 +2117,9 @@
                         url: spotify.track_id
                             ? `https://open.spotify.com/track/${encodeURIComponent(spotify.track_id)}`
                             : 'https://open.spotify.com/',
-                        timestamps: spotify.timestamps
+                        timestamps: spotify.timestamps,
+                        device: discordDevice,
+                        deviceType: discordDeviceType
                     });
                 }
             }
@@ -2065,12 +2139,15 @@
                         String(t.title || '').toLowerCase() === String(parsed.title || '').toLowerCase()
                     );
                     if (!isDuplicate) {
+                        parsed.device = parsed.device || discordDevice;
+                        parsed.deviceType = parsed.deviceType || discordDeviceType;
                         tracks.push(parsed);
                     }
                 }
             }
 
             if (tracks.length > 0) {
+                checkAndNotifyTrackChange(tracks[0]);
                 const cards = tracks.map(createMusicCard);
                 musicList.replaceChildren(...cards.map(card => card.element));
                 musicList.hidden = false;
@@ -2079,6 +2156,7 @@
                     trackProgressTimer = setInterval(updateTrackProgress, 1000);
                 }
             } else {
+                lastPlayedTrackKey = '';
                 renderNoMusic(musicList, latestLanyardPresence);
             }
         }

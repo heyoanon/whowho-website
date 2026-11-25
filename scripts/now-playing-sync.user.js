@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Whoami Now Playing Multi-Streaming Sync
 // @namespace    https://github.com/heyoanon/whowho-website
-// @version      2.0.0
-// @description  Automatically broadcasts currently playing audio from Spotify, YouTube Music, and Apple Music Web to your Whoami website in real-time.
+// @version      2.1.0
+// @description  Automatically broadcasts currently playing audio from Spotify, YouTube Music, and Apple Music Web to your Whoami website in real-time with device info.
 // @match        https://open.spotify.com/*
 // @match        https://music.youtube.com/*
 // @match        https://www.youtube.com/*
@@ -15,12 +15,10 @@
 (function() {
     'use strict';
 
-    // Target API endpoint (replace with your custom domain if applicable)
     const API_ENDPOINT = window.location.origin.includes('localhost') 
         ? 'http://localhost:3000/api/now-playing'
         : 'https://whowho-website.vercel.app/api/now-playing';
 
-    // Optional API secret if configured in Vercel environment variables
     const API_SECRET = '';
 
     let lastTrackKey = '';
@@ -29,14 +27,29 @@
     function detectStreamingPlatform() {
         const host = window.location.hostname.toLowerCase();
         if (host.includes('spotify.com')) return 'Spotify';
-        if (host.includes('music.youtube.com')) return 'YouTube Music';
-        if (host.includes('youtube.com')) return 'YouTube Music';
-        if (host.includes('music.apple.com') || host.includes('apple.com')) return 'Apple Music';
+        if (host.includes('music.youtube.com') || host.includes('youtube.com')) return 'YouTube Music';
+        if (host.includes('apple.com')) return 'Apple Music';
         return 'Music';
     }
 
+    function getDeviceLocation() {
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const browser = navigator.userAgent.includes('Brave') ? 'Brave' :
+                        navigator.userAgent.includes('Edg') ? 'Edge' :
+                        navigator.userAgent.includes('Chrome') ? 'Chrome' :
+                        navigator.userAgent.includes('Firefox') ? 'Firefox' :
+                        navigator.userAgent.includes('Safari') ? 'Safari' : 'Web Browser';
+        const platform = detectStreamingPlatform();
+        return {
+            device: isMobile ? `Mobile Phone • ${browser}` : `Desktop PC • ${browser}`,
+            deviceType: isMobile ? 'mobile' : 'desktop'
+        };
+    }
+
     function sendTrackUpdate(trackData) {
+        const devInfo = getDeviceLocation();
         const payload = JSON.stringify({
+            ...devInfo,
             ...trackData,
             secret: API_SECRET
         });
@@ -60,7 +73,7 @@
     function checkNowPlaying() {
         const platform = detectStreamingPlatform();
 
-        // Method 1: MediaSession API (Universal for Spotify, YouTube Music, and Apple Music)
+        // 1. MediaSession API (Universal standard across Spotify, YouTube Music, and Apple Music)
         if (navigator.mediaSession && navigator.mediaSession.metadata) {
             const meta = navigator.mediaSession.metadata;
             const title = (meta.title || '').trim();
@@ -68,13 +81,12 @@
             const album = (meta.album || '').trim();
             const artworkUrl = meta.artwork && meta.artwork.length ? meta.artwork[meta.artwork.length - 1].src : '';
 
-            // Check playback status across media elements
             const mediaElements = Array.from(document.querySelectorAll('audio, video'));
             const activeMedia = mediaElements.find(el => !el.paused && !el.ended && el.currentTime > 0);
             const isPlaying = Boolean(activeMedia || (navigator.mediaSession.playbackState === 'playing'));
             const duration = activeMedia && Number.isFinite(activeMedia.duration) ? Math.round(activeMedia.duration) : 0;
 
-            const trackKey = `${platform}:${title}:${artist}:${isPlaying}`;
+            const trackKey = `${platform}:${title}:${artist}:${album}:${isPlaying}`;
             if (title && trackKey !== lastTrackKey) {
                 lastTrackKey = trackKey;
                 isCurrentlyPlaying = isPlaying;
@@ -93,7 +105,7 @@
             if (title) return;
         }
 
-        // Method 2: DOM Fallbacks per platform
+        // 2. DOM Fallbacks
         if (platform === 'Spotify') {
             const titleEl = document.querySelector('[data-testid="now-playing-widget"] [data-testid="context-item-info-title"] a') ||
                             document.querySelector('.now-playing-bar [data-testid="context-item-link"]') ||
@@ -186,8 +198,13 @@
         }
     }
 
-    // Check periodically every 2 seconds
-    setInterval(checkNowPlaying, 2000);
+    // Fast 1s polling + event triggers for instant track change sync
+    setInterval(checkNowPlaying, 1000);
+
+    // Immediate check on media events
+    document.addEventListener('play', () => setTimeout(checkNowPlaying, 200), true);
+    document.addEventListener('pause', () => setTimeout(checkNowPlaying, 200), true);
+    document.addEventListener('ended', () => setTimeout(checkNowPlaying, 200), true);
 
     // Broadcast pause when tab is closed
     window.addEventListener('beforeunload', () => {
@@ -196,5 +213,5 @@
         }
     });
 
-    console.log(`[Whoami Sync] Multi-Streaming Sync loaded for ${detectStreamingPlatform()}.`);
+    console.log(`[Whoami Sync] Loaded multi-streaming auto-sync for ${detectStreamingPlatform()}.`);
 })();

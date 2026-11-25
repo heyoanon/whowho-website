@@ -64,9 +64,18 @@ async function initializeDatabase() {
       started_at BIGINT,
       ends_at BIGINT,
       is_playing BOOLEAN NOT NULL DEFAULT true,
+      device TEXT,
+      device_type TEXT,
       updated_at TIMESTAMPTZ NOT NULL
     )
   `);
+
+  try {
+    await database.query(`
+      ALTER TABLE now_playing ADD COLUMN IF NOT EXISTS device TEXT;
+      ALTER TABLE now_playing ADD COLUMN IF NOT EXISTS device_type TEXT;
+    `);
+  } catch {}
 
   await database.query(`
     CREATE TABLE IF NOT EXISTS profile_data (
@@ -395,8 +404,8 @@ async function saveNowPlaying(trackData) {
 
   try {
     await database.query(`
-      INSERT INTO now_playing (id, source, title, artist, album, artwork_url, track_url, duration_ms, started_at, ends_at, is_playing, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
+      INSERT INTO now_playing (id, source, title, artist, album, artwork_url, track_url, duration_ms, started_at, ends_at, is_playing, device, device_type, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
       ON CONFLICT (id) DO UPDATE SET
         source = EXCLUDED.source,
         title = EXCLUDED.title,
@@ -408,6 +417,8 @@ async function saveNowPlaying(trackData) {
         started_at = EXCLUDED.started_at,
         ends_at = EXCLUDED.ends_at,
         is_playing = EXCLUDED.is_playing,
+        device = EXCLUDED.device,
+        device_type = EXCLUDED.device_type,
         updated_at = NOW()
     `, [
       'current',
@@ -420,7 +431,9 @@ async function saveNowPlaying(trackData) {
       trackData.durationMs || 0,
       trackData.timestamps?.start || null,
       trackData.timestamps?.end || null,
-      trackData.isPlaying !== false
+      trackData.isPlaying !== false,
+      trackData.device || '',
+      trackData.deviceType || ''
     ]);
   } catch (err) {
     console.error('Unable to persist now_playing:', err.message);
@@ -445,6 +458,8 @@ async function getStoredNowPlaying() {
             album: row.album || '',
             artworkUrl: row.artwork_url || '',
             url: row.track_url || '',
+            device: row.device || '',
+            deviceType: row.device_type || '',
             timestamps: (row.started_at && row.ends_at) ? { start: Number(row.started_at), end: Number(row.ends_at) } : null,
             updatedAt: row.updated_at
           };
@@ -512,11 +527,19 @@ async function fetchSpotifyCurrentlyPlaying() {
   if (!token) return null;
 
   try {
-    const response = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+    let response = await fetch('https://api.spotify.com/v1/me/player', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
     });
+
+    if (response.status === 204 || response.status > 400) {
+      response = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+    }
 
     if (response.status === 204 || response.status > 400) {
       return null;
@@ -533,6 +556,9 @@ async function fetchSpotifyCurrentlyPlaying() {
     const start = Date.now() - progressMs;
     const end = start + durationMs;
 
+    const deviceName = data.device ? data.device.name : '';
+    const isMobileDev = data.device && /smartphone|mobile|phone/i.test(data.device.type);
+
     return {
       isPlaying: true,
       source: 'Spotify',
@@ -541,6 +567,8 @@ async function fetchSpotifyCurrentlyPlaying() {
       album: item.album ? item.album.name : '',
       artworkUrl: item.album && item.album.images && item.album.images[0] ? item.album.images[0].url : '',
       url: item.external_urls ? item.external_urls.spotify : '',
+      device: deviceName ? `${deviceName} (Spotify)` : 'Spotify App',
+      deviceType: isMobileDev ? 'mobile' : 'desktop',
       timestamps: { start, end },
       durationMs
     };
@@ -640,11 +668,37 @@ app.post('/api/now-playing', async (req, res) => {
     artworkUrl = '',
     url = '',
     duration = 0,
-    isPlaying = true
+    isPlaying = true,
+    device = '',
+    deviceType = ''
   } = req.body || {};
 
   if (isPlaying && !title) {
     return res.status(400).json({ error: 'Track title is required when isPlaying is true.' });
+  }
+
+  // Infer device info if not provided
+  if (!device) {
+    const ua = (req.headers['user-agent'] || '').toLowerCase();
+    if (ua.includes('iphone')) {
+      device = 'iPhone';
+      deviceType = 'mobile';
+    } else if (ua.includes('ipad')) {
+      device = 'iPad';
+      deviceType = 'mobile';
+    } else if (ua.includes('android')) {
+      device = 'Android Device';
+      deviceType = 'mobile';
+    } else if (ua.includes('windows')) {
+      device = 'Windows PC';
+      deviceType = 'desktop';
+    } else if (ua.includes('macintosh') || ua.includes('mac os')) {
+      device = 'Mac Desktop';
+      deviceType = 'desktop';
+    } else {
+      device = 'Desktop / Mobile';
+      deviceType = 'device';
+    }
   }
 
   // Normalize source name for Spotify, YouTube Music, and Apple Music
@@ -690,6 +744,8 @@ app.post('/api/now-playing', async (req, res) => {
     album: String(album || '').trim(),
     artworkUrl: String(artworkUrl || '').trim(),
     url: String(url || '').trim(),
+    device: String(device || '').trim(),
+    deviceType: String(deviceType || 'device').trim(),
     durationMs,
     timestamps: (durationMs > 0 && isPlaying) ? { start: now, end: now + durationMs } : null,
     updatedAtMs: now

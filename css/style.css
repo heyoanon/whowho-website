@@ -605,6 +605,99 @@ h3 {
     box-shadow: 0 0 14px rgba(250, 45, 72, 0.8);
 }
 
+/* Device Location Pill ("Where It Plays") */
+.lanyard-device-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    margin-top: 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-family: 'Press Start 2P', monospace;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(0, 240, 255, 0.5);
+    background: rgba(0, 240, 255, 0.08);
+    color: #00f0ff;
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.25);
+    max-width: fit-content;
+    animation: devicePillFadeIn 0.3s ease;
+}
+
+.lanyard-device-pill.mobile-device {
+    border-color: rgba(255, 170, 0, 0.6);
+    background: rgba(255, 170, 0, 0.1);
+    color: #ffaa00;
+    box-shadow: 0 0 8px rgba(255, 170, 0, 0.25);
+}
+
+.lanyard-device-pill.desktop-device {
+    border-color: rgba(0, 255, 170, 0.6);
+    background: rgba(0, 255, 170, 0.08);
+    color: #00ffaa;
+    box-shadow: 0 0 8px rgba(0, 255, 170, 0.25);
+}
+
+.device-pill-icon {
+    font-size: 12px;
+    line-height: 1;
+}
+
+.device-pill-text {
+    line-height: 1.4;
+}
+
+/* Retro Animated Audio Equalizer Bars */
+.retro-eq-bars {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 2.5px;
+    height: 13px;
+    margin-left: 4px;
+}
+
+.retro-bar {
+    width: 3px;
+    background-color: currentColor;
+    border-radius: 1px;
+    animation: retroEqBounce 0.8s infinite ease-in-out alternate;
+}
+
+.retro-bar.bar-1 { height: 40%; animation-delay: 0.1s; }
+.retro-bar.bar-2 { height: 90%; animation-delay: 0.35s; }
+.retro-bar.bar-3 { height: 60%; animation-delay: 0.2s; }
+.retro-bar.bar-4 { height: 100%; animation-delay: 0.45s; }
+
+@keyframes retroEqBounce {
+    0% { height: 20%; opacity: 0.5; }
+    50% { height: 100%; opacity: 1; }
+    100% { height: 40%; opacity: 0.7; }
+}
+
+@keyframes devicePillFadeIn {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Track Change Flash Neon Glow */
+.track-change-flash {
+    animation: trackChangeGlowAnim 1.4s ease-out;
+}
+
+@keyframes trackChangeGlowAnim {
+    0% {
+        box-shadow: 0 0 25px rgba(0, 255, 170, 0.9), inset 0 0 15px rgba(0, 255, 170, 0.5);
+        border-color: #00ffaa;
+    }
+    50% {
+        box-shadow: 0 0 35px rgba(0, 240, 255, 0.8), inset 0 0 20px rgba(0, 240, 255, 0.4);
+        border-color: #00f0ff;
+    }
+    100% {
+        box-shadow: none;
+    }
+}
+
 .streaming-sync-box {
     margin-top: 16px;
     padding: 16px;
@@ -2124,6 +2217,15 @@ h3 {
     .lanyard-track-timing {
         gap: 6px;
         font-size: 10px;
+    }
+
+    .lanyard-device-pill {
+        font-size: 8px;
+        padding: 5px 8px;
+        justify-content: center;
+        text-align: center;
+        max-width: 100%;
+        margin-top: 6px;
     }
 
     .lanyard-empty-card {
