@@ -515,11 +515,13 @@
                 showAdminPasswordModal('Only the owner of the website can edit Now Playing settings.', () => {
                     editingSection = 'nowPlaying';
                     renderPage('nowPlaying', false);
+                    setTimeout(() => { if (typeof triggerAutofillCurrentTrack === 'function') triggerAutofillCurrentTrack(false); }, 180);
                 });
                 return;
             }
             editingSection = 'nowPlaying';
             renderPage('nowPlaying', false);
+            setTimeout(() => { if (typeof triggerAutofillCurrentTrack === 'function') triggerAutofillCurrentTrack(false); }, 180);
         }
         window.toggleEditNowPlaying = toggleEditNowPlaying;
 
@@ -611,6 +613,25 @@
                             <h2>EDIT NOW PLAYING</h2>
                         </div>
                         <div class="fact-box scrollable-facts-box">
+                            <!-- 0. Live Device Playback Detector & Autofill Banner -->
+                            <div class="autofill-detection-box" id="autofill-detection-box">
+                                <div class="autofill-status-header">
+                                    <span class="live-pulse" id="autofill-pulse"></span>
+                                    <span id="autofill-status-title">DETECTING WHAT'S PLAYING ON DEVICE...</span>
+                                </div>
+                                <div class="autofill-detected-info" id="autofill-detected-info">
+                                    Scanning device audio across Spotify, YouTube Music, Apple Music & browser...
+                                </div>
+                                <div class="autofill-actions-row">
+                                    <button type="button" class="btn-autofill-action" onclick="triggerAutofillCurrentTrack(false)">
+                                        ⚡ AUTOFILL WHAT'S PLAYING
+                                    </button>
+                                    <button type="button" class="btn-autofill-action save" onclick="triggerAutofillCurrentTrack(true)">
+                                        💾 AUTOFILL & SAVE (BOTH ON-REPEAT & LIVE)
+                                    </button>
+                                </div>
+                            </div>
+
                             <!-- 1. Live Streaming Broadcaster (Spotify, YouTube Music, Apple Music) -->
                             <div class="streaming-sync-box">
                                 <div class="streaming-sync-title">📡 BROADCAST WHAT'S PLAYING LIVE</div>
@@ -624,7 +645,10 @@
                                 </div>
                                 <input type="hidden" id="live-stream-service" value="Spotify">
                                 <div class="profile-form-group">
-                                    <label class="profile-form-label">CURRENT SONG TITLE</label>
+                                    <label class="profile-form-label" style="display:flex; justify-content:space-between; align-items:center;">
+                                        <span>CURRENT SONG TITLE</span>
+                                        <button type="button" class="inline-autofill-link" onclick="triggerAutofillCurrentTrack(false)">⚡ AUTOFILL</button>
+                                    </label>
                                     <input class="profile-input-field" id="live-stream-title" placeholder="e.g. Supernova" autocomplete="off">
                                 </div>
                                 <div class="profile-form-group">
@@ -645,7 +669,10 @@
 
                             <!-- 2. On Repeat Fallback & Last.fm Settings -->
                             <form class="profile-edit-form" id="form-nowPlaying" onsubmit="event.preventDefault(); promptSaveProfile('nowPlaying');" style="margin-top:20px;">
-                                <h3 style="font-size:12px; color:#ffd700; margin-bottom:12px;">★ DEFAULT ON-REPEAT SONG & SETTINGS</h3>
+                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+                                    <h3 style="font-size:12px; color:#ffd700; margin:0;">★ DEFAULT ON-REPEAT SONG & SETTINGS</h3>
+                                    <button type="button" class="inline-autofill-link" onclick="triggerAutofillCurrentTrack(true)">💾 AUTOFILL & SAVE CURRENT TRACK</button>
+                                </div>
                                 <div class="profile-form-group">
                                     <label class="profile-form-label">SONG TITLE</label>
                                     <input class="profile-input-field" name="title" value="${escapeHtml(currentVibe.title || '')}" placeholder="e.g. Supernova" required autocomplete="off">
@@ -675,6 +702,7 @@
                                     <button type="button" class="btn-cancel-profile" onclick="cancelEditProfile('nowPlaying')">CANCEL</button>
                                 </div>
                             </form>
+                            <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style="display:none;" onload="if(typeof triggerAutofillCurrentTrack==='function') setTimeout(function(){ triggerAutofillCurrentTrack(false); }, 180);">
                         </div>
                     </div>
                 `;
@@ -1816,6 +1844,230 @@
             }
         }
         window.clearLiveStreamBroadcast = clearLiveStreamBroadcast;
+
+        async function detectActiveDevicePlayback() {
+            // 1. Check local browser MediaSession (active audio playing on mobile or desktop browser)
+            if (typeof navigator !== 'undefined' && navigator.mediaSession && navigator.mediaSession.metadata) {
+                const meta = navigator.mediaSession.metadata;
+                const title = (meta.title || '').trim();
+                const artist = (meta.artist || '').trim();
+                const album = (meta.album || '').trim();
+                let artworkUrl = '';
+                if (meta.artwork && meta.artwork.length) {
+                    artworkUrl = meta.artwork[meta.artwork.length - 1].src || '';
+                }
+                const mediaElements = Array.from(document.querySelectorAll('audio, video'));
+                const hasLocalPlaying = mediaElements.some(el => !el.paused && !el.ended && el.currentTime > 0) ||
+                                        navigator.mediaSession.playbackState === 'playing';
+
+                if (title && hasLocalPlaying) {
+                    const host = window.location.hostname.toLowerCase();
+                    let source = 'Spotify';
+                    if (host.includes('youtube')) source = 'YouTube Music';
+                    else if (host.includes('apple')) source = 'Apple Music';
+
+                    return {
+                        source,
+                        title,
+                        artist,
+                        album,
+                        artworkUrl,
+                        url: '',
+                        device: /Android|iPhone|iPad/i.test(navigator.userAgent) ? 'Mobile Phone' : 'Desktop PC',
+                        deviceType: /Android|iPhone|iPad/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+                    };
+                }
+            }
+
+            // 2. Direct broadcast track (from Windows sync script, userscript, mobile shortcuts, or live SSE)
+            if (latestDirectTrack && latestDirectTrack.isPlaying && latestDirectTrack.title) {
+                return {
+                    source: latestDirectTrack.source || 'Spotify',
+                    title: latestDirectTrack.title,
+                    artist: latestDirectTrack.artist || '',
+                    album: latestDirectTrack.album || '',
+                    artworkUrl: latestDirectTrack.artworkUrl || '',
+                    url: latestDirectTrack.url || '',
+                    device: latestDirectTrack.device || '',
+                    deviceType: latestDirectTrack.deviceType || ''
+                };
+            }
+
+            // 3. Discord Lanyard presence (Spotify & listening activities)
+            if (latestLanyardPresence) {
+                if (latestLanyardPresence.spotify && latestLanyardPresence.spotify.song) {
+                    const s = latestLanyardPresence.spotify;
+                    return {
+                        source: 'Spotify',
+                        title: s.song,
+                        artist: s.artist || '',
+                        album: s.album || '',
+                        artworkUrl: s.album_art_url || '',
+                        url: s.track_id ? `https://open.spotify.com/track/${s.track_id}` : '',
+                        device: latestLanyardPresence.active_on_discord_mobile ? 'Mobile Phone' : 'Desktop PC',
+                        deviceType: latestLanyardPresence.active_on_discord_mobile ? 'mobile' : 'desktop'
+                    };
+                }
+                if (Array.isArray(latestLanyardPresence.activities)) {
+                    for (const act of latestLanyardPresence.activities) {
+                        const parsed = parseMusicActivity(act);
+                        if (parsed && parsed.title) {
+                            return parsed;
+                        }
+                    }
+                }
+            }
+
+            // 4. Fetch live track from server API (/api/now-playing - checks Spotify API & Last.fm 24/7)
+            try {
+                const res = await fetch('/api/now-playing', { cache: 'no-store' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.isPlaying && data.title) {
+                        return {
+                            source: data.source || 'Spotify',
+                            title: data.title,
+                            artist: data.artist || '',
+                            album: data.album || '',
+                            artworkUrl: data.artworkUrl || '',
+                            url: data.url || '',
+                            device: data.device || '',
+                            deviceType: data.deviceType || ''
+                        };
+                    }
+                }
+            } catch {}
+
+            return null;
+        }
+        window.detectActiveDevicePlayback = detectActiveDevicePlayback;
+
+        async function triggerAutofillCurrentTrack(saveImmediately = false) {
+            const statusTitle = document.getElementById('autofill-status-title');
+            const detectedInfo = document.getElementById('autofill-detected-info');
+            const pulse = document.getElementById('autofill-pulse');
+
+            if (statusTitle) statusTitle.textContent = 'DETECTING CURRENT PLAYBACK...';
+            if (detectedInfo) detectedInfo.textContent = 'Scanning Spotify, YouTube Music, Apple Music & device...';
+
+            const track = await detectActiveDevicePlayback();
+
+            if (!track || !track.title) {
+                if (statusTitle) statusTitle.textContent = 'STANDBY: NO LIVE STREAM DETECTED';
+                if (detectedInfo) detectedInfo.textContent = 'No track actively streaming right now on your device. You can type details manually or run the sync script.';
+                if (pulse) pulse.style.backgroundColor = '#ffd700';
+                if (saveImmediately) {
+                    playArcadeBeep();
+                    showToast('NO ACTIVE STREAM DETECTED ON DEVICE.');
+                }
+                return;
+            }
+
+            // High-resolution metadata enrichment if missing
+            if ((!track.artworkUrl || !track.album) && track.artist && track.title) {
+                try {
+                    const query = encodeURIComponent(`${track.artist} ${track.title}`);
+                    const itunesRes = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`);
+                    if (itunesRes.ok) {
+                        const itunesData = await itunesRes.json();
+                        const item = itunesData.results?.[0];
+                        if (item) {
+                            if (!track.album && item.collectionName) track.album = item.collectionName;
+                            if (!track.artworkUrl && item.artworkUrl100) {
+                                track.artworkUrl = item.artworkUrl100.replace('100x100bb', '600x600bb');
+                            }
+                            if (!track.url && item.trackViewUrl) track.url = item.trackViewUrl;
+                        }
+                    }
+                } catch {}
+            }
+
+            if (!track.url && track.title) {
+                const q = encodeURIComponent(`${track.title} ${track.artist}`.trim());
+                if (/spotify/i.test(track.source)) track.url = `https://open.spotify.com/search/${q}`;
+                else if (/apple/i.test(track.source)) track.url = `https://music.apple.com/search?term=${q}`;
+                else track.url = `https://music.youtube.com/search?q=${q}`;
+            }
+
+            // Update UI status banner
+            if (statusTitle) statusTitle.textContent = `DETECTED: ${track.title.toUpperCase()}`;
+            if (detectedInfo) {
+                const devText = track.device ? ` • Playing on ${track.device}` : '';
+                detectedInfo.innerHTML = `🎵 <b>${escapeHtml(track.title)}</b> by <b>${escapeHtml(track.artist || 'Unknown')}</b> (${escapeHtml(track.source || 'Music')}${escapeHtml(devText)})`;
+            }
+            if (pulse) pulse.style.backgroundColor = '#00ffaa';
+
+            // 1. Autofill Section 1: BROADCAST WHAT'S PLAYING LIVE
+            selectStreamingService(track.source || 'Spotify');
+            const liveTitleInput = document.getElementById('live-stream-title');
+            const liveArtistInput = document.getElementById('live-stream-artist');
+            if (liveTitleInput) liveTitleInput.value = track.title;
+            if (liveArtistInput) liveArtistInput.value = track.artist || '';
+
+            // 2. Autofill Section 2: DEFAULT ON-REPEAT SONG & SETTINGS
+            const formNowPlaying = document.getElementById('form-nowPlaying');
+            if (formNowPlaying) {
+                const titleEl = formNowPlaying.querySelector('input[name="title"]');
+                const artistEl = formNowPlaying.querySelector('input[name="artist"]');
+                const albumEl = formNowPlaying.querySelector('input[name="album"]');
+                const urlEl = formNowPlaying.querySelector('input[name="url"]');
+                const artworkEl = formNowPlaying.querySelector('input[name="artworkUrl"]');
+
+                if (titleEl) titleEl.value = track.title;
+                if (artistEl) artistEl.value = track.artist || '';
+                if (albumEl) albumEl.value = track.album || '';
+                if (urlEl) urlEl.value = track.url || '';
+                if (artworkEl) artworkEl.value = track.artworkUrl || '';
+            }
+
+            // 3. If saveImmediately requested, save to profile & broadcast to live stream
+            if (saveImmediately) {
+                playArcadeBeep();
+                currentProfileData.onRepeat = {
+                    title: track.title,
+                    artist: track.artist || '',
+                    album: track.album || '',
+                    url: track.url || '',
+                    artworkUrl: track.artworkUrl || '',
+                    source: track.source || 'On Repeat'
+                };
+
+                try {
+                    localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+                } catch {}
+
+                saveProfileToServer(currentProfileData);
+
+                // Broadcast to live stream
+                const token = getStoredAdminToken();
+                fetch('/api/now-playing', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    },
+                    body: JSON.stringify({
+                        source: track.source || 'Music',
+                        title: track.title,
+                        artist: track.artist || '',
+                        album: track.album || '',
+                        artworkUrl: track.artworkUrl || '',
+                        url: track.url || '',
+                        device: track.device || (/Android|iPhone|iPad/i.test(navigator.userAgent) ? 'Mobile Phone' : 'Desktop PC'),
+                        deviceType: /Android|iPhone|iPad/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+                        isPlaying: true
+                    })
+                }).catch(() => {});
+
+                showToast(`SAVED "${track.title.toUpperCase()}" AS ON REPEAT!`);
+                editingSection = null;
+                renderPage('nowPlaying', false);
+            } else {
+                playArcadeBeep();
+                showToast(`AUTO-FILLED: "${track.title.toUpperCase()}"!`);
+            }
+        }
+        window.triggerAutofillCurrentTrack = triggerAutofillCurrentTrack;
 
         let lastPlayedTrackKey = '';
         function checkAndNotifyTrackChange(track) {
