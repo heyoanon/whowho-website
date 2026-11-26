@@ -4,8 +4,11 @@
 
 body {
     margin: 0;
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
     background-color: #000000;
     color: #ffffff;
     font-family: 'Press Start 2P', monospace;
@@ -15,14 +18,17 @@ body {
 .split-container {
     display: flex;
     width: 100%;
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .left-half,
 .right-half {
     width: 50%;
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -34,31 +40,35 @@ body {
     overflow: hidden;
     align-items: stretch;
     justify-content: stretch;
+    flex: 1 1 50%;
+    min-width: 0;
 }
 
 .right-half {
     background-color: #000000;
-    padding: 20px 24px;
-    height: calc(100vh - 80px);
-    max-height: calc(100vh - 80px);
+    padding: clamp(16px, 2.6vh, 26px) clamp(16px, 2vw, 24px);
+    height: auto;
+    max-height: calc(100dvh - clamp(20px, 5vh, 80px));
+    min-height: min(480px, calc(100dvh - 30px));
     flex-direction: column;
     align-items: flex-start;
     justify-content: flex-start;
     border: 3px solid #004cff;
     box-shadow: 0 0 10px #004cff, 0 0 20px #004cff, inset 0 0 10px rgba(0, 76, 255, 0.2);
     border-radius: 12px;
-    margin: 40px 40px 40px 20px;
-    background: rgba(0, 0, 0, 0.7);
+    margin: clamp(14px, 3vh, 40px) clamp(12px, 2.5vw, 40px) clamp(14px, 3vh, 40px) clamp(10px, 1.5vw, 20px);
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
     flex: 1 1 50%;
-    width: calc(50% - 60px);
+    width: calc(50% - clamp(20px, 3vw, 60px));
     max-width: 650px; 
-    min-width: 340px;
-    min-height: 0;
+    min-width: 0;
     align-self: center;
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
     scrollbar-color: #004cff #000000;
+    box-sizing: border-box;
 }
 
 .menu-panel {
@@ -154,11 +164,12 @@ body {
     object-fit: cover;
     object-position: 42% center;
     min-height: 100vh;
+    min-height: 100dvh;
 }
 
 h1 {
     margin: 0 0 18px 0;
-    font-size: 40px;
+    font-size: clamp(24px, 3vw, 40px);
     color: #ffffff;
     text-transform: uppercase;
     text-shadow: 0 0 8px #ffffff;
@@ -166,7 +177,7 @@ h1 {
 
 h2 {
     margin: 0 0 16px;
-    font-size: 30px;
+    font-size: clamp(18px, 2.2vw, 30px);
     color: #004cff;
     text-transform: uppercase;
 }
@@ -184,9 +195,9 @@ h3 {
     color: #ffffff;
     font-family: 'Press Start 2P', monospace;
     text-align: left;
-    padding: 0;
+    padding: 2px 0;
     cursor: pointer;
-    font-size: 30px;
+    font-size: clamp(15px, 1.85vw, 28px);
     text-transform: uppercase;
     transition: all 0.2s ease;
     position: relative;
@@ -194,7 +205,10 @@ h3 {
     outline: none;
     display: block;
     width: fit-content;
+    max-width: 100%;
     line-height: 2;
+    white-space: normal;
+    word-break: break-word;
 }
 
 .menu-item::before {
@@ -2649,6 +2663,91 @@ h3 {
     text-shadow: 0 0 8px #004cff;
 }
 
+/* Tablet & Medium Window Breakpoint (<= 1024px) */
+@media (max-width: 1024px) {
+    body {
+        height: auto;
+        min-height: 100dvh;
+        overflow-x: hidden;
+        overflow-y: auto;
+        background-image: linear-gradient(rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.82)), url('/pacman-pac.gif');
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-attachment: fixed;
+    }
+
+    .split-container {
+        min-height: 100dvh;
+        height: auto;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: clamp(14px, 3vh, 28px) clamp(12px, 3vw, 24px);
+        box-sizing: border-box;
+        overflow: visible;
+        background: transparent;
+    }
+
+    .left-half,
+    .right-half {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .left-half {
+        display: none;
+    }
+
+    .whoami-image {
+        min-height: 0;
+        height: 100%;
+        object-position: center center;
+    }
+
+    .right-half {
+        width: 100%;
+        max-width: min(620px, 94vw);
+        min-height: min(520px, calc(100dvh - 30px));
+        height: auto;
+        max-height: calc(100dvh - 24px);
+        margin: 0 auto;
+        padding: clamp(18px, 3vh, 26px) clamp(16px, 2.5vw, 24px);
+        border: 2px solid #004cff;
+        box-shadow: 0 0 12px #004cff, 0 0 24px rgba(0, 76, 255, 0.35), inset 0 0 10px rgba(0, 76, 255, 0.2);
+        border-radius: 12px;
+        align-self: center;
+        align-items: stretch;
+        background: rgba(0, 0, 0, 0.88);
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+    }
+
+    .menu-panel {
+        width: 100%;
+        min-height: 100%;
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        text-align: left;
+        gap: clamp(12px, 2.2vh, 18px);
+        padding: 10px 4px;
+        box-sizing: border-box;
+    }
+
+    .menu-item {
+        font-size: clamp(16px, 2.5vw, 22px);
+        line-height: 1.8;
+    }
+}
+
 @media (max-width: 700px) {
     body {
         height: auto;
@@ -2692,11 +2791,11 @@ h3 {
 
     .right-half {
         width: 100%;
-        max-width: 480px;
+        max-width: min(520px, 100%);
         min-height: calc(100dvh - 24px);
         height: auto;
         margin: 0 auto;
-        padding: 20px 16px;
+        padding: clamp(14px, 3.5vw, 20px) clamp(10px, 3vw, 16px);
         border: 2px solid #004cff;
         box-shadow: 0 0 10px #004cff, 0 0 20px rgba(0, 76, 255, 0.35), inset 0 0 10px rgba(0, 76, 255, 0.2);
         border-radius: 12px;
@@ -3299,4 +3398,160 @@ h3 {
         display: none !important;
     }
 
+}
+
+/* Extra-compact Viewports (<= 380px) */
+@media (max-width: 380px) {
+    .right-half {
+        padding: 12px 8px;
+        border-width: 2px;
+    }
+
+    h1 {
+        font-size: 18px;
+        letter-spacing: 1px;
+    }
+
+    h2 {
+        font-size: 15px;
+    }
+
+    .menu-item {
+        font-size: 11px;
+        padding: 4px 5px;
+        line-height: 1.6;
+    }
+
+    .arcade-screen-container {
+        max-width: 220px;
+        max-height: 220px;
+    }
+
+    .arcade-dpad {
+        grid-template-columns: 30px 30px 30px;
+        grid-template-rows: 30px 30px 30px;
+    }
+
+    .dpad-btn {
+        font-size: 10px;
+    }
+
+    .action-btn.fire {
+        width: 44px;
+        height: 44px;
+        font-size: 11px;
+    }
+}
+
+/* Short Viewport Heights (laptops, split screen, landscape) */
+@media (max-height: 720px) {
+    .right-half {
+        margin: clamp(6px, 1.5vh, 12px) auto;
+        padding: 14px 18px;
+        max-height: calc(100dvh - 16px);
+    }
+
+    h1 {
+        margin-bottom: 8px;
+        font-size: clamp(18px, 3.8vh, 26px);
+    }
+
+    h2 {
+        margin-bottom: 8px;
+        font-size: clamp(15px, 2.8vh, 20px);
+    }
+
+    .menu-panel,
+    .sub-menu {
+        gap: 10px;
+    }
+
+    .menu-item {
+        line-height: 1.6;
+    }
+
+    .arcade-screen-container {
+        max-width: min(240px, 38vh);
+        max-height: min(240px, 38vh);
+    }
+}
+
+/* Very Short Viewport Heights (Mobile landscape <= 520px) */
+@media (max-height: 520px) {
+    body {
+        overflow-y: auto;
+    }
+
+    .split-container {
+        padding: 6px 8px;
+        min-height: 100%;
+        height: auto;
+    }
+
+    .right-half {
+        padding: 8px 12px;
+        margin: 4px auto;
+        height: auto;
+        max-height: none;
+        min-height: calc(100dvh - 8px);
+    }
+
+    h1 {
+        font-size: 16px;
+        margin-bottom: 6px;
+    }
+
+    h2 {
+        font-size: 14px;
+        margin-bottom: 6px;
+    }
+
+    .menu-panel,
+    .sub-menu {
+        gap: 6px;
+        padding: 4px 0;
+    }
+
+    .menu-item {
+        font-size: 11px;
+        line-height: 1.4;
+        padding: 2px 4px;
+    }
+
+    .top-row {
+        margin-bottom: 6px !important;
+        padding-bottom: 4px !important;
+        min-height: 30px !important;
+    }
+
+    .back-button {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 15px !important;
+    }
+
+    .arcade-screen-container {
+        max-width: min(160px, 46vh);
+        max-height: min(160px, 46vh);
+    }
+
+    .arcade-controls-container {
+        gap: 8px;
+        margin-top: 4px;
+    }
+
+    .arcade-dpad {
+        grid-template-columns: 26px 26px 26px;
+        grid-template-rows: 26px 26px 26px;
+    }
+
+    .dpad-btn {
+        font-size: 9px;
+    }
+
+    .action-btn.fire {
+        width: 38px;
+        height: 38px;
+        font-size: 10px;
+    }
 }
