@@ -1022,6 +1022,68 @@ h3 {
     overflow-y: auto;
 }
 
+.loop-top-actions {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.btn-toggle-add-track {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    padding: 10px 16px;
+    background: rgba(0, 240, 255, 0.12);
+    border: 2px solid #00f0ff;
+    color: #00f0ff;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+}
+
+.btn-toggle-add-track:hover {
+    background: rgba(0, 240, 255, 0.25);
+    color: #ffffff;
+    box-shadow: 0 0 16px rgba(0, 240, 255, 0.6);
+    transform: translateY(-1px);
+}
+
+.btn-toggle-add-track.active {
+    background: rgba(255, 0, 85, 0.15);
+    border-color: #ff0055;
+    color: #ff5588;
+    box-shadow: 0 0 10px rgba(255, 0, 85, 0.35);
+    text-shadow: 0 0 8px rgba(255, 0, 85, 0.5);
+}
+
+.btn-toggle-add-track.active:hover {
+    background: rgba(255, 0, 85, 0.3);
+    color: #ffffff;
+    box-shadow: 0 0 16px rgba(255, 0, 85, 0.6);
+}
+
+.loop-close-form-btn {
+    font-family: inherit;
+    font-size: 11px;
+    padding: 4px 8px;
+    background: rgba(255, 0, 85, 0.15);
+    border: 1px solid rgba(255, 0, 85, 0.5);
+    color: #ff5588;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.loop-close-form-btn:hover {
+    background: rgba(255, 0, 85, 0.35);
+    color: #ffffff;
+}
+
 .loop-add-card {
     background: rgba(0, 240, 255, 0.04);
     border: 2px solid #00f0ff;

@@ -200,7 +200,8 @@
         let editingSection = null;
         let editingLoopTrackIndex = null;
         let isEditingSideQuests = false;
-                let isAdminLoggedIn = false;
+        let isAddTrackFormOpen = false;
+        let isAdminLoggedIn = false;
 
         const DISCORD_USER_ID = '772073053097033741';
         const fallbackVinylSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230b101d" rx="8"/><circle cx="50" cy="50" r="42" fill="%23111827" stroke="%2300ffcc" stroke-width="2"/><circle cx="50" cy="50" r="30" fill="%23090d16" stroke="%230077ff" stroke-width="1.5"/><circle cx="50" cy="50" r="18" fill="%2300ffcc"/><circle cx="50" cy="50" r="6" fill="%23000"/></svg>';
@@ -593,6 +594,7 @@
             playArcadeBeep();
             editingSection = null;
             isEditingSideQuests = false;
+            isAddTrackFormOpen = false;
             if (sectionKey === 'nowPlaying') {
                 renderPage('nowPlaying', false);
             } else {
@@ -604,6 +606,7 @@
             playArcadeBeep();
             editingSection = 'nowPlaying';
             editingLoopTrackIndex = null;
+            isAddTrackFormOpen = false;
             renderPage('nowPlaying', false);
             connectDirectStream();
         }
@@ -697,8 +700,38 @@
         }
         window.getLoopServiceClass = getLoopServiceClass;
 
+        function toggleAddTrackForm(forceState = null) {
+            playArcadeBeep();
+            const card = document.getElementById('loop-add-card');
+            const toggleBtn = document.getElementById('btn-toggle-add-track');
+            if (forceState !== null) {
+                isAddTrackFormOpen = forceState;
+            } else {
+                isAddTrackFormOpen = !isAddTrackFormOpen;
+            }
+
+            if (card) {
+                card.style.display = isAddTrackFormOpen ? 'block' : 'none';
+            }
+            if (toggleBtn) {
+                toggleBtn.innerHTML = isAddTrackFormOpen ? '✕ HIDE ADD TRACK FORM' : '➕ ADD A TRACK';
+                toggleBtn.classList.toggle('active', isAddTrackFormOpen);
+            }
+
+            if (isAddTrackFormOpen) {
+                const titleInput = document.getElementById('loop-new-title');
+                if (titleInput) {
+                    setTimeout(() => titleInput.focus(), 80);
+                }
+            }
+        }
+        window.toggleAddTrackForm = toggleAddTrackForm;
+
         function autofillLoopFromCurrentSong() {
             playArcadeBeep();
+            if (!isAddTrackFormOpen) {
+                toggleAddTrackForm(true);
+            }
             const track = latestDirectTrack || (latestLanyardPresence && latestLanyardPresence.spotify ? {
                 title: latestLanyardPresence.spotify.song,
                 artist: latestLanyardPresence.spotify.artist,
@@ -856,6 +889,7 @@
             }
 
             showToast(`SAVED "${newTrack.title.toUpperCase()}" UNDER THE LOOP!`);
+            isAddTrackFormOpen = false;
             renderPage('nowPlaying', false);
         }
         window.handleAddTrackToLoop = handleAddTrackToLoop;
@@ -1108,13 +1142,25 @@
                             <button type="button" class="btn-cancel-profile" onclick="cancelEditProfile('nowPlaying')" title="Back to live playback">✕ CLOSE</button>
                         </div>
                         <div class="fact-box scrollable-facts-box loop-facts-box">
-                            <!-- 1. ADD INTO THE LOOP CARD -->
-                            <div class="loop-add-card">
+                            <!-- ADD A TRACK TRIGGER / EXPAND BUTTON -->
+                            <div class="loop-top-actions">
+                                <button type="button" class="btn-toggle-add-track ${isAddTrackFormOpen ? 'active' : ''}" id="btn-toggle-add-track" onclick="toggleAddTrackForm()">
+                                    ${isAddTrackFormOpen ? '✕ HIDE ADD TRACK FORM' : '➕ ADD A TRACK'}
+                                </button>
+                            </div>
+
+                            <!-- 1. ADD INTO THE LOOP CARD (COLLAPSED BY DEFAULT, ONLY EXPANDS ON BUTTON CLICK) -->
+                            <div class="loop-add-card" id="loop-add-card" style="display: ${isAddTrackFormOpen ? 'block' : 'none'};">
                                 <div class="loop-add-header">
                                     <span class="loop-add-title">➕ ADD INTO THE LOOP</span>
-                                    <button type="button" class="btn-autofill-action" onclick="autofillLoopFromCurrentSong()">
-                                        ⚡ AUTOFILL CURRENT SONG
-                                    </button>
+                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                        <button type="button" class="btn-autofill-action" onclick="autofillLoopFromCurrentSong()">
+                                            ⚡ AUTOFILL CURRENT SONG
+                                        </button>
+                                        <button type="button" class="loop-close-form-btn" onclick="toggleAddTrackForm(false)" title="Collapse form">
+                                            ✕
+                                        </button>
+                                    </div>
                                 </div>
                                 <p class="loop-add-desc">Add a track into your loop rotation. Saved tracks appear directly below.</p>
                                 <form id="form-add-to-loop" onsubmit="event.preventDefault(); handleAddTrackToLoop();">
@@ -1145,6 +1191,7 @@
                                         </div>
                                     </div>
                                     <div class="loop-add-actions">
+                                        <button type="button" class="btn-cancel-profile" onclick="toggleAddTrackForm(false)" style="margin-right: 8px;">✕ CANCEL</button>
                                         <button type="submit" class="btn-save-profile loop-submit-btn">➕ ADD INTO THE LOOP</button>
                                     </div>
                                 </form>
