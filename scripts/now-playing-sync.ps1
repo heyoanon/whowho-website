@@ -1,4 +1,4 @@
-# Windows Now Playing Broadcast Script for Whoami
+﻿# Windows Now Playing Broadcast Script for Whoami
 # Automatically detects current audio playback from Spotify, YouTube Music, Apple Music, and any browser/desktop app
 # and syncs it in real-time to your Whoami website whenever a track changes or pauses, including streaming service & device location.
 
@@ -333,7 +333,13 @@ while ($true) {
                             }
                         }
                         if ($durationSec -gt 0) {
-                            $positionSec = [Math]::Min($durationSec, [Math]::Max(0, [Math]::Round($basePos)))
+                            $roundedBase = [Math]::Max(0, [Math]::Round($basePos))
+                            if ($isPlaying -and $roundedBase -ge $durationSec) {
+                                # Track finished while still playing: wrap around to track from start
+                                $positionSec = [int]($roundedBase % $durationSec)
+                            } else {
+                                $positionSec = [Math]::Min($durationSec, $roundedBase)
+                            }
                         } else {
                             $positionSec = [Math]::Max(0, [Math]::Round($basePos))
                         }
@@ -554,7 +560,13 @@ while ($true) {
                     " [{0:D2}:{1:D2} / {2:D2}:{3:D2}]" -f $currM, $currS, $durM, $durS
                 } else { "" }
                 if ($isNewTrack -or $isSeek) {
-                    $actionPrefix = if ($isSeek) { "Seek/Jump Detected" } else { "Track Detected Instantly" }
+                    $actionPrefix = if ($isSeek) {
+                        if ($positionSec -le 3 -and $lastBroadcastPosition -ge ($durationSec - 5) -and $durationSec -gt 0) {
+                            "Track Finished -> Auto-Tracking"
+                        } else {
+                            "Seek/Jump Detected"
+                        }
+                    } else { "Track Detected Instantly" }
                     Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] $actionPrefix -> [$stateIcon] $title by $artist on $source ($device)$timeSuffix" -ForegroundColor Green
                 }
 

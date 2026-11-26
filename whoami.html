@@ -1628,7 +1628,29 @@
 
                 const durationSeconds = Math.floor((endsAt - startedAt) / 1000);
                 const adjustedNow = Date.now() - serverClockOffset;
-                const elapsedSeconds = Math.min(durationSeconds, Math.max(0, Math.floor((adjustedNow - startedAt) / 1000)));
+                const rawElapsedSeconds = Math.max(0, Math.floor((adjustedNow - startedAt) / 1000));
+
+                let elapsedSeconds = rawElapsedSeconds;
+                if (durationSeconds > 0 && rawElapsedSeconds >= durationSeconds) {
+                    // Track time finished: automatically roll over and track time again from 00:00
+                    elapsedSeconds = rawElapsedSeconds % durationSeconds;
+
+                    const cycle = Math.floor(rawElapsedSeconds / durationSeconds);
+                    if (timing.dataset.lastCycle !== String(cycle)) {
+                        timing.dataset.lastCycle = String(cycle);
+                        // Trigger immediate fetches to capture track change or sync repeat timestamps
+                        pollDirectNowPlaying();
+                        fetchLanyardPresence();
+                        setTimeout(pollDirectNowPlaying, 750);
+                        setTimeout(fetchLanyardPresence, 1200);
+                        setTimeout(pollDirectNowPlaying, 1800);
+                    }
+                } else {
+                    if (timing.dataset.lastCycle) {
+                        delete timing.dataset.lastCycle;
+                    }
+                }
+
                 const progressPercent = durationSeconds > 0 ? (elapsedSeconds / durationSeconds) * 100 : 0;
                 const formattedElapsed = formatTrackTime(elapsedSeconds);
                 const formattedTotal = formatTrackTime(durationSeconds);
@@ -1644,15 +1666,6 @@
                 if (progress) progress.setAttribute('aria-valuenow', String(Math.round(progressPercent)));
                 if (progressFill) progressFill.style.width = `${progressPercent}%`;
                 timing.hidden = false;
-
-                // Instant detection when track ends: query next track immediately
-                if (elapsedSeconds >= durationSeconds) {
-                    if (!timing.dataset.trackEnded) {
-                        timing.dataset.trackEnded = 'true';
-                        fetchLanyardPresence();
-                        setTimeout(fetchLanyardPresence, 1200);
-                    }
-                }
             });
         }
 
@@ -2472,7 +2485,10 @@
 
                 const durationSeconds = Math.floor((endsAt - startedAt) / 1000);
                 const adjustedNow = Date.now() - serverClockOffset;
-                const elapsedSeconds = Math.min(durationSeconds, Math.max(0, Math.floor((adjustedNow - startedAt) / 1000)));
+                const rawElapsedSeconds = Math.max(0, Math.floor((adjustedNow - startedAt) / 1000));
+                const elapsedSeconds = durationSeconds > 0 && rawElapsedSeconds >= durationSeconds
+                    ? (rawElapsedSeconds % durationSeconds)
+                    : rawElapsedSeconds;
                 const progressPercent = durationSeconds > 0 ? (elapsedSeconds / durationSeconds) * 100 : 0;
 
                 const elapsedTime = document.createElement('span');
@@ -2643,6 +2659,9 @@
                         const newEnd = String(primaryTrack.timestamps.end || 0);
                         const timing = musicList.querySelector('.lanyard-track-timing');
                         if (timing) {
+                            if (timing.dataset.start !== newStart || timing.dataset.end !== newEnd) {
+                                delete timing.dataset.lastCycle;
+                            }
                             timing.dataset.start = newStart;
                             timing.dataset.end = newEnd;
                         }
