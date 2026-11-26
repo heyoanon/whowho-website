@@ -451,8 +451,9 @@ while ($true) {
                     }
                 }
 
-                $rawDev = "Desktop PC • $deviceApp ($source)"
-                $device = ($rawDev -replace '[\uFFFD\?â€¢]+', ' • ' -replace '(?:\s*[\.\•\-\u2022\u00B7\u25CF\uFFFD\?]+\s*)+', ' • ' -replace '^\s*•\s*|\s*•\s*$', '').Trim()
+                $bullet = [char]0x2022
+                $rawDev = "Desktop PC $bullet $deviceApp ($source)"
+                $device = ($rawDev -replace '(?:\s*[\.\-\u2022\u00B7\u25CF\uFFFD\?]+\s*)+', " $bullet ").Trim()
 
                 $cacheKey = "$artist - $title - $album"
                 $hasCachedArt = $artworkCache.ContainsKey($cacheKey)
@@ -491,8 +492,8 @@ while ($true) {
 
                 $stateIcon = if ($isPlaying) { "PLAYING" } else { "PAUSED" }
                 $timeSuffix = if ($durationSec -gt 0) {
-                    $m = [Math]::Floor($durationSec / 60)
-                    $s = $durationSec % 60
+                    $m = [int][Math]::Floor($durationSec / 60)
+                    $s = [int]($durationSec % 60)
                     " [00:00 / {0:D2}:{1:D2}]" -f $m, $s
                 } else { "" }
                 if ($isNewTrack) {
