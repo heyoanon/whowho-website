@@ -1,4 +1,4 @@
-﻿# Windows Now Playing Broadcast Script for Whoami
+# Windows Now Playing Broadcast Script for Whoami
 # Automatically detects current audio playback from Spotify, YouTube Music, Apple Music, and any browser/desktop app
 # and syncs it in real-time to your Whoami website whenever a track changes or pauses, including streaming service & device location.
 

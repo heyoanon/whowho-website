@@ -1347,6 +1347,18 @@
         let directPollTimer = null;
         let isPollingDirectTrack = false;
         let serverClockOffset = 0;
+        try {
+            const cachedOffset = sessionStorage.getItem('whowho_server_clock_offset');
+            if (cachedOffset) serverClockOffset = Number(cachedOffset) || 0;
+            const cachedTrack = sessionStorage.getItem('whowho_latest_direct_track');
+            if (cachedTrack) {
+                const parsed = JSON.parse(cachedTrack);
+                const nowAdj = Date.now() - serverClockOffset;
+                if (parsed && parsed.isPlaying && parsed.title && parsed.timestamps?.end > nowAdj) {
+                    latestDirectTrack = parsed;
+                }
+            }
+        } catch {}
 
         async function pollDirectNowPlaying() {
             if (isPollingDirectTrack) return;
@@ -1361,6 +1373,7 @@
                     if (data) {
                         if (data.serverTime) {
                             serverClockOffset = Date.now() - Number(data.serverTime);
+                            try { sessionStorage.setItem('whowho_server_clock_offset', String(serverClockOffset)); } catch {}
                         }
                         if (data.isPlaying && isAdvertisementTrack(data.title, data.artist, data.album)) {
                             return;
@@ -1373,6 +1386,13 @@
                         const timestampsShifted = Math.abs(newStart - prevStart) > 1500;
 
                         latestDirectTrack = data.isPlaying ? data : null;
+                        try {
+                            if (data.isPlaying && data.title) {
+                                sessionStorage.setItem('whowho_latest_direct_track', JSON.stringify(data));
+                            } else {
+                                sessionStorage.removeItem('whowho_latest_direct_track');
+                            }
+                        } catch {}
 
                         if (prevKey !== newKey || timestampsShifted) {
                             if (editingSection === 'nowPlaying') {
@@ -2481,9 +2501,14 @@
                 timing.dataset.start = String(startedAt);
                 timing.dataset.end = String(endsAt);
 
+                const durationSeconds = Math.floor((endsAt - startedAt) / 1000);
+                const adjustedNow = Date.now() - serverClockOffset;
+                const elapsedSeconds = Math.min(durationSeconds, Math.max(0, Math.floor((adjustedNow - startedAt) / 1000)));
+                const progressPercent = durationSeconds > 0 ? (elapsedSeconds / durationSeconds) * 100 : 0;
+
                 const elapsedTime = document.createElement('span');
                 elapsedTime.dataset.elapsedTime = '';
-                elapsedTime.textContent = '00:00';
+                elapsedTime.textContent = formatTrackTime(elapsedSeconds);
 
                 const progress = document.createElement('div');
                 progress.className = 'lanyard-track-progress';
@@ -2491,15 +2516,16 @@
                 progress.setAttribute('aria-label', `${track.source} track progress`);
                 progress.setAttribute('aria-valuemin', '0');
                 progress.setAttribute('aria-valuemax', '100');
-                progress.setAttribute('aria-valuenow', '0');
+                progress.setAttribute('aria-valuenow', String(Math.round(progressPercent)));
 
                 const progressFill = document.createElement('span');
                 progressFill.className = 'lanyard-track-progress-fill';
+                progressFill.style.width = `${progressPercent}%`;
                 progress.appendChild(progressFill);
 
                 const totalTime = document.createElement('span');
                 totalTime.dataset.totalTime = '';
-                totalTime.textContent = '00:00';
+                totalTime.textContent = formatTrackTime(durationSeconds);
 
                 timing.append(elapsedTime, progress, totalTime);
                 trackInfo.appendChild(timing);
@@ -4124,6 +4150,16 @@
         checkAdminStatus().then(() => {
             loadProfileData();
             const hash = (window.location.hash || '').replace(/^#/, '').trim();
+            if (hash === 'nowPlaying') {
+                // Update owner edit button without resetting audio stream or timers
+                const editBtn = document.querySelector('.now-playing-panel .edit-profile-btn');
+                if (editBtn) {
+                    editBtn.className = `edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}`;
+                    editBtn.textContent = isAdminLoggedIn ? '✎ EDIT VIBE' : '🔒 OWNER EDIT';
+                    editBtn.title = isAdminLoggedIn ? 'Set on-repeat song & music settings' : 'Owner access required';
+                }
+                return;
+            }
             if (hash === 'randomGame' || isEditingSideQuests || editingSection) {
                 return;
             }
@@ -4136,8 +4172,14 @@
             }
         });
         connectDirectStream();
-        prefetchNowPlaying();
-        setInterval(prefetchNowPlaying, 15000);
+        const hashInit = (window.location.hash || '').replace(/^#/, '').trim();
+        if (hashInit !== 'nowPlaying') {
+            prefetchNowPlaying();
+        }
+        setInterval(() => {
+            const h = (window.location.hash || '').replace(/^#/, '').trim();
+            if (h !== 'nowPlaying') prefetchNowPlaying();
+        }, 15000);
 
         function handleAppResume() {
             connectDirectStream();

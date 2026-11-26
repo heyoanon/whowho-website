@@ -1056,6 +1056,9 @@ app.get('/api/now-playing/stream', async (req, res) => {
 });
 
 app.get('/api/now-playing', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   try {
     // 1. Direct broadcast (from POST /api/now-playing)
     const directTrack = await getStoredNowPlaying();
