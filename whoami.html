@@ -739,122 +739,112 @@
         }
         window.autofillLoopFromCurrentSong = autofillLoopFromCurrentSong;
 
+        async function saveLoopToServer(tracks) {
+            try {
+                await fetch('/api/loop', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ inTheLoop: tracks })
+                });
+            } catch (err) {
+                console.warn('Loop save notice:', err);
+            }
+        }
+        window.saveLoopToServer = saveLoopToServer;
+
         function handleAddTrackToLoop() {
             playArcadeBeep();
-            const action = () => {
-                const titleEl = document.getElementById('loop-new-title');
-                const artistEl = document.getElementById('loop-new-artist');
-                const albumEl = document.getElementById('loop-new-album');
-                const sourceEl = document.getElementById('loop-new-source');
-                const urlEl = document.getElementById('loop-new-url');
-                const artworkEl = document.getElementById('loop-new-artwork');
+            const titleEl = document.getElementById('loop-new-title');
+            const artistEl = document.getElementById('loop-new-artist');
+            const albumEl = document.getElementById('loop-new-album');
+            const sourceEl = document.getElementById('loop-new-source');
+            const urlEl = document.getElementById('loop-new-url');
+            const artworkEl = document.getElementById('loop-new-artwork');
 
-                const title = (titleEl ? titleEl.value : '').trim();
-                const artist = (artistEl ? artistEl.value : '').trim();
+            const title = (titleEl ? titleEl.value : '').trim();
+            const artist = (artistEl ? artistEl.value : '').trim();
 
-                if (!title || !artist) {
-                    showToast('TITLE AND ARTIST ARE REQUIRED!');
-                    return;
-                }
+            if (!title || !artist) {
+                showToast('TITLE AND ARTIST ARE REQUIRED!');
+                return;
+            }
 
-                const newTrack = {
-                    id: `loop-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-                    title,
-                    artist,
-                    album: (albumEl ? albumEl.value : '').trim(),
-                    source: (sourceEl ? sourceEl.value : 'Spotify').trim() || 'Spotify',
-                    url: (urlEl ? urlEl.value : '').trim(),
-                    artworkUrl: (artworkEl ? artworkEl.value : '').trim()
-                };
-
-                if (!Array.isArray(currentProfileData.inTheLoop)) {
-                    currentProfileData.inTheLoop = [];
-                }
-
-                currentProfileData.inTheLoop.push(newTrack);
-                currentProfileData.onRepeat = currentProfileData.inTheLoop[0];
-
-                try {
-                    localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
-                } catch {}
-                saveProfileToServer(currentProfileData);
-
-                showToast(`SAVED "${newTrack.title.toUpperCase()}" UNDER THE LOOP!`);
-                renderPage('nowPlaying', false);
+            const newTrack = {
+                id: `loop-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+                title,
+                artist,
+                album: (albumEl ? albumEl.value : '').trim(),
+                source: (sourceEl ? sourceEl.value : 'Spotify').trim() || 'Spotify',
+                url: (urlEl ? urlEl.value : '').trim(),
+                artworkUrl: (artworkEl ? artworkEl.value : '').trim()
             };
 
-            if (!isAdminLoggedIn) {
-                showAdminPasswordModal('Owner access required to add tracks to What\'s in the loop.', action);
-            } else {
-                action();
+            if (!Array.isArray(currentProfileData.inTheLoop)) {
+                currentProfileData.inTheLoop = [];
             }
+
+            currentProfileData.inTheLoop.push(newTrack);
+            currentProfileData.onRepeat = currentProfileData.inTheLoop[0];
+
+            try {
+                localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+            } catch {}
+            saveLoopToServer(currentProfileData.inTheLoop);
+            if (isAdminLoggedIn) {
+                saveProfileToServer(currentProfileData);
+            }
+
+            showToast(`SAVED "${newTrack.title.toUpperCase()}" UNDER THE LOOP!`);
+            renderPage('nowPlaying', false);
         }
         window.handleAddTrackToLoop = handleAddTrackToLoop;
 
         function moveLoopTrackUp(index) {
             playArcadeBeep();
-            const action = () => {
-                if (!Array.isArray(currentProfileData.inTheLoop) || index <= 0 || index >= currentProfileData.inTheLoop.length) return;
-                const temp = currentProfileData.inTheLoop[index];
-                currentProfileData.inTheLoop[index] = currentProfileData.inTheLoop[index - 1];
-                currentProfileData.inTheLoop[index - 1] = temp;
-                currentProfileData.onRepeat = currentProfileData.inTheLoop[0];
+            if (!Array.isArray(currentProfileData.inTheLoop) || index <= 0 || index >= currentProfileData.inTheLoop.length) return;
+            const temp = currentProfileData.inTheLoop[index];
+            currentProfileData.inTheLoop[index] = currentProfileData.inTheLoop[index - 1];
+            currentProfileData.inTheLoop[index - 1] = temp;
+            currentProfileData.onRepeat = currentProfileData.inTheLoop[0];
 
-                try {
-                    localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
-                } catch {}
+            try {
+                localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+            } catch {}
+            saveLoopToServer(currentProfileData.inTheLoop);
+            if (isAdminLoggedIn) {
                 saveProfileToServer(currentProfileData);
-
-                showToast('TRACK MOVED UP!');
-                renderPage('nowPlaying', false);
-            };
-
-            if (!isAdminLoggedIn) {
-                showAdminPasswordModal('Owner access required to reorder tracks.', action);
-            } else {
-                action();
             }
+
+            showToast('TRACK MOVED UP!');
+            renderPage('nowPlaying', false);
         }
         window.moveLoopTrackUp = moveLoopTrackUp;
 
         function moveLoopTrackDown(index) {
             playArcadeBeep();
-            const action = () => {
-                if (!Array.isArray(currentProfileData.inTheLoop) || index < 0 || index >= currentProfileData.inTheLoop.length - 1) return;
-                const temp = currentProfileData.inTheLoop[index];
-                currentProfileData.inTheLoop[index] = currentProfileData.inTheLoop[index + 1];
-                currentProfileData.inTheLoop[index + 1] = temp;
-                currentProfileData.onRepeat = currentProfileData.inTheLoop[0];
+            if (!Array.isArray(currentProfileData.inTheLoop) || index < 0 || index >= currentProfileData.inTheLoop.length - 1) return;
+            const temp = currentProfileData.inTheLoop[index];
+            currentProfileData.inTheLoop[index] = currentProfileData.inTheLoop[index + 1];
+            currentProfileData.inTheLoop[index + 1] = temp;
+            currentProfileData.onRepeat = currentProfileData.inTheLoop[0];
 
-                try {
-                    localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
-                } catch {}
+            try {
+                localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+            } catch {}
+            saveLoopToServer(currentProfileData.inTheLoop);
+            if (isAdminLoggedIn) {
                 saveProfileToServer(currentProfileData);
-
-                showToast('TRACK MOVED DOWN!');
-                renderPage('nowPlaying', false);
-            };
-
-            if (!isAdminLoggedIn) {
-                showAdminPasswordModal('Owner access required to reorder tracks.', action);
-            } else {
-                action();
             }
+
+            showToast('TRACK MOVED DOWN!');
+            renderPage('nowPlaying', false);
         }
         window.moveLoopTrackDown = moveLoopTrackDown;
 
         function startEditLoopTrack(index) {
             playArcadeBeep();
-            const action = () => {
-                editingLoopTrackIndex = index;
-                renderPage('nowPlaying', false);
-            };
-
-            if (!isAdminLoggedIn) {
-                showAdminPasswordModal('Owner access required to edit tracks in the loop.', action);
-            } else {
-                action();
-            }
+            editingLoopTrackIndex = index;
+            renderPage('nowPlaying', false);
         }
         window.startEditLoopTrack = startEditLoopTrack;
 
@@ -867,52 +857,47 @@
 
         function saveEditedLoopTrack(index) {
             playArcadeBeep();
-            const action = () => {
-                if (!Array.isArray(currentProfileData.inTheLoop) || !currentProfileData.inTheLoop[index]) return;
+            if (!Array.isArray(currentProfileData.inTheLoop) || !currentProfileData.inTheLoop[index]) return;
 
-                const titleEl = document.getElementById(`edit-loop-title-${index}`);
-                const artistEl = document.getElementById(`edit-loop-artist-${index}`);
-                const albumEl = document.getElementById(`edit-loop-album-${index}`);
-                const sourceEl = document.getElementById(`edit-loop-source-${index}`);
-                const urlEl = document.getElementById(`edit-loop-url-${index}`);
-                const artworkEl = document.getElementById(`edit-loop-artwork-${index}`);
+            const titleEl = document.getElementById(`edit-loop-title-${index}`);
+            const artistEl = document.getElementById(`edit-loop-artist-${index}`);
+            const albumEl = document.getElementById(`edit-loop-album-${index}`);
+            const sourceEl = document.getElementById(`edit-loop-source-${index}`);
+            const urlEl = document.getElementById(`edit-loop-url-${index}`);
+            const artworkEl = document.getElementById(`edit-loop-artwork-${index}`);
 
-                const title = (titleEl ? titleEl.value : '').trim();
-                const artist = (artistEl ? artistEl.value : '').trim();
+            const title = (titleEl ? titleEl.value : '').trim();
+            const artist = (artistEl ? artistEl.value : '').trim();
 
-                if (!title || !artist) {
-                    showToast('TITLE AND ARTIST ARE REQUIRED!');
-                    return;
-                }
+            if (!title || !artist) {
+                showToast('TITLE AND ARTIST ARE REQUIRED!');
+                return;
+            }
 
-                const existing = currentProfileData.inTheLoop[index];
-                currentProfileData.inTheLoop[index] = {
-                    id: existing.id || `loop-${Date.now()}-${index}`,
-                    title,
-                    artist,
-                    album: (albumEl ? albumEl.value : '').trim(),
-                    source: (sourceEl ? sourceEl.value : 'Spotify').trim() || 'Spotify',
-                    url: (urlEl ? urlEl.value : '').trim(),
-                    artworkUrl: (artworkEl ? artworkEl.value : '').trim()
-                };
-
-                currentProfileData.onRepeat = currentProfileData.inTheLoop[0];
-                editingLoopTrackIndex = null;
-
-                try {
-                    localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
-                } catch {}
-                saveProfileToServer(currentProfileData);
-
-                showToast('TRACK UPDATED IN THE LOOP!');
-                renderPage('nowPlaying', false);
+            const existing = currentProfileData.inTheLoop[index];
+            currentProfileData.inTheLoop[index] = {
+                id: existing.id || `loop-${Date.now()}-${index}`,
+                title,
+                artist,
+                album: (albumEl ? albumEl.value : '').trim(),
+                source: (sourceEl ? sourceEl.value : 'Spotify').trim() || 'Spotify',
+                url: (urlEl ? urlEl.value : '').trim(),
+                artworkUrl: (artworkEl ? artworkEl.value : '').trim()
             };
 
-            if (!isAdminLoggedIn) {
-                showAdminPasswordModal('Owner access required to save track edits.', action);
-            } else {
-                action();
+            currentProfileData.onRepeat = currentProfileData.inTheLoop[0];
+            editingLoopTrackIndex = null;
+
+            try {
+                localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+            } catch {}
+            saveLoopToServer(currentProfileData.inTheLoop);
+            if (isAdminLoggedIn) {
+                saveProfileToServer(currentProfileData);
             }
+
+            showToast('TRACK UPDATED IN THE LOOP!');
+            renderPage('nowPlaying', false);
         }
         window.saveEditedLoopTrack = saveEditedLoopTrack;
 
@@ -925,27 +910,22 @@
                 'REMOVE FROM LOOP?',
                 `Are you sure you want to remove "${track.title}" from What's in the loop?`,
                 () => {
-                    const deleteAction = () => {
-                        currentProfileData.inTheLoop.splice(index, 1);
-                        if (currentProfileData.inTheLoop.length > 0) {
-                            currentProfileData.onRepeat = currentProfileData.inTheLoop[0];
-                        }
-                        editingLoopTrackIndex = null;
-
-                        try {
-                            localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
-                        } catch {}
-                        saveProfileToServer(currentProfileData);
-
-                        showToast(`REMOVED "${track.title.toUpperCase()}" FROM LOOP.`);
-                        renderPage('nowPlaying', false);
-                    };
-
-                    if (!isAdminLoggedIn) {
-                        showAdminPasswordModal('Owner access required to remove tracks.', deleteAction);
-                    } else {
-                        deleteAction();
+                    currentProfileData.inTheLoop.splice(index, 1);
+                    if (currentProfileData.inTheLoop.length > 0) {
+                        currentProfileData.onRepeat = currentProfileData.inTheLoop[0];
                     }
+                    editingLoopTrackIndex = null;
+
+                    try {
+                        localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+                    } catch {}
+                    saveLoopToServer(currentProfileData.inTheLoop);
+                    if (isAdminLoggedIn) {
+                        saveProfileToServer(currentProfileData);
+                    }
+
+                    showToast(`REMOVED "${track.title.toUpperCase()}" FROM LOOP.`);
+                    renderPage('nowPlaying', false);
                 }
             );
         }

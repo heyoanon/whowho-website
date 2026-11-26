@@ -1318,6 +1318,36 @@ app.get('/api/profile', async (_req, res) => {
   return res.json({ success: true, profile: profile || null });
 });
 
+app.post('/api/loop', async (req, res) => {
+  const { inTheLoop } = req.body || {};
+  if (!Array.isArray(inTheLoop)) {
+    return res.status(400).json({ error: 'Valid inTheLoop array is required.' });
+  }
+
+  try {
+    let profile = await loadStoredProfile() || {};
+    profile.inTheLoop = inTheLoop.map((t, idx) => ({
+      id: t.id ? String(t.id).slice(0, 60) : `loop-${Date.now()}-${idx}`,
+      title: String(t.title || '').trim().slice(0, 150),
+      artist: String(t.artist || '').trim().slice(0, 150),
+      album: String(t.album || '').trim().slice(0, 150),
+      source: String(t.source || 'Spotify').trim().slice(0, 50),
+      url: String(t.url || '').trim().slice(0, 500),
+      artworkUrl: String(t.artworkUrl || '').trim().slice(0, 500)
+    })).filter(t => t.title && t.artist);
+
+    if (profile.inTheLoop.length > 0) {
+      profile.onRepeat = profile.inTheLoop[0];
+    }
+
+    await saveStoredProfile(profile);
+    return res.json({ success: true, inTheLoop: profile.inTheLoop });
+  } catch (err) {
+    console.error('Error saving loop tracks:', err);
+    return res.status(500).json({ error: 'Failed to save loop tracks.' });
+  }
+});
+
 app.post('/api/profile', async (req, res) => {
   if (!isAuthorizedAdmin(req)) {
     return res.status(401).json({ error: 'Unauthorized. Admin / owner access required to save changes.' });
