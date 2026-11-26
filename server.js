@@ -867,149 +867,154 @@ async function fetchLastFmCurrentlyPlaying(userParam) {
 }
 
 app.post('/api/now-playing', async (req, res) => {
-  const secret = req.headers['x-api-key'] || req.body?.secret || req.query?.secret;
-  const configuredSecret = process.env.NOW_PLAYING_SECRET ? process.env.NOW_PLAYING_SECRET.trim() : '';
+  try {
+    const secret = req.headers['x-api-key'] || req.body?.secret || req.query?.secret;
+    const configuredSecret = process.env.NOW_PLAYING_SECRET ? process.env.NOW_PLAYING_SECRET.trim() : '';
 
-  if (configuredSecret && secret !== configuredSecret && !isValidAdminPassword(secret) && !isAuthorizedAdmin(req)) {
-    return res.status(401).json({ error: 'Unauthorized. Provide valid secret or API key.' });
-  }
-
-  let {
-    source = 'Music',
-    title,
-    artist = '',
-    album = '',
-    artworkUrl = '',
-    url = '',
-    duration = 0,
-    isPlaying = true,
-    device = '',
-    deviceType = ''
-  } = req.body || {};
-
-  if (isPlaying && !title) {
-    return res.status(400).json({ error: 'Track title is required when isPlaying is true.' });
-  }
-
-  // Filter advertisements from being broadcast
-  if (isAdvertisementTrack(title, artist, album)) {
-    return res.json({ success: true, ignored: true, message: 'Advertisement ignored.' });
-  }
-
-  // Infer device info if not provided
-  if (!device) {
-    const ua = (req.headers['user-agent'] || '').toLowerCase();
-    let browserName = 'Browser';
-    if (ua.includes('zen')) browserName = 'Zen Browser';
-    else if (ua.includes('librewolf')) browserName = 'LibreWolf';
-    else if (ua.includes('opr/') || ua.includes('opera')) browserName = ua.includes('gx') ? 'Opera GX' : 'Opera';
-    else if (ua.includes('brave')) browserName = 'Brave';
-    else if (ua.includes('vivaldi')) browserName = 'Vivaldi';
-    else if (ua.includes('arc/')) browserName = 'Arc';
-    else if (ua.includes('waterfox')) browserName = 'Waterfox';
-    else if (ua.includes('floorp')) browserName = 'Floorp';
-    else if (ua.includes('edg/')) browserName = 'Edge';
-    else if (ua.includes('firefox')) browserName = 'Firefox';
-    else if (ua.includes('chrome')) browserName = 'Chrome';
-    else if (ua.includes('safari')) browserName = 'Safari';
-
-    if (ua.includes('iphone')) {
-      device = `iPhone • ${browserName}`;
-      deviceType = 'mobile';
-    } else if (ua.includes('ipad')) {
-      device = `iPad • ${browserName}`;
-      deviceType = 'mobile';
-    } else if (ua.includes('android')) {
-      device = `Android • ${browserName}`;
-      deviceType = 'mobile';
-    } else if (ua.includes('windows')) {
-      device = `Desktop PC • ${browserName}`;
-      deviceType = 'desktop';
-    } else if (ua.includes('macintosh') || ua.includes('mac os')) {
-      device = `Mac • ${browserName}`;
-      deviceType = 'desktop';
-    } else if (ua.includes('linux')) {
-      device = `Linux • ${browserName}`;
-      deviceType = 'desktop';
-    } else {
-      device = `Desktop PC • ${browserName}`;
-      deviceType = 'desktop';
+    if (configuredSecret && secret !== configuredSecret && !isValidAdminPassword(secret) && !isAuthorizedAdmin(req)) {
+      return res.status(401).json({ error: 'Unauthorized. Provide valid secret or API key.' });
     }
-  }
 
-  // Normalize source name for Spotify, YouTube Music, and Apple Music
-  const sourceLower = String(source).toLowerCase();
-  let normalizedSource = String(source).trim() || 'Music';
-  if (sourceLower.includes('spotify')) {
-    normalizedSource = 'Spotify';
-  } else if (sourceLower.includes('youtube') || sourceLower.includes('ytm')) {
-    normalizedSource = 'YouTube Music';
-  } else if (sourceLower.includes('apple') || sourceLower.includes('itunes')) {
-    normalizedSource = 'Apple Music';
-  }
+    let {
+      source = 'Music',
+      title,
+      artist = '',
+      album = '',
+      artworkUrl = '',
+      url = '',
+      duration = 0,
+      position = 0,
+      isPlaying = true,
+      device = '',
+      deviceType = ''
+    } = req.body || {};
 
-  // Generate official streaming link if none provided
-  if (!url && title) {
-    const query = encodeURIComponent(`${title} ${artist}`.trim());
-    if (normalizedSource === 'Spotify') {
-      url = `https://open.spotify.com/search/${query}`;
-    } else if (normalizedSource === 'YouTube Music') {
-      url = `https://music.youtube.com/search?q=${query}`;
-    } else if (normalizedSource === 'Apple Music') {
-      url = `https://music.apple.com/search?term=${query}`;
-    } else {
-      url = `https://www.google.com/search?q=${query}`;
+    if (isPlaying && !title) {
+      return res.status(400).json({ error: 'Track title is required when isPlaying is true.' });
     }
-  }
 
-  const durationMs = Number(duration) > 0 ? Number(duration) * 1000 : (Number(req.body.durationMs) || 0);
-  const positionMs = Number(position) > 0 ? Number(position) * 1000 : (Number(req.body.positionMs) || 0);
-  const now = Date.now();
-  const start = now - positionMs;
-  const end = durationMs > 0 ? (start + durationMs) : 0;
-  const sanitizedDevice = String(device || '')
-    .replace(/[\uFFFD\?]+/g, ' • ')
-    .replace(/\s*[\.\•\-]\s*(?:[\.\•\-]\s*)*/g, ' • ')
-    .replace(/^\s*•\s*|\s*•\s*$/g, '')
-    .trim();
-  const trackData = {
-    isPlaying: Boolean(isPlaying),
-    source: normalizedSource,
-    title: String(title || '').trim(),
-    artist: String(artist || '').trim(),
-    album: String(album || '').trim(),
-    artworkUrl: String(artworkUrl || '').trim(),
-    url: String(url || '').trim(),
-    device: sanitizedDevice,
-    deviceType: String(deviceType || 'device').trim(),
-    durationMs,
-    timestamps: (durationMs > 0 && isPlaying) ? { start, end } : null,
-    updatedAtMs: now
-  };
+    // Filter advertisements from being broadcast
+    if (isAdvertisementTrack(title, artist, album)) {
+      return res.json({ success: true, ignored: true, message: 'Advertisement ignored.' });
+    }
 
-  // BROADCAST IMMEDIATELY: 0ms latency for track start detection
-  saveNowPlaying(trackData).catch(() => {});
-  res.json({ success: true, track: trackData });
+    // Infer device info if not provided
+    if (!device) {
+      const ua = (req.headers['user-agent'] || '').toLowerCase();
+      let browserName = 'Browser';
+      if (ua.includes('zen')) browserName = 'Zen Browser';
+      else if (ua.includes('librewolf')) browserName = 'LibreWolf';
+      else if (ua.includes('opr/') || ua.includes('opera')) browserName = ua.includes('gx') ? 'Opera GX' : 'Opera';
+      else if (ua.includes('brave')) browserName = 'Brave';
+      else if (ua.includes('vivaldi')) browserName = 'Vivaldi';
+      else if (ua.includes('arc/')) browserName = 'Arc';
+      else if (ua.includes('waterfox')) browserName = 'Waterfox';
+      else if (ua.includes('floorp')) browserName = 'Floorp';
+      else if (ua.includes('edg/')) browserName = 'Edge';
+      else if (ua.includes('firefox')) browserName = 'Firefox';
+      else if (ua.includes('chrome')) browserName = 'Chrome';
+      else if (ua.includes('safari')) browserName = 'Safari';
 
-  // Background artwork & album resolution: enriches artwork without blocking track detection
-  if (isPlaying && (!trackData.artworkUrl || !trackData.album || !trackData.durationMs)) {
-    resolveTrackArtwork(trackData.artist, trackData.title, trackData.album).then(async (resolved) => {
-      if (resolved && (resolved.artworkUrl || resolved.album || resolved.durationMs)) {
-        const enrichedDuration = trackData.durationMs || resolved.durationMs || 0;
-        const enrichedTimestamps = enrichedDuration > 0
-          ? (trackData.timestamps || { start: now, end: now + enrichedDuration })
-          : null;
-        const enriched = {
-          ...trackData,
-          artworkUrl: resolved.artworkUrl || trackData.artworkUrl,
-          album: resolved.album || trackData.album,
-          durationMs: enrichedDuration,
-          timestamps: enrichedTimestamps,
-          url: (!trackData.url && resolved.url && normalizedSource === 'Apple Music') ? resolved.url : trackData.url
-        };
-        await saveNowPlaying(enriched);
+      if (ua.includes('iphone')) {
+        device = `iPhone • ${browserName}`;
+        deviceType = 'mobile';
+      } else if (ua.includes('ipad')) {
+        device = `iPad • ${browserName}`;
+        deviceType = 'mobile';
+      } else if (ua.includes('android')) {
+        device = `Android • ${browserName}`;
+        deviceType = 'mobile';
+      } else if (ua.includes('windows')) {
+        device = `Desktop PC • ${browserName}`;
+        deviceType = 'desktop';
+      } else if (ua.includes('macintosh') || ua.includes('mac os')) {
+        device = `Mac • ${browserName}`;
+        deviceType = 'desktop';
+      } else if (ua.includes('linux')) {
+        device = `Linux • ${browserName}`;
+        deviceType = 'desktop';
+      } else {
+        device = `Desktop PC • ${browserName}`;
+        deviceType = 'desktop';
       }
-    }).catch(() => { });
+    }
+
+    // Normalize source name for Spotify, YouTube Music, and Apple Music
+    const sourceLower = String(source).toLowerCase();
+    let normalizedSource = String(source).trim() || 'Music';
+    if (sourceLower.includes('spotify')) {
+      normalizedSource = 'Spotify';
+    } else if (sourceLower.includes('youtube') || sourceLower.includes('ytm')) {
+      normalizedSource = 'YouTube Music';
+    } else if (sourceLower.includes('apple') || sourceLower.includes('itunes')) {
+      normalizedSource = 'Apple Music';
+    }
+
+    // Generate official streaming link if none provided
+    if (!url && title) {
+      const query = encodeURIComponent(`${title} ${artist}`.trim());
+      if (normalizedSource === 'Spotify') {
+        url = `https://open.spotify.com/search/${query}`;
+      } else if (normalizedSource === 'YouTube Music') {
+        url = `https://music.youtube.com/search?q=${query}`;
+      } else if (normalizedSource === 'Apple Music') {
+        url = `https://music.apple.com/search?term=${query}`;
+      } else {
+        url = `https://www.google.com/search?q=${query}`;
+      }
+    }
+
+    const durationMs = Number(duration) > 0 ? Number(duration) * 1000 : (Number(req.body?.durationMs) || 0);
+    const positionMs = Number(position) > 0 ? Number(position) * 1000 : (Number(req.body?.positionMs) || 0);
+    const now = Date.now();
+    const start = now - positionMs;
+    const end = durationMs > 0 ? (start + durationMs) : 0;
+    const sanitizedDevice = String(device || '')
+      .replace(/[\uFFFD\?â€¢]+/g, ' • ')
+      .replace(/(?:\s*[.\-•·●\u2022\u00B7\u25CF\uFFFD\?]+\s*)+/g, ' • ')
+      .replace(/^\s*•\s*|\s*•\s*$/g, '')
+      .trim();
+
+    const trackData = {
+      isPlaying: Boolean(isPlaying),
+      source: normalizedSource,
+      title: String(title || '').trim(),
+      artist: String(artist || '').trim(),
+      album: String(album || '').trim(),
+      artworkUrl: String(artworkUrl || '').trim(),
+      url: String(url || '').trim(),
+      device: sanitizedDevice,
+      deviceType: String(deviceType || 'device').trim(),
+      durationMs,
+      timestamps: (durationMs > 0 && isPlaying) ? { start, end } : null,
+      updatedAtMs: now
+    };
+
+    // If artwork is missing, resolve it swiftly (within 800ms) before responding so UI gets rich metadata immediately
+    if (isPlaying && (!trackData.artworkUrl || !trackData.album || !trackData.durationMs)) {
+      try {
+        const resolved = await Promise.race([
+          resolveTrackArtwork(trackData.artist, trackData.title, trackData.album),
+          new Promise(r => setTimeout(r, 800))
+        ]);
+        if (resolved && (resolved.artworkUrl || resolved.album || resolved.durationMs)) {
+          if (resolved.artworkUrl && !trackData.artworkUrl) trackData.artworkUrl = resolved.artworkUrl;
+          if (resolved.album && !trackData.album) trackData.album = resolved.album;
+          if (resolved.durationMs && !trackData.durationMs) {
+            trackData.durationMs = resolved.durationMs;
+            trackData.timestamps = { start: now, end: now + resolved.durationMs };
+          }
+          if (resolved.url && !trackData.url && normalizedSource === 'Apple Music') trackData.url = resolved.url;
+        }
+      } catch {}
+    }
+
+    // Persist immediately (with timeout guarantee) to ensure PostgreSQL save completes on Vercel
+    await saveNowPlaying(trackData);
+    return res.json({ success: true, track: trackData });
+  } catch (error) {
+    console.error('POST /api/now-playing error:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 });
 
@@ -1036,164 +1041,169 @@ app.get('/api/now-playing/stream', async (req, res) => {
 });
 
 app.get('/api/now-playing', async (req, res) => {
-  // 1. Direct broadcast (from POST /api/now-playing)
-  const directTrack = await getStoredNowPlaying();
-  if (directTrack && directTrack.isPlaying && !isAdvertisementTrack(directTrack.title, directTrack.artist, directTrack.album)) {
-    if (!directTrack.artworkUrl && directTrack.title) {
+  try {
+    // 1. Direct broadcast (from POST /api/now-playing)
+    const directTrack = await getStoredNowPlaying();
+    if (directTrack && directTrack.isPlaying && !isAdvertisementTrack(directTrack.title, directTrack.artist, directTrack.album)) {
+      if (!directTrack.artworkUrl && directTrack.title) {
+        try {
+          const resolved = await resolveTrackArtwork(directTrack.artist, directTrack.title, directTrack.album);
+          if (resolved.artworkUrl) {
+            directTrack.artworkUrl = resolved.artworkUrl;
+            if (!directTrack.album && resolved.album) directTrack.album = resolved.album;
+            saveNowPlaying({ ...directTrack, isPlaying: true }).catch(() => { });
+          }
+        } catch { }
+      }
+      return res.json({
+        isPlaying: true,
+        provider: 'direct-broadcast',
+        ...directTrack
+      });
+    }
+
+    // 2. Direct Spotify Web API (if configured in env)
+    if (process.env.SPOTIFY_REFRESH_TOKEN) {
+      const spotifyTrack = await fetchSpotifyCurrentlyPlaying();
+      if (spotifyTrack && spotifyTrack.isPlaying) {
+        return res.json({
+          isPlaying: true,
+          provider: 'spotify-api',
+          ...spotifyTrack
+        });
+      }
+    }
+
+    // 3. Last.fm API (if configured in env, query param, or saved in profile)
+    let lastFmUser = req.query.lastfm || req.query.lastfm_user || process.env.LASTFM_USER;
+    if (!lastFmUser) {
       try {
-        const resolved = await resolveTrackArtwork(directTrack.artist, directTrack.title, directTrack.album);
-        if (resolved.artworkUrl) {
-          directTrack.artworkUrl = resolved.artworkUrl;
-          if (!directTrack.album && resolved.album) directTrack.album = resolved.album;
-          saveNowPlaying({ ...directTrack, isPlaying: true }).catch(() => { });
+        const stored = await loadStoredProfile();
+        if (stored && stored.lastfmUser) {
+          lastFmUser = String(stored.lastfmUser).trim();
         }
       } catch { }
     }
-    return res.json({
-      isPlaying: true,
-      provider: 'direct-broadcast',
-      ...directTrack
-    });
-  }
-
-  // 2. Direct Spotify Web API (if configured in env)
-  if (process.env.SPOTIFY_REFRESH_TOKEN) {
-    const spotifyTrack = await fetchSpotifyCurrentlyPlaying();
-    if (spotifyTrack && spotifyTrack.isPlaying) {
-      return res.json({
-        isPlaying: true,
-        provider: 'spotify-api',
-        ...spotifyTrack
-      });
-    }
-  }
-
-  // 3. Last.fm API (if configured in env, query param, or saved in profile)
-  let lastFmUser = req.query.lastfm || req.query.lastfm_user || process.env.LASTFM_USER;
-  if (!lastFmUser) {
-    try {
-      const stored = await loadStoredProfile();
-      if (stored && stored.lastfmUser) {
-        lastFmUser = String(stored.lastfmUser).trim();
+    if (lastFmUser) {
+      const lastFmTrack = await fetchLastFmCurrentlyPlaying(lastFmUser);
+      if (lastFmTrack && lastFmTrack.isPlaying) {
+        return res.json({
+          isPlaying: true,
+          provider: 'lastfm',
+          ...lastFmTrack
+        });
       }
-    } catch { }
-  }
-  if (lastFmUser) {
-    const lastFmTrack = await fetchLastFmCurrentlyPlaying(lastFmUser);
-    if (lastFmTrack && lastFmTrack.isPlaying) {
-      return res.json({
-        isPlaying: true,
-        provider: 'lastfm',
-        ...lastFmTrack
-      });
     }
-  }
 
-  // 4. Lanyard Discord API fallback
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 3000);
-    const discordRes = await fetch('https://api.lanyard.rest/v1/users/772073053097033741', {
-      cache: 'no-store',
-      signal: controller.signal
-    });
-    clearTimeout(timer);
-    if (discordRes.ok) {
-      const discordData = await discordRes.json();
-      if (discordData.success && discordData.data) {
-        const presence = discordData.data;
-        if (presence.listening_to_spotify && presence.spotify) {
-          const sp = presence.spotify;
-          let artworkUrl = sp.album_art_url || '';
-          let album = sp.album || '';
-          if (!artworkUrl && sp.artist && sp.song) {
-            try {
-              const resArt = await resolveTrackArtwork(sp.artist, sp.song, album);
-              if (resArt.artworkUrl) artworkUrl = resArt.artworkUrl;
-              if (!album && resArt.album) album = resArt.album;
-            } catch { }
+    // 4. Lanyard Discord API fallback
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 3000);
+      const discordRes = await fetch('https://api.lanyard.rest/v1/users/772073053097033741', {
+        cache: 'no-store',
+        signal: controller.signal
+      });
+      clearTimeout(timer);
+      if (discordRes.ok) {
+        const discordData = await discordRes.json();
+        if (discordData.success && discordData.data) {
+          const presence = discordData.data;
+          if (presence.listening_to_spotify && presence.spotify) {
+            const sp = presence.spotify;
+            let artworkUrl = sp.album_art_url || '';
+            let album = sp.album || '';
+            if (!artworkUrl && sp.artist && sp.song) {
+              try {
+                const resArt = await resolveTrackArtwork(sp.artist, sp.song, album);
+                if (resArt.artworkUrl) artworkUrl = resArt.artworkUrl;
+                if (!album && resArt.album) album = resArt.album;
+              } catch { }
+            }
+            return res.json({
+              isPlaying: true,
+              provider: 'discord-lanyard',
+              source: 'Spotify',
+              title: sp.song,
+              artist: sp.artist,
+              album,
+              artworkUrl,
+              url: sp.track_id ? `https://open.spotify.com/track/${sp.track_id}` : 'https://open.spotify.com/',
+              timestamps: sp.timestamps
+            });
           }
-          return res.json({
-            isPlaying: true,
-            provider: 'discord-lanyard',
-            source: 'Spotify',
-            title: sp.song,
-            artist: sp.artist,
-            album,
-            artworkUrl,
-            url: sp.track_id ? `https://open.spotify.com/track/${sp.track_id}` : 'https://open.spotify.com/',
-            timestamps: sp.timestamps
-          });
-        }
 
-        if (Array.isArray(presence.activities)) {
-          for (const act of presence.activities) {
-            const nameLower = (act.name || '').toLowerCase();
-            const isBitChord = nameLower.includes('bitchord') || String(act.application_id) === '1543679166967193620';
-            const isYtm = nameLower.includes('youtube music') || nameLower.includes('yt music');
-            const isSpotifyAct = nameLower.includes('spotify') || String(act.id || '').startsWith('spotify:');
-            const isListening = act.type === 2 || act.status_display_type === 2;
+          if (Array.isArray(presence.activities)) {
+            for (const act of presence.activities) {
+              const nameLower = (act.name || '').toLowerCase();
+              const isBitChord = nameLower.includes('bitchord') || String(act.application_id) === '1543679166967193620';
+              const isYtm = nameLower.includes('youtube music') || nameLower.includes('yt music');
+              const isSpotifyAct = nameLower.includes('spotify') || String(act.id || '').startsWith('spotify:');
+              const isListening = act.type === 2 || act.status_display_type === 2;
 
-            if (isBitChord || isYtm || isSpotifyAct || isListening) {
-              const title = (act.details || act.state || act.name || '').replace(/^listening to\s+/i, '').trim();
-              const artist = act.details && act.state && act.details !== act.state ? act.state.replace(/^by\s+/i, '').trim() : '';
-              const album = (act.assets?.large_text || act.assets?.small_text || '').trim();
-              let artworkUrl = '';
-              if (act.assets?.large_image?.startsWith('spotify:')) {
-                artworkUrl = `https://i.scdn.co/image/${act.assets.large_image.slice(8)}`;
-              } else if (act.assets?.large_image?.startsWith('mp:external/')) {
-                artworkUrl = `https://media.discordapp.net/external/${act.assets.large_image.slice(12)}`;
+              if (isBitChord || isYtm || isSpotifyAct || isListening) {
+                const title = (act.details || act.state || act.name || '').replace(/^listening to\s+/i, '').trim();
+                const artist = act.details && act.state && act.details !== act.state ? act.state.replace(/^by\s+/i, '').trim() : '';
+                const album = (act.assets?.large_text || act.assets?.small_text || '').trim();
+                let artworkUrl = '';
+                if (act.assets?.large_image?.startsWith('spotify:')) {
+                  artworkUrl = `https://i.scdn.co/image/${act.assets.large_image.slice(8)}`;
+                } else if (act.assets?.large_image?.startsWith('mp:external/')) {
+                  artworkUrl = `https://media.discordapp.net/external/${act.assets.large_image.slice(12)}`;
+                }
+
+                let resolvedAlbum = (album && album !== title && album !== artist) ? album : '';
+                if (!artworkUrl && title) {
+                  try {
+                    const resArt = await resolveTrackArtwork(artist, title, resolvedAlbum);
+                    if (resArt.artworkUrl) artworkUrl = resArt.artworkUrl;
+                    if (!resolvedAlbum && resArt.album) resolvedAlbum = resArt.album;
+                  } catch { }
+                }
+
+                return res.json({
+                  isPlaying: true,
+                  provider: 'discord-lanyard',
+                  source: isBitChord ? 'BitChord' : (isYtm ? 'YouTube Music' : (isSpotifyAct ? 'Spotify' : (act.name || 'Music'))),
+                  title,
+                  artist,
+                  album: resolvedAlbum,
+                  artworkUrl,
+                  url: act.details_url || '',
+                  timestamps: act.timestamps || null
+                });
               }
-
-              let resolvedAlbum = (album && album !== title && album !== artist) ? album : '';
-              if (!artworkUrl && title) {
-                try {
-                  const resArt = await resolveTrackArtwork(artist, title, resolvedAlbum);
-                  if (resArt.artworkUrl) artworkUrl = resArt.artworkUrl;
-                  if (!resolvedAlbum && resArt.album) resolvedAlbum = resArt.album;
-                } catch { }
-              }
-
-              return res.json({
-                isPlaying: true,
-                provider: 'discord-lanyard',
-                source: isBitChord ? 'BitChord' : (isYtm ? 'YouTube Music' : (isSpotifyAct ? 'Spotify' : (act.name || 'Music'))),
-                title,
-                artist,
-                album: resolvedAlbum,
-                artworkUrl,
-                url: act.details_url || '',
-                timestamps: act.timestamps || null
-              });
             }
           }
         }
       }
+    } catch (err) {
+      // ignore
     }
-  } catch (err) {
-    // ignore
+
+    // 5. Standby fallback with stored on-repeat vibe
+    let onRepeatTrack = null;
+    try {
+      const profile = await loadStoredProfile();
+      if (profile && profile.onRepeat && profile.onRepeat.title) {
+        onRepeatTrack = profile.onRepeat;
+      }
+    } catch { }
+
+    return res.json({
+      isPlaying: false,
+      status: 'standby',
+      message: 'No live stream actively broadcasting. Showing on-repeat rotation.',
+      onRepeat: onRepeatTrack || null,
+      supportedSources: ['Spotify Web API', 'Last.fm Scrobbler', 'Direct Broadcast', 'Discord Rich Presence'],
+      endpoints: {
+        postUpdate: 'POST /api/now-playing',
+        directGet: 'GET /api/now-playing'
+      }
+    });
+  } catch (error) {
+    console.error('GET /api/now-playing error:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error' });
   }
-
-  // 5. Standby fallback with stored on-repeat vibe
-  let onRepeatTrack = null;
-  try {
-    const profile = await loadStoredProfile();
-    if (profile && profile.onRepeat && profile.onRepeat.title) {
-      onRepeatTrack = profile.onRepeat;
-    }
-  } catch { }
-
-  return res.json({
-    isPlaying: false,
-    status: 'standby',
-    message: 'No live stream actively broadcasting. Showing on-repeat rotation.',
-    onRepeat: onRepeatTrack || null,
-    supportedSources: ['Spotify Web API', 'Last.fm Scrobbler', 'Direct Broadcast', 'Discord Rich Presence'],
-    endpoints: {
-      postUpdate: 'POST /api/now-playing',
-      directGet: 'GET /api/now-playing'
-    }
-  });
 });
 
 const defaultProfileHobbies = [

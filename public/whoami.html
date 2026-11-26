@@ -1360,8 +1360,8 @@
                         if (data.isPlaying && isAdvertisementTrack(data.title, data.artist, data.album)) {
                             return;
                         }
-                        const prevKey = latestDirectTrack ? `${latestDirectTrack.title}:::${latestDirectTrack.artist}:::${latestDirectTrack.isPlaying}` : '__NONE__';
-                        const newKey = (data.isPlaying && data.title) ? `${data.title}:::${data.artist}:::${data.isPlaying}` : '__NONE__';
+                        const prevKey = latestDirectTrack ? `${latestDirectTrack.title}:::${latestDirectTrack.artist}:::${latestDirectTrack.album || ''}:::${latestDirectTrack.artworkUrl || ''}:::${latestDirectTrack.durationMs || 0}:::${latestDirectTrack.device || ''}:::${latestDirectTrack.isPlaying}` : '__NONE__';
+                        const newKey = (data.isPlaying && data.title) ? `${data.title}:::${data.artist}:::${data.album || ''}:::${data.artworkUrl || ''}:::${data.durationMs || 0}:::${data.device || ''}:::${data.isPlaying}` : '__NONE__';
                         
                         latestDirectTrack = data.isPlaying ? data : null;
 
@@ -2387,6 +2387,10 @@
                             if (!albumContainer.parentElement) {
                                 trackDetails.insertBefore(albumContainer, serviceBadge);
                             }
+                            if (!trackProgressTimer) {
+                                updateTrackProgress();
+                                trackProgressTimer = setInterval(updateTrackProgress, 1000);
+                            }
                         }
                     }
                 });
@@ -2409,8 +2413,8 @@
             }
 
             const cleanDev = String(deviceRaw || '')
-                .replace(/[\uFFFD\?]+/g, ' • ')
-                .replace(/\s*[\.\•\-]\s*(?:[\.\•\-]\s*)*/g, ' • ')
+                .replace(/[\uFFFD\?â€¢]+/g, ' • ')
+                .replace(/(?:\s*[.\-•·●\u2022\u00B7\u25CF\uFFFD\?]+\s*)+/g, ' • ')
                 .replace(/^\s*•\s*|\s*•\s*$/g, '')
                 .trim();
             if (cleanDev) {

@@ -452,7 +452,7 @@ while ($true) {
                 }
 
                 $rawDev = "Desktop PC • $deviceApp ($source)"
-                $device = ($rawDev -replace '[\uFFFD\?]+', ' • ' -replace '\s*[\.\•\-]\s*(?:[\.\•\-]\s*)*', ' • ' -replace '^\s*•\s*|\s*•\s*$', '').Trim()
+                $device = ($rawDev -replace '[\uFFFD\?â€¢]+', ' • ' -replace '(?:\s*[\.\•\-\u2022\u00B7\u25CF\uFFFD\?]+\s*)+', ' • ' -replace '^\s*•\s*|\s*•\s*$', '').Trim()
 
                 $cacheKey = "$artist - $title - $album"
                 $hasCachedArt = $artworkCache.ContainsKey($cacheKey)
