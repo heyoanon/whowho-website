@@ -85,13 +85,23 @@
     }
 
     function getDeviceLocation() {
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const isTablet = /iPad|tablet|(android(?!.*mobile))/i.test(navigator.userAgent);
+        const isMobile = !isTablet && /Android|iPhone|iPod/i.test(navigator.userAgent);
         const browser = detectBrowserName();
         const platform = detectStreamingPlatform();
         const devName = platform === 'BitChord' ? `${browser} (BitChord)` : browser;
+        let device = `Desktop PC • ${devName}`;
+        let deviceType = 'desktop';
+        if (isTablet) {
+            device = `Tablet • ${devName}`;
+            deviceType = 'tablet';
+        } else if (isMobile) {
+            device = `Mobile Phone • ${devName}`;
+            deviceType = 'mobile';
+        }
         return {
-            device: isMobile ? `Mobile Phone • ${devName}` : `Desktop PC • ${devName}`,
-            deviceType: isMobile ? 'mobile' : 'desktop'
+            device,
+            deviceType
         };
     }
 
@@ -133,6 +143,19 @@
                     const parts = dStr.split(':').map(Number);
                     if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) duration = parts[0] * 60 + parts[1];
                 }
+            }
+        } else if (platform === 'BitChord') {
+            const curEl = document.querySelector('.bitchord-time-current, .player-time-current, .current-time, [data-testid="current-time"], .time-current');
+            const totalEl = document.querySelector('.bitchord-time-total, .player-time-total, .total-time, [data-testid="total-time"], .time-total, .duration');
+            if (curEl && curEl.textContent) {
+                const parts = curEl.textContent.trim().split(':').map(Number);
+                if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) position = parts[0] * 60 + parts[1];
+                else if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) position = parts[0] * 3600 + parts[1] * 60 + parts[2];
+            }
+            if (totalEl && totalEl.textContent) {
+                const parts = totalEl.textContent.trim().split(':').map(Number);
+                if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) duration = parts[0] * 60 + parts[1];
+                else if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) duration = parts[0] * 3600 + parts[1] * 60 + parts[2];
             }
         }
         return {

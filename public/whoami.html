@@ -222,6 +222,7 @@
         let isPrefetching = false;
         let latestLanyardPresence = null;
         let latestDirectTrack = null;
+        let latestDirectTracks = [];
 
         let currentRandomGame = null;
         let isRollingGame = false;
@@ -1934,6 +1935,9 @@
                         }
 
                         latestDirectTrack = data.isPlaying ? data : null;
+                        latestDirectTracks = (data.isPlaying && Array.isArray(data.tracks) && data.tracks.length > 0)
+                            ? data.tracks
+                            : (latestDirectTrack ? [latestDirectTrack] : []);
                         try {
                             if (data.isPlaying && data.title) {
                                 sessionStorage.setItem('whowho_latest_direct_track', JSON.stringify(data));
@@ -2109,6 +2113,9 @@
                         serverClockOffset = Date.now() - Number(directData.serverTime);
                     }
                     latestDirectTrack = directData.isPlaying ? directData : null;
+                    latestDirectTracks = (directData.isPlaying && Array.isArray(directData.tracks) && directData.tracks.length > 0)
+                        ? directData.tracks
+                        : (latestDirectTrack ? [latestDirectTrack] : []);
                     if (directData.onRepeat && (!currentProfileData.onRepeat || !currentProfileData.onRepeat.title)) {
                         currentProfileData.onRepeat = directData.onRepeat;
                     }
@@ -2163,14 +2170,14 @@
         function updateTrackProgress() {
             document.querySelectorAll('.lanyard-music-card').forEach(card => {
                 const timeRange = card.querySelector('.lanyard-track-time-range');
-                if (!timeRange || !timeRange.dataset.start || !timeRange.dataset.end) return;
+                if (!timeRange || !timeRange.dataset.start) return;
 
                 const startedAt = Number(timeRange.dataset.start);
-                const endsAt = Number(timeRange.dataset.end);
+                const endsAt = Number(timeRange.dataset.end || 0);
 
-                if (!startedAt || !endsAt || endsAt <= startedAt) return;
+                if (!startedAt || startedAt <= 0) return;
 
-                const durationSeconds = Math.floor((endsAt - startedAt) / 1000);
+                const durationSeconds = (endsAt > startedAt) ? Math.floor((endsAt - startedAt) / 1000) : 0;
                 const adjustedNow = Date.now() - serverClockOffset;
                 const rawElapsedSeconds = Math.max(0, Math.floor((adjustedNow - startedAt) / 1000));
 
@@ -2196,13 +2203,27 @@
                 }
 
                 const formattedElapsed = formatTrackTime(elapsedSeconds);
-                const formattedTotal = formatTrackTime(durationSeconds);
-
                 const elapsedEl = timeRange.querySelector('[data-elapsed-time]');
                 const totalEl = timeRange.querySelector('[data-total-time]');
 
                 if (elapsedEl) elapsedEl.textContent = formattedElapsed;
-                if (totalEl) totalEl.textContent = formattedTotal;
+                if (durationSeconds > 0) {
+                    if (totalEl) {
+                        totalEl.textContent = formatTrackTime(durationSeconds);
+                    } else {
+                        const slash = document.createElement('span');
+                        slash.className = 'time-slash';
+                        slash.style.margin = '0 4px';
+                        slash.style.color = '#ffd700';
+                        slash.textContent = '/';
+                        const tot = document.createElement('span');
+                        tot.className = 'time-total';
+                        tot.setAttribute('data-total-time', '');
+                        tot.textContent = formatTrackTime(durationSeconds);
+                        timeRange.appendChild(slash);
+                        timeRange.appendChild(tot);
+                    }
+                }
                 timeRange.style.display = 'inline-flex';
             });
         }
@@ -2900,17 +2921,28 @@
                 trackDetails.appendChild(artist);
             }
 
-            // Determine track timestamps and timing
-            if ((!track.timestamps || !track.timestamps.start || !track.timestamps.end) && track.durationMs > 0) {
-                const s = Date.now();
-                const e = s + Number(track.durationMs);
-                track.timestamps = { start: s, end: e };
+            // Determine track timestamps and timing preserving device start time
+            let timestamps = track.timestamps || {};
+            let startedAt = Number(timestamps.start) || 0;
+            let endsAt = Number(timestamps.end) || 0;
+
+            if (startedAt <= 0 && track.positionMs) {
+                startedAt = Date.now() - Number(track.positionMs);
             }
 
-            const timestamps = track.timestamps || {};
-            const startedAt = Number(timestamps.start);
-            const endsAt = Number(timestamps.end);
-            const hasTiming = Number.isFinite(startedAt) && Number.isFinite(endsAt) && startedAt > 0 && endsAt > startedAt;
+            if (track.durationMs > 0) {
+                if (startedAt <= 0) {
+                    startedAt = Date.now();
+                }
+                if (endsAt <= startedAt) {
+                    endsAt = startedAt + Number(track.durationMs);
+                }
+                track.timestamps = { start: startedAt, end: endsAt };
+            } else if (startedAt > 0 && endsAt > startedAt) {
+                track.durationMs = endsAt - startedAt;
+            }
+
+            const hasTiming = Number.isFinite(startedAt) && startedAt > 0;
 
             // Construct album line with live start-to-finish track time placed immediately after album name
             const albumContainer = document.createElement('div');
@@ -2925,7 +2957,7 @@
             timeRangeSpan.className = 'lanyard-track-time-range';
 
             if (hasTiming) {
-                const durationSeconds = Math.floor((endsAt - startedAt) / 1000);
+                const durationSeconds = (endsAt > startedAt) ? Math.floor((endsAt - startedAt) / 1000) : 0;
                 const adjustedNow = Date.now() - serverClockOffset;
                 const rawElapsedSeconds = Math.max(0, Math.floor((adjustedNow - startedAt) / 1000));
                 const elapsedSeconds = durationSeconds > 0 && rawElapsedSeconds >= durationSeconds
@@ -2933,9 +2965,14 @@
                     : rawElapsedSeconds;
 
                 timeRangeSpan.dataset.start = String(startedAt);
-                timeRangeSpan.dataset.end = String(endsAt);
+                if (endsAt > startedAt) {
+                    timeRangeSpan.dataset.end = String(endsAt);
+                }
                 const bullet = track.album ? `<span class="time-sep">•</span> ` : '';
-                timeRangeSpan.innerHTML = `${bullet}<span class="time-elapsed" data-elapsed-time>${formatTrackTime(elapsedSeconds)}</span> <span class="time-slash" style="margin: 0 4px; color: #ffd700;">/</span> <span class="time-total" data-total-time>${formatTrackTime(durationSeconds)}</span>`;
+                const totalDisplay = durationSeconds > 0 
+                    ? `<span class="time-slash" style="margin: 0 4px; color: #ffd700;">/</span> <span class="time-total" data-total-time>${formatTrackTime(durationSeconds)}</span>`
+                    : '';
+                timeRangeSpan.innerHTML = `${bullet}<span class="time-elapsed" data-elapsed-time>${formatTrackTime(elapsedSeconds)}</span> ${totalDisplay}`;
                 timeRangeSpan.style.display = 'inline-flex';
             } else {
                 timeRangeSpan.style.display = 'none';
@@ -2975,7 +3012,7 @@
                             }
                         }
                         if (res.durationMs > 0 && (!track.timestamps || !track.timestamps.end)) {
-                            const s = Date.now();
+                            const s = Number(track.timestamps?.start) || startedAt || Date.now();
                             const e = s + Number(res.durationMs);
                             track.timestamps = { start: s, end: e };
                             track.durationMs = res.durationMs;
@@ -2983,7 +3020,10 @@
                             timeRangeSpan.dataset.start = String(s);
                             timeRangeSpan.dataset.end = String(e);
                             const bullet = track.album ? `<span class="time-sep">•</span> ` : '';
-                            timeRangeSpan.innerHTML = `${bullet}<span class="time-elapsed" data-elapsed-time>00:00</span> <span class="time-slash" style="margin: 0 4px; color: #ffd700;">/</span> <span class="time-total" data-total-time>${formatTrackTime(durSec)}</span>`;
+                            const adjustedNow = Date.now() - serverClockOffset;
+                            const rawElapsed = Math.max(0, Math.floor((adjustedNow - s) / 1000));
+                            const elapsedSec = (durSec > 0 && rawElapsed >= durSec) ? (rawElapsed % durSec) : rawElapsed;
+                            timeRangeSpan.innerHTML = `${bullet}<span class="time-elapsed" data-elapsed-time>${formatTrackTime(elapsedSec)}</span> <span class="time-slash" style="margin: 0 4px; color: #ffd700;">/</span> <span class="time-total" data-total-time>${formatTrackTime(durSec)}</span>`;
                             timeRangeSpan.style.display = 'inline-flex';
                             if (!albumContainer.parentElement) {
                                 trackDetails.insertBefore(albumContainer, serviceBadge);
@@ -3005,8 +3045,12 @@
             let devIcon = '🎧';
             let devLabel = '';
             let isMobileDev = false;
+            let isTabletDev = false;
 
-            if (deviceType === 'mobile' || /mobile|phone|iphone|android|ipad/i.test(deviceRaw)) {
+            if (deviceType === 'tablet' || /tablet|ipad/i.test(deviceRaw)) {
+                devIcon = '📟';
+                isTabletDev = true;
+            } else if (deviceType === 'mobile' || /mobile|phone|iphone|android/i.test(deviceRaw)) {
                 devIcon = '📱';
                 isMobileDev = true;
             } else if (deviceType === 'desktop' || /desktop|pc|windows|mac|linux|brave|zen|opera|librewolf|vivaldi|arc|waterfox|floorp|thorium|chromium|chrome|firefox|edge/i.test(deviceRaw)) {
@@ -3026,12 +3070,13 @@
                     devLabel = `PLAYING ON ${cleanDev.toUpperCase()}`;
                 }
             } else {
-                devLabel = isMobileDev ? `PLAYING VIA ${sourceStr.toUpperCase()} ON MOBILE PHONE` : `PLAYING VIA ${sourceStr.toUpperCase()} ON DESKTOP PC`;
+                devLabel = isTabletDev ? `PLAYING VIA ${sourceStr.toUpperCase()} ON TABLET` : isMobileDev ? `PLAYING VIA ${sourceStr.toUpperCase()} ON MOBILE PHONE` : `PLAYING VIA ${sourceStr.toUpperCase()} ON DESKTOP PC`;
             }
 
             if (devLabel) {
                 const devBadge = document.createElement('div');
-                devBadge.className = `lanyard-device-pill ${isMobileDev ? 'mobile-device' : 'desktop-device'}`;
+                const devClass = isTabletDev ? 'tablet-device' : (isMobileDev ? 'mobile-device' : 'desktop-device');
+                devBadge.className = `lanyard-device-pill ${devClass}`;
                 devBadge.innerHTML = `
                     <span class="device-pill-icon">${devIcon}</span>
                     <span class="device-pill-text">${escapeHtml(devLabel)}</span>
@@ -3129,20 +3174,24 @@
                 }
             }
 
-            // 1. Direct Cloud API track (/api/now-playing: Spotify, YouTube Music, or BitChord without Discord)
-            if (latestDirectTrack && latestDirectTrack.isPlaying && latestDirectTrack.title) {
-                if (!isAdvertisementTrack(latestDirectTrack.title, latestDirectTrack.artist, latestDirectTrack.album)) {
+            // 1. Direct Cloud API tracks across all devices (Desktop, Tablet, Mobile, BitChord, Spotify, YTM)
+            const directList = (Array.isArray(latestDirectTracks) && latestDirectTracks.length > 0)
+                ? latestDirectTracks
+                : (latestDirectTrack ? [latestDirectTrack] : []);
+
+            for (const dt of directList) {
+                if (dt && dt.isPlaying && dt.title && !isAdvertisementTrack(dt.title, dt.artist, dt.album)) {
                     tracks.push({
-                        source: latestDirectTrack.source || 'Music',
-                        title: latestDirectTrack.title,
-                        artist: latestDirectTrack.artist || '',
-                        album: latestDirectTrack.album || '',
-                        artworkUrl: latestDirectTrack.artworkUrl || null,
+                        source: dt.source || 'Music',
+                        title: dt.title,
+                        artist: dt.artist || '',
+                        album: dt.album || '',
+                        artworkUrl: dt.artworkUrl || null,
                         fallbackArtworkUrl: null,
-                        url: latestDirectTrack.url || '',
-                        timestamps: latestDirectTrack.timestamps || null,
-                        device: latestDirectTrack.device || '',
-                        deviceType: latestDirectTrack.deviceType || ''
+                        url: dt.url || '',
+                        timestamps: dt.timestamps || null,
+                        device: dt.device || '',
+                        deviceType: dt.deviceType || ''
                     });
                 }
             }
@@ -3198,19 +3247,21 @@
                 // ONLY REFRESH / RE-RENDER WHEN THE NOW PLAYING TRACK CHANGES!
                 if (!force && newKey === currentlyRenderedTrackKey && musicList.children.length > 0 && !musicList.querySelector('.standby-card')) {
                     // Track has NOT changed: keep existing DOM intact so animations/equalizers don't reset or flicker!
-                    if (primaryTrack.timestamps && (primaryTrack.timestamps.start !== undefined || primaryTrack.timestamps.end !== undefined)) {
-                        const newStart = String(primaryTrack.timestamps.start || 0);
-                        const newEnd = String(primaryTrack.timestamps.end || 0);
-                        const timeRange = musicList.querySelector('.lanyard-track-time-range');
+                    musicList.querySelectorAll('.lanyard-music-card').forEach((card, idx) => {
+                        const trk = tracks[idx];
+                        if (!trk || !trk.timestamps) return;
+                        const timeRange = card.querySelector('.lanyard-track-time-range');
                         if (timeRange) {
+                            const newStart = String(trk.timestamps.start || 0);
+                            const newEnd = String(trk.timestamps.end || 0);
                             if (timeRange.dataset.start !== newStart || timeRange.dataset.end !== newEnd) {
                                 delete timeRange.dataset.lastCycle;
                             }
                             timeRange.dataset.start = newStart;
                             timeRange.dataset.end = newEnd;
                         }
-                        updateTrackProgress();
-                    }
+                    });
+                    updateTrackProgress();
                     return;
                 }
 
@@ -3272,6 +3323,9 @@
                         serverClockOffset = Date.now() - Number(directData.serverTime);
                     }
                     latestDirectTrack = directData.isPlaying ? directData : null;
+                    latestDirectTracks = (directData.isPlaying && Array.isArray(directData.tracks) && directData.tracks.length > 0)
+                        ? directData.tracks
+                        : (latestDirectTrack ? [latestDirectTrack] : []);
                     if (directData.onRepeat && (!currentProfileData.onRepeat || !currentProfileData.onRepeat.title)) {
                         currentProfileData.onRepeat = directData.onRepeat;
                     }

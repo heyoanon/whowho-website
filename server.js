@@ -477,13 +477,21 @@ app.delete('/api/messages/:id', requireAdmin, async (req, res) => {
   }
 });
 
+const memoryStreams = new Map();
 let memoryNowPlaying = null;
 let spotifyAccessToken = null;
 let spotifyTokenExpiresAt = 0;
 const sseNowPlayingClients = new Set();
 
-function broadcastNowPlaying(trackData) {
-  const payload = `data: ${JSON.stringify(trackData || { isPlaying: false })}\n\n`;
+function getStreamKey(trackData) {
+  const dev = String(trackData.device || '').toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 40);
+  const src = String(trackData.source || 'music').toLowerCase().replace(/[^a-z0-9]/g, '_');
+  const type = String(trackData.deviceType || 'desktop').toLowerCase();
+  return `stream_${src}_${type}_${dev}`.slice(0, 64) || 'stream_default';
+}
+
+function broadcastNowPlaying(trackData, allStreams = []) {
+  const payload = `data: ${JSON.stringify({ ...(trackData || { isPlaying: false }), tracks: allStreams })}\n\n`;
   for (const client of sseNowPlayingClients) {
     try {
       client.write(payload);
@@ -494,54 +502,185 @@ function broadcastNowPlaying(trackData) {
 }
 
 async function saveNowPlaying(trackData) {
-  memoryNowPlaying = trackData;
-  broadcastNowPlaying(trackData);
+  const streamKey = getStreamKey(trackData);
+  const now = Date.now();
+
+  if (trackData.isPlaying) {
+    trackData.streamKey = streamKey;
+    trackData.updatedAtMs = now;
+    memoryStreams.set(streamKey, trackData);
+    memoryNowPlaying = trackData;
+  } else {
+    memoryStreams.delete(streamKey);
+    if (memoryNowPlaying && memoryNowPlaying.streamKey === streamKey) {
+      const remaining = Array.from(memoryStreams.values()).filter(s => s.isPlaying);
+      memoryNowPlaying = remaining.length > 0 ? remaining[remaining.length - 1] : { isPlaying: false };
+    }
+  }
+
+  // Prune expired streams from memory
+  for (const [key, stream] of memoryStreams.entries()) {
+    const age = now - (stream.updatedAtMs || 0);
+    const dur = stream.durationMs || (5 * 60 * 1000);
+    if (age > Math.max(dur + 120000, 8 * 60 * 1000)) {
+      memoryStreams.delete(key);
+    }
+  }
+
+  const allActive = Array.from(memoryStreams.values()).filter(s => s.isPlaying);
+  broadcastNowPlaying(memoryNowPlaying, allActive);
+
   if (!database) return;
 
   try {
-    const dbPromise = database.query(`
-      INSERT INTO now_playing (id, source, title, artist, album, artwork_url, track_url, duration_ms, started_at, ends_at, is_playing, device, device_type, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
-      ON CONFLICT (id) DO UPDATE SET
-        source = EXCLUDED.source,
-        title = EXCLUDED.title,
-        artist = EXCLUDED.artist,
-        album = EXCLUDED.album,
-        artwork_url = EXCLUDED.artwork_url,
-        track_url = EXCLUDED.track_url,
-        duration_ms = EXCLUDED.duration_ms,
-        started_at = EXCLUDED.started_at,
-        ends_at = EXCLUDED.ends_at,
-        is_playing = EXCLUDED.is_playing,
-        device = EXCLUDED.device,
-        device_type = EXCLUDED.device_type,
-        updated_at = NOW()
-    `, [
-      'current',
-      trackData.source || 'Music',
-      trackData.title,
-      trackData.artist || '',
-      trackData.album || '',
-      trackData.artworkUrl || '',
-      trackData.url || '',
-      trackData.durationMs || 0,
-      trackData.timestamps?.start || null,
-      trackData.timestamps?.end || null,
-      trackData.isPlaying !== false,
-      trackData.device || '',
-      trackData.deviceType || ''
-    ]);
+    if (trackData.isPlaying) {
+      // Upsert the specific device stream row
+      await database.query(`
+        INSERT INTO now_playing (id, source, title, artist, album, artwork_url, track_url, duration_ms, started_at, ends_at, is_playing, device, device_type, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          source = EXCLUDED.source,
+          title = EXCLUDED.title,
+          artist = EXCLUDED.artist,
+          album = EXCLUDED.album,
+          artwork_url = EXCLUDED.artwork_url,
+          track_url = EXCLUDED.track_url,
+          duration_ms = EXCLUDED.duration_ms,
+          started_at = EXCLUDED.started_at,
+          ends_at = EXCLUDED.ends_at,
+          is_playing = EXCLUDED.is_playing,
+          device = EXCLUDED.device,
+          device_type = EXCLUDED.device_type,
+          updated_at = NOW()
+      `, [
+        streamKey,
+        trackData.source || 'Music',
+        trackData.title,
+        trackData.artist || '',
+        trackData.album || '',
+        trackData.artworkUrl || '',
+        trackData.url || '',
+        trackData.durationMs || 0,
+        trackData.timestamps?.start || null,
+        trackData.timestamps?.end || null,
+        true,
+        trackData.device || '',
+        trackData.deviceType || ''
+      ]);
 
-    await Promise.race([
-      dbPromise,
-      new Promise((_, reject) => setTimeout(() => reject(new Error('DB persist timeout')), 2000))
-    ]);
+      // Maintain 'current' row for backwards compatibility
+      await database.query(`
+        INSERT INTO now_playing (id, source, title, artist, album, artwork_url, track_url, duration_ms, started_at, ends_at, is_playing, device, device_type, updated_at)
+        VALUES ('current', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          source = EXCLUDED.source,
+          title = EXCLUDED.title,
+          artist = EXCLUDED.artist,
+          album = EXCLUDED.album,
+          artwork_url = EXCLUDED.artwork_url,
+          track_url = EXCLUDED.track_url,
+          duration_ms = EXCLUDED.duration_ms,
+          started_at = EXCLUDED.started_at,
+          ends_at = EXCLUDED.ends_at,
+          is_playing = EXCLUDED.is_playing,
+          device = EXCLUDED.device,
+          device_type = EXCLUDED.device_type,
+          updated_at = NOW()
+      `, [
+        'current',
+        trackData.source || 'Music',
+        trackData.title,
+        trackData.artist || '',
+        trackData.album || '',
+        trackData.artworkUrl || '',
+        trackData.url || '',
+        trackData.durationMs || 0,
+        trackData.timestamps?.start || null,
+        trackData.timestamps?.end || null,
+        true,
+        trackData.device || '',
+        trackData.deviceType || ''
+      ]);
+    } else {
+      await database.query(`UPDATE now_playing SET is_playing = false, updated_at = NOW() WHERE id = $1`, [streamKey]);
+    }
   } catch (err) {
-    console.warn('Unable to persist now_playing:', err.message);
+    console.warn('Unable to persist stream:', err.message);
   }
 }
 
+async function getStoredNowPlayingStreams() {
+  const activeStreams = [];
+  const seenKeys = new Set();
+  const now = Date.now();
+
+  if (database) {
+    try {
+      const res = await database.query(`
+        SELECT * FROM now_playing 
+        WHERE is_playing = true 
+          AND id != 'current' 
+          AND updated_at > NOW() - INTERVAL '8 minutes'
+        ORDER BY updated_at DESC
+      `);
+      if (res && res.rows && res.rows.length > 0) {
+        for (const row of res.rows) {
+          const ageMs = now - new Date(row.updated_at).getTime();
+          const durationMs = row.duration_ms || (5 * 60 * 1000);
+          const maxValidAgeMs = Math.max(durationMs + 120000, 8 * 60 * 1000);
+          if (ageMs < maxValidAgeMs) {
+            const stream = {
+              isPlaying: true,
+              source: row.source,
+              title: row.title,
+              artist: row.artist || '',
+              album: row.album || '',
+              artworkUrl: row.artwork_url || '',
+              url: row.track_url || '',
+              device: row.device || '',
+              deviceType: row.device_type || '',
+              durationMs: row.duration_ms || 0,
+              timestamps: (row.started_at && row.ends_at) ? { start: Number(row.started_at), end: Number(row.ends_at) } : (row.started_at ? { start: Number(row.started_at) } : null),
+              updatedAt: row.updated_at
+            };
+            const k = `${stream.source}::${stream.title}::${stream.device}`;
+            if (!seenKeys.has(k)) {
+              seenKeys.add(k);
+              activeStreams.push(stream);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Unable to read stored now_playing streams:', err.message);
+    }
+  }
+
+  // Merge in-memory active streams
+  for (const [key, stream] of memoryStreams.entries()) {
+    if (stream.isPlaying && stream.title) {
+      const ageMs = now - (stream.updatedAtMs || 0);
+      const durationMs = stream.durationMs || (5 * 60 * 1000);
+      const maxValidAgeMs = Math.max(durationMs + 120000, 8 * 60 * 1000);
+      if (ageMs < maxValidAgeMs) {
+        const k = `${stream.source}::${stream.title}::${stream.device}`;
+        if (!seenKeys.has(k)) {
+          seenKeys.add(k);
+          activeStreams.push(stream);
+        }
+      }
+    }
+  }
+
+  return activeStreams;
+}
+
 async function getStoredNowPlaying() {
+  const streams = await getStoredNowPlayingStreams();
+  if (streams.length > 0) {
+    return streams[0];
+  }
+
   if (database) {
     try {
       const dbPromise = database.query('SELECT * FROM now_playing WHERE id = $1', ['current']);
@@ -566,7 +705,7 @@ async function getStoredNowPlaying() {
             device: row.device || '',
             deviceType: row.device_type || '',
             durationMs: row.duration_ms || 0,
-            timestamps: (row.started_at && row.ends_at) ? { start: Number(row.started_at), end: Number(row.ends_at) } : null,
+            timestamps: (row.started_at && row.ends_at) ? { start: Number(row.started_at), end: Number(row.ends_at) } : (row.started_at ? { start: Number(row.started_at) } : null),
             updatedAt: row.updated_at
           };
         }
@@ -923,11 +1062,11 @@ app.post('/api/now-playing', async (req, res) => {
       else if (ua.includes('chrome')) browserName = 'Chrome';
       else if (ua.includes('safari')) browserName = 'Safari';
 
-      if (ua.includes('iphone')) {
+      if (ua.includes('ipad') || (ua.includes('android') && !ua.includes('mobile')) || ua.includes('tablet')) {
+        device = `Tablet • ${browserName}`;
+        deviceType = 'tablet';
+      } else if (ua.includes('iphone')) {
         device = `iPhone • ${browserName}`;
-        deviceType = 'mobile';
-      } else if (ua.includes('ipad')) {
-        device = `iPad • ${browserName}`;
         deviceType = 'mobile';
       } else if (ua.includes('android')) {
         device = `Android • ${browserName}`;
@@ -1070,25 +1209,30 @@ app.get('/api/now-playing', async (req, res) => {
   res.setHeader('Surrogate-Control', 'no-store');
   res.removeHeader('ETag');
   try {
-    // 1. Direct broadcast (from POST /api/now-playing)
-    const directTrack = await getStoredNowPlaying();
-    if (directTrack && directTrack.isPlaying && !isAdvertisementTrack(directTrack.title, directTrack.artist, directTrack.album)) {
-      if (!directTrack.artworkUrl && directTrack.title) {
-        try {
-          const resolved = await resolveTrackArtwork(directTrack.artist, directTrack.title, directTrack.album);
-          if (resolved.artworkUrl) {
-            directTrack.artworkUrl = resolved.artworkUrl;
-            if (!directTrack.album && resolved.album) directTrack.album = resolved.album;
-            saveNowPlaying({ ...directTrack, isPlaying: true }).catch(() => { });
-          }
-        } catch { }
+    // 1. Direct broadcast across all devices (from POST /api/now-playing)
+    const directStreams = await getStoredNowPlayingStreams();
+    if (directStreams && directStreams.length > 0) {
+      const validStreams = directStreams.filter(s => !isAdvertisementTrack(s.title, s.artist, s.album));
+      if (validStreams.length > 0) {
+        const primaryTrack = validStreams[0];
+        if (!primaryTrack.artworkUrl && primaryTrack.title) {
+          try {
+            const resolved = await resolveTrackArtwork(primaryTrack.artist, primaryTrack.title, primaryTrack.album);
+            if (resolved.artworkUrl) {
+              primaryTrack.artworkUrl = resolved.artworkUrl;
+              if (!primaryTrack.album && resolved.album) primaryTrack.album = resolved.album;
+              saveNowPlaying({ ...primaryTrack, isPlaying: true }).catch(() => { });
+            }
+          } catch { }
+        }
+        return res.json({
+          isPlaying: true,
+          provider: 'direct-broadcast',
+          serverTime: Date.now(),
+          ...primaryTrack,
+          tracks: validStreams
+        });
       }
-      return res.json({
-        isPlaying: true,
-        provider: 'direct-broadcast',
-        serverTime: Date.now(),
-        ...directTrack
-      });
     }
 
     // 2. Direct Spotify Web API (if configured in env)

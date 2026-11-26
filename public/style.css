@@ -420,9 +420,36 @@ h3 {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 0;
-    padding: 16px 28px;
+    padding: 16px 24px;
+    max-height: clamp(380px, 68vh, 600px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #00f0ff #050b17;
+}
+
+.lanyard-box::-webkit-scrollbar {
+    width: 10px;
+}
+
+.lanyard-box::-webkit-scrollbar-track {
+    background: #050b17;
+    border: 2px solid rgba(0, 76, 255, 0.35);
+    border-radius: 8px;
+}
+
+.lanyard-box::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #00ffff, #0077ff, #004cff);
+    border-radius: 8px;
+    border: 1px solid rgba(0, 240, 255, 0.6);
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.7);
+}
+
+.lanyard-box::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #33ffff, #00f0ff, #0088ff);
+    box-shadow: 0 0 12px rgba(0, 240, 255, 1);
 }
 
 .lanyard-music-list {
@@ -432,6 +459,12 @@ h3 {
     flex-direction: column;
     width: 100%;
     gap: 16px;
+}
+
+.lanyard-music-list > .lanyard-music-card + .lanyard-music-card {
+    border-top: 2px dashed rgba(0, 240, 255, 0.3);
+    padding-top: 16px;
+    margin-top: 4px;
 }
 
 .lanyard-music-card {
@@ -699,6 +732,13 @@ h3 {
     background: rgba(255, 170, 0, 0.1);
     color: #ffaa00;
     box-shadow: 0 0 8px rgba(255, 170, 0, 0.25);
+}
+
+.lanyard-device-pill.tablet-device {
+    border-color: rgba(200, 100, 255, 0.6);
+    background: rgba(200, 100, 255, 0.1);
+    color: #df9aff;
+    box-shadow: 0 0 8px rgba(200, 100, 255, 0.25);
 }
 
 .lanyard-device-pill.desktop-device {
