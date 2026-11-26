@@ -203,6 +203,7 @@
                 let isAdminLoggedIn = false;
 
         const DISCORD_USER_ID = '772073053097033741';
+        const fallbackVinylSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230b101d" rx="8"/><circle cx="50" cy="50" r="42" fill="%23111827" stroke="%2300ffcc" stroke-width="2"/><circle cx="50" cy="50" r="30" fill="%23090d16" stroke="%230077ff" stroke-width="1.5"/><circle cx="50" cy="50" r="18" fill="%2300ffcc"/><circle cx="50" cy="50" r="6" fill="%23000"/></svg>';
         const albumCache = new Map();
         const DETAIL_PAGES = ['knowMe', 'knownFacts', 'unknownFacts', 'hobbies', 'whoIUlt', 'ultBias', 'ultGroups'];
         const TOP_PAGES = ['profile', 'socials', 'nowPlaying', 'sidequests', 'message', 'randomGame'];
@@ -1880,9 +1881,7 @@
                         } catch {}
 
                         if (editingSection === 'nowPlaying') {
-                            if (typeof triggerAutofillCurrentTrack === 'function') {
-                                triggerAutofillCurrentTrack(false, false);
-                            }
+                            // Viewing What's in the loop: keep latestDirectTrack fresh without UI interruption
                         } else {
                             renderUnifiedMusic();
                         }
@@ -2773,8 +2772,6 @@
             sourceLabel.className = `lanyard-source-label ${sourceClass}`;
             sourceLabel.innerHTML = sourceLabelHtml;
             card.appendChild(sourceLabel);
-
-            const fallbackVinylSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230b101d" rx="8"/><circle cx="50" cy="50" r="42" fill="%23111827" stroke="%2300ffcc" stroke-width="2"/><circle cx="50" cy="50" r="30" fill="%23090d16" stroke="%230077ff" stroke-width="1.5"/><circle cx="50" cy="50" r="18" fill="%2300ffcc"/><circle cx="50" cy="50" r="6" fill="%23000"/></svg>';
 
             const albumArt = document.createElement('img');
             albumArt.className = 'lanyard-album-art';
@@ -4475,15 +4472,11 @@
                 if (editingSection !== 'nowPlaying') {
                     startLanyardMonitoring();
                 } else {
+                    stopLanyardRefresh();
                     connectDirectStream();
                     if (directPollTimer) clearInterval(directPollTimer);
-                    directPollTimer = setInterval(pollDirectNowPlaying, 750);
+                    directPollTimer = setInterval(pollDirectNowPlaying, 1000);
                     pollDirectNowPlaying();
-                    setTimeout(() => {
-                        if (typeof triggerAutofillCurrentTrack === 'function') {
-                            triggerAutofillCurrentTrack(true, false);
-                        }
-                    }, 200);
                 }
                 return;
             }
@@ -4625,6 +4618,7 @@
                     editBtn.className = 'edit-profile-btn';
                     editBtn.textContent = "🔁 WHAT'S IN THE LOOP";
                     editBtn.title = "View and manage What's in the loop";
+                    editBtn.onclick = toggleEditNowPlaying;
                 }
                 return;
             }
