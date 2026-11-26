@@ -3285,7 +3285,7 @@
                 year: '1981',
                 developer: 'NAMCO',
                 genre: 'FIXED SHOOTER',
-                builtinGame: 'invaders',
+                builtinGame: 'asteroids',
                 vibeMatch: 'Crisp synthesized laser beeps and cosmic starfield vibes matching our glowing chiptune atmosphere!',
                 description: 'Pilot your starfighter against swooping insectoid fleets. Rescue captured ships to unleash devastating dual-fighter firepower.'
             },
@@ -3294,7 +3294,7 @@
                 year: '1981',
                 developer: 'NINTENDO',
                 genre: 'PLATFORMER',
-                builtinGame: 'frogger',
+                builtinGame: 'donkey',
                 vibeMatch: 'Retro girder construction, bouncing barrels, and classic 8-bit jump sound effects!',
                 description: 'Guide Jumpman up hazardous construction girders, leaping rolling barrels and fireballs to rescue Lady Pauline from Donkey Kong.'
             },
@@ -3357,7 +3357,7 @@
                 year: '1986',
                 developer: 'SEGA',
                 genre: 'SYNTH RACER',
-                builtinGame: 'breakout',
+                builtinGame: 'racer',
                 vibeMatch: 'Pure retro synthwave aesthetic, pixel palms, and cruising through neon sunsets with chiptune radio!',
                 description: 'Hop into the Ferrari Testarossa Spider, select your favorite synth-pop radio station (Magical Sound Shower!), and race toward branching destinations.'
             },
@@ -3402,7 +3402,7 @@
                 year: '1992',
                 developer: 'SEGA',
                 genre: 'PLATFORMER',
-                builtinGame: 'snake',
+                builtinGame: 'flappy',
                 vibeMatch: 'Neon-soaked Casino Night Zone aesthetics with glowing pinball bumpers and chiptune funk!',
                 description: 'Team up as Sonic and Tails to spin-dash through high-speed loops, corkscrews, and mechanical fortresses to stop Dr. Robotnik\'s Death Egg.'
             },
@@ -3411,7 +3411,7 @@
                 year: '1997',
                 developer: 'KONAMI',
                 genre: 'METROIDVANIA',
-                builtinGame: 'invaders',
+                builtinGame: 'donkey',
                 vibeMatch: 'Dark gothic pixel artistry, intricate castle maps, and haunting retro synth audio!',
                 description: 'Awaken as Alucard and explore the sprawling inverted labyrinth of Dracula\'s castle in one of the most celebrated action RPGs ever crafted.'
             },
@@ -3432,6 +3432,24 @@
                 builtinGame: 'pong',
                 vibeMatch: 'Arcade rhythm perfection combining Japanese drum beats, bright pixel celebrations, and infectious energy!',
                 description: 'Grab your wooden drum bachi and strike the Don and Ka drum rims in time with iconic anime, pop, and game themes.'
+            },
+            {
+                title: 'ASTEROIDS',
+                year: '1979',
+                developer: 'ATARI',
+                genre: 'VECTOR / SCI-FI',
+                builtinGame: 'asteroids',
+                vibeMatch: 'Hypnotic space vector graphics, wrap-around physics, and shattering cosmic space rocks!',
+                description: 'Pilot your triangular spaceship through a perilous asteroid field. Rotate, thrust, and blast floating space boulders into dust while dodging flying saucers.'
+            },
+            {
+                title: 'FLAPPY PIXEL',
+                year: '2013',
+                developer: 'DOTGEARS',
+                genre: 'ARCADE / TAP RUNNER',
+                builtinGame: 'flappy',
+                vibeMatch: 'Iconic pixel flap timing, glowing neon pipes, and pure one-more-try arcade addiction!',
+                description: 'Tap to flap through treacherous neon laser pipes and collect shimmering golden coins. Simple controls, impossible precision, pure retro challenge.'
             }
         ];
 
@@ -3452,7 +3470,11 @@
                 breakout: 'BREAKOUT',
                 snake: 'SNAKE',
                 pong: 'PONG',
-                frogger: 'FROGGER'
+                frogger: 'FROGGER',
+                asteroids: 'ASTEROIDS',
+                racer: 'NEON RACER',
+                flappy: 'FLAPPY PIXEL',
+                donkey: 'DONKEY HOP'
             };
             const arcadeName = titleMap[gameType] || 'PAC-MAN';
 
@@ -3611,7 +3633,11 @@
                 breakout: 'BREAKOUT',
                 snake: 'SNAKE',
                 pong: 'PONG',
-                frogger: 'FROGGER'
+                frogger: 'FROGGER',
+                asteroids: 'ASTEROIDS',
+                racer: 'NEON RACER',
+                flappy: 'FLAPPY PIXEL',
+                donkey: 'DONKEY HOP'
             };
             const displayTitle = titleMap[gameType] || 'PAC-MAN';
 
@@ -3637,6 +3663,10 @@
                         <button type="button" class="arcade-tab-btn ${gameType === 'snake' ? 'active' : ''}" data-type="snake">SNAKE</button>
                         <button type="button" class="arcade-tab-btn ${gameType === 'pong' ? 'active' : ''}" data-type="pong">PONG</button>
                         <button type="button" class="arcade-tab-btn ${gameType === 'frogger' ? 'active' : ''}" data-type="frogger">FROGGER</button>
+                        <button type="button" class="arcade-tab-btn ${gameType === 'asteroids' ? 'active' : ''}" data-type="asteroids">ASTEROIDS</button>
+                        <button type="button" class="arcade-tab-btn ${gameType === 'racer' ? 'active' : ''}" data-type="racer">RACER</button>
+                        <button type="button" class="arcade-tab-btn ${gameType === 'flappy' ? 'active' : ''}" data-type="flappy">FLAPPY</button>
+                        <button type="button" class="arcade-tab-btn ${gameType === 'donkey' ? 'active' : ''}" data-type="donkey">BARREL JUMP</button>
                     </div>
 
                     <div class="arcade-screen-container">
@@ -3797,7 +3827,11 @@
                 breakout: 'BREAKOUT',
                 snake: 'SNAKE',
                 pong: 'PONG',
-                frogger: 'FROGGER'
+                frogger: 'FROGGER',
+                asteroids: 'ASTEROIDS',
+                racer: 'NEON RACER',
+                flappy: 'FLAPPY PIXEL',
+                donkey: 'DONKEY HOP'
             };
             if (nameEl) nameEl.textContent = titleMap[gameType] || 'PAC-MAN';
 
@@ -3820,6 +3854,14 @@
                 runPongGame(canvas);
             } else if (gameType === 'frogger') {
                 runFroggerGame(canvas);
+            } else if (gameType === 'asteroids') {
+                runAsteroidsGame(canvas);
+            } else if (gameType === 'racer') {
+                runRacerGame(canvas);
+            } else if (gameType === 'flappy') {
+                runFlappyGame(canvas);
+            } else if (gameType === 'donkey') {
+                runDonkeyGame(canvas);
             }
         }
 
@@ -5018,6 +5060,959 @@
                 ctx.fillStyle = '#00ff44';
                 for (let i = 0; i < lives; i++) {
                     ctx.fillRect(10 + i * 14, 288, 8, 8);
+                }
+
+                arcadeAnimFrame = requestAnimationFrame(loop);
+            }
+            arcadeAnimFrame = requestAnimationFrame(loop);
+        }
+
+        function runAsteroidsGame(canvas) {
+            const ctx = canvas.getContext('2d');
+            let shipX = 150;
+            let shipY = 150;
+            let shipAngle = -Math.PI / 2;
+            let shipVx = 0;
+            let shipVy = 0;
+            let score = 0;
+            let lives = 3;
+            let isGameOver = false;
+            let shootCooldown = 0;
+            let invulnTimer = 60;
+
+            let bullets = [];
+            let asteroids = [];
+            let particles = [];
+
+            const stars = [];
+            for (let i = 0; i < 30; i++) {
+                stars.push({ x: Math.random() * 300, y: Math.random() * 300, size: Math.random() > 0.8 ? 2 : 1, brightness: Math.random() });
+            }
+
+            function spawnAsteroidWave(count = 4) {
+                for (let i = 0; i < count; i++) {
+                    let x, y;
+                    do {
+                        x = Math.random() * 300;
+                        y = Math.random() * 300;
+                    } while (Math.hypot(x - shipX, y - shipY) < 70);
+
+                    const speed = 0.6 + Math.random() * 0.8;
+                    const dir = Math.random() * Math.PI * 2;
+                    asteroids.push(createAsteroid(x, y, 20, Math.cos(dir) * speed, Math.sin(dir) * speed));
+                }
+            }
+
+            function createAsteroid(x, y, radius, vx, vy) {
+                const numVerts = 8;
+                const offsets = [];
+                for (let i = 0; i < numVerts; i++) {
+                    offsets.push(0.75 + Math.random() * 0.5);
+                }
+                return { x, y, radius, vx, vy, rot: Math.random() * Math.PI * 2, rotSpeed: (Math.random() - 0.5) * 0.04, numVerts, offsets };
+            }
+
+            spawnAsteroidWave(4);
+
+            function loop() {
+                if (isGameOver) return;
+
+                if (arcadeActiveInputs.left) shipAngle -= 0.08;
+                if (arcadeActiveInputs.right) shipAngle += 0.08;
+
+                const isThrusting = arcadeActiveInputs.up;
+                if (isThrusting) {
+                    shipVx += Math.cos(shipAngle) * 0.16;
+                    shipVy += Math.sin(shipAngle) * 0.16;
+                    if (Math.random() > 0.3) {
+                        particles.push({
+                            x: shipX - Math.cos(shipAngle) * 8 + (Math.random() - 0.5) * 4,
+                            y: shipY - Math.sin(shipAngle) * 8 + (Math.random() - 0.5) * 4,
+                            vx: -Math.cos(shipAngle) * (1.5 + Math.random()) + (Math.random() - 0.5) * 0.5,
+                            vy: -Math.sin(shipAngle) * (1.5 + Math.random()) + (Math.random() - 0.5) * 0.5,
+                            life: 12,
+                            maxLife: 12,
+                            color: Math.random() > 0.5 ? '#ff5500' : '#ffff00'
+                        });
+                    }
+                }
+
+                shipVx *= 0.985;
+                shipVy *= 0.985;
+
+                const spd = Math.hypot(shipVx, shipVy);
+                if (spd > 4.5) {
+                    shipVx = (shipVx / spd) * 4.5;
+                    shipVy = (shipVy / spd) * 4.5;
+                }
+
+                shipX = (shipX + shipVx + 300) % 300;
+                shipY = (shipY + shipVy + 300) % 300;
+
+                if (invulnTimer > 0) invulnTimer--;
+
+                if (shootCooldown > 0) shootCooldown--;
+                if ((arcadeActiveInputs.action || arcadeDiscreteActionTriggered) && shootCooldown <= 0) {
+                    arcadeDiscreteActionTriggered = false;
+                    shootCooldown = 11;
+                    bullets.push({
+                        x: shipX + Math.cos(shipAngle) * 11,
+                        y: shipY + Math.sin(shipAngle) * 11,
+                        vx: Math.cos(shipAngle) * 5.8 + shipVx * 0.2,
+                        vy: Math.sin(shipAngle) * 5.8 + shipVy * 0.2,
+                        life: 38
+                    });
+                    playArcadeBeep(880, 440, 0.05, 'triangle');
+                }
+
+                for (let i = bullets.length - 1; i >= 0; i--) {
+                    const b = bullets[i];
+                    b.x = (b.x + b.vx + 300) % 300;
+                    b.y = (b.y + b.vy + 300) % 300;
+                    b.life--;
+                    if (b.life <= 0) bullets.splice(i, 1);
+                }
+
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life--;
+                    if (p.life <= 0) particles.splice(i, 1);
+                }
+
+                asteroids.forEach(a => {
+                    a.x = (a.x + a.vx + 300) % 300;
+                    a.y = (a.y + a.vy + 300) % 300;
+                    a.rot += a.rotSpeed;
+                });
+
+                bulletLoop: for (let bi = bullets.length - 1; bi >= 0; bi--) {
+                    const b = bullets[bi];
+                    for (let ai = asteroids.length - 1; ai >= 0; ai--) {
+                        const a = asteroids[ai];
+                        if (Math.hypot(b.x - a.x, b.y - a.y) < a.radius + 3) {
+                            bullets.splice(bi, 1);
+
+                            for (let k = 0; k < 8; k++) {
+                                const ang = Math.random() * Math.PI * 2;
+                                const pSpd = 0.8 + Math.random() * 2;
+                                particles.push({
+                                    x: a.x,
+                                    y: a.y,
+                                    vx: Math.cos(ang) * pSpd,
+                                    vy: Math.sin(ang) * pSpd,
+                                    life: 16,
+                                    maxLife: 16,
+                                    color: '#00ffff'
+                                });
+                            }
+
+                            if (a.radius > 16) {
+                                score += 20;
+                                asteroids.push(createAsteroid(a.x, a.y, 11, a.vx + (Math.random() - 0.5) * 1.5, a.vy + (Math.random() - 0.5) * 1.5));
+                                asteroids.push(createAsteroid(a.x, a.y, 11, -a.vx + (Math.random() - 0.5) * 1.5, -a.vy + (Math.random() - 0.5) * 1.5));
+                            } else if (a.radius > 9) {
+                                score += 50;
+                                asteroids.push(createAsteroid(a.x, a.y, 6, a.vx + (Math.random() - 0.5) * 2, a.vy + (Math.random() - 0.5) * 2));
+                                asteroids.push(createAsteroid(a.x, a.y, 6, -a.vx + (Math.random() - 0.5) * 2, -a.vy + (Math.random() - 0.5) * 2));
+                            } else {
+                                score += 100;
+                            }
+                            asteroids.splice(ai, 1);
+                            updateArcadeScoreDisplay(score);
+                            playArcadeBeep(240, 100, 0.08, 'sawtooth');
+
+                            if (asteroids.length === 0) {
+                                score += 500;
+                                updateArcadeScoreDisplay(score);
+                                spawnAsteroidWave(5);
+                            }
+                            continue bulletLoop;
+                        }
+                    }
+                }
+
+                if (invulnTimer <= 0) {
+                    for (let a of asteroids) {
+                        if (Math.hypot(shipX - a.x, shipY - a.y) < a.radius + 7) {
+                            lives--;
+                            playArcadeBeep(180, 50, 0.3, 'sawtooth');
+
+                            for (let k = 0; k < 18; k++) {
+                                const ang = Math.random() * Math.PI * 2;
+                                particles.push({
+                                    x: shipX,
+                                    y: shipY,
+                                    vx: Math.cos(ang) * (1.2 + Math.random() * 2.5),
+                                    vy: Math.sin(ang) * (1.2 + Math.random() * 2.5),
+                                    life: 25,
+                                    maxLife: 25,
+                                    color: '#ff0055'
+                                });
+                            }
+
+                            if (lives <= 0) {
+                                isGameOver = true;
+                                showArcadeOverlay('EXPLODED! FINAL SCORE: ' + score);
+                                return;
+                            }
+
+                            shipX = 150;
+                            shipY = 150;
+                            shipVx = 0;
+                            shipVy = 0;
+                            invulnTimer = 90;
+                            break;
+                        }
+                    }
+                }
+
+                ctx.fillStyle = '#020308';
+                ctx.fillRect(0, 0, 300, 300);
+
+                ctx.fillStyle = '#ffffff';
+                stars.forEach(s => {
+                    ctx.globalAlpha = s.brightness;
+                    ctx.fillRect(s.x, s.y, s.size, s.size);
+                });
+                ctx.globalAlpha = 1.0;
+
+                ctx.strokeStyle = '#00f0ff';
+                ctx.lineWidth = 1.8;
+                ctx.shadowColor = '#00f0ff';
+                ctx.shadowBlur = 4;
+                asteroids.forEach(a => {
+                    ctx.beginPath();
+                    for (let i = 0; i < a.numVerts; i++) {
+                        const ang = a.rot + (i / a.numVerts) * Math.PI * 2;
+                        const r = a.radius * a.offsets[i];
+                        const vx = a.x + Math.cos(ang) * r;
+                        const vy = a.y + Math.sin(ang) * r;
+                        if (i === 0) ctx.moveTo(vx, vy);
+                        else ctx.lineTo(vx, vy);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                });
+                ctx.shadowBlur = 0;
+
+                ctx.fillStyle = '#ffff00';
+                ctx.shadowColor = '#ffff00';
+                ctx.shadowBlur = 6;
+                bullets.forEach(b => {
+                    ctx.beginPath();
+                    ctx.arc(b.x, b.y, 2.2, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                ctx.shadowBlur = 0;
+
+                particles.forEach(p => {
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+                    ctx.fillRect(p.x, p.y, 2, 2);
+                });
+                ctx.globalAlpha = 1.0;
+
+                if (invulnTimer % 6 < 4) {
+                    ctx.save();
+                    ctx.translate(shipX, shipY);
+                    ctx.rotate(shipAngle);
+
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.fillStyle = '#004cff';
+                    ctx.lineWidth = 2;
+                    ctx.shadowColor = '#00f0ff';
+                    ctx.shadowBlur = 6;
+
+                    ctx.beginPath();
+                    ctx.moveTo(11, 0);
+                    ctx.lineTo(-9, -7);
+                    ctx.lineTo(-5, 0);
+                    ctx.lineTo(-9, 7);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+
+                    if (isThrusting) {
+                        ctx.strokeStyle = '#ff8800';
+                        ctx.fillStyle = '#ffff00';
+                        ctx.beginPath();
+                        ctx.moveTo(-6, -4);
+                        ctx.lineTo(-14 - Math.random() * 4, 0);
+                        ctx.lineTo(-6, 4);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                }
+
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1.5;
+                for (let i = 0; i < lives; i++) {
+                    ctx.save();
+                    ctx.translate(14 + i * 14, 288);
+                    ctx.rotate(-Math.PI / 2);
+                    ctx.beginPath();
+                    ctx.moveTo(6, 0);
+                    ctx.lineTo(-5, -4);
+                    ctx.lineTo(-5, 4);
+                    ctx.closePath();
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                arcadeAnimFrame = requestAnimationFrame(loop);
+            }
+            arcadeAnimFrame = requestAnimationFrame(loop);
+        }
+
+        function runRacerGame(canvas) {
+            const ctx = canvas.getContext('2d');
+            let carX = 150;
+            const carY = 240;
+            const carW = 24;
+            const carH = 34;
+            let speed = 4.0;
+            let score = 0;
+            let isGameOver = false;
+            let stripeOffset = 0;
+            let turboTimer = 0;
+
+            let enemies = [];
+            let pickups = [];
+            let particles = [];
+            let spawnTimer = 0;
+
+            const lanePositions = [90, 150, 210];
+
+            function spawnTraffic() {
+                const lane = lanePositions[Math.floor(Math.random() * lanePositions.length)];
+                const isTruck = Math.random() > 0.75;
+                const colors = ['#00f0ff', '#ff0066', '#ffff00', '#9900ff'];
+                enemies.push({
+                    x: lane,
+                    y: -50,
+                    w: isTruck ? 28 : 22,
+                    h: isTruck ? 44 : 32,
+                    speed: isTruck ? 1.8 + Math.random() * 1.0 : 2.5 + Math.random() * 1.5,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    isTruck
+                });
+
+                if (Math.random() > 0.6) {
+                    const pickupLane = lanePositions[Math.floor(Math.random() * lanePositions.length)];
+                    pickups.push({
+                        x: pickupLane,
+                        y: -90,
+                        radius: 7
+                    });
+                }
+            }
+
+            function loop() {
+                if (isGameOver) return;
+
+                if (arcadeActiveInputs.left) carX = Math.max(64, carX - 3.8);
+                if (arcadeActiveInputs.right) carX = Math.min(236, carX + 3.8);
+
+                if (turboTimer > 0) {
+                    turboTimer--;
+                    speed = 7.5;
+                    score += 3;
+                    particles.push({
+                        x: carX + (Math.random() - 0.5) * 14,
+                        y: carY + carH / 2,
+                        vx: (Math.random() - 0.5) * 2,
+                        vy: 3 + Math.random() * 3,
+                        life: 14,
+                        maxLife: 14,
+                        color: Math.random() > 0.5 ? '#00ffff' : '#ff00ff'
+                    });
+                } else if (arcadeActiveInputs.up) {
+                    speed = Math.min(6.2, speed + 0.12);
+                    score += 2;
+                } else if (arcadeActiveInputs.down) {
+                    speed = Math.max(2.2, speed - 0.2);
+                    score += 0.5;
+                } else {
+                    speed = speed > 4.0 ? Math.max(4.0, speed - 0.05) : Math.min(4.0, speed + 0.05);
+                    score += 1;
+                }
+
+                updateArcadeScoreDisplay(Math.floor(score));
+                stripeOffset = (stripeOffset + speed * 1.5) % 40;
+
+                spawnTimer += speed;
+                if (spawnTimer >= 180) {
+                    spawnTimer = 0;
+                    spawnTraffic();
+                }
+
+                for (let i = enemies.length - 1; i >= 0; i--) {
+                    const e = enemies[i];
+                    e.y += speed - e.speed;
+                    if (e.y > 350) {
+                        enemies.splice(i, 1);
+                        score += 30;
+                    }
+                }
+
+                for (let i = pickups.length - 1; i >= 0; i--) {
+                    const p = pickups[i];
+                    p.y += speed;
+                    if (Math.hypot(p.x - carX, p.y - carY) < p.radius + 14) {
+                        pickups.splice(i, 1);
+                        score += 100;
+                        turboTimer = 120;
+                        playArcadeBeep(587, 1174, 0.15, 'square');
+                    } else if (p.y > 330) {
+                        pickups.splice(i, 1);
+                    }
+                }
+
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life--;
+                    if (p.life <= 0) particles.splice(i, 1);
+                }
+
+                for (let e of enemies) {
+                    if (Math.abs(e.x - carX) < (e.w + carW) / 2 - 3 && Math.abs(e.y - carY) < (e.h + carH) / 2 - 3) {
+                        isGameOver = true;
+                        playArcadeBeep(160, 50, 0.35, 'sawtooth');
+                        showArcadeOverlay('CRASHED! FINAL SCORE: ' + Math.floor(score));
+                        return;
+                    }
+                }
+
+                ctx.fillStyle = '#080014';
+                ctx.fillRect(0, 0, 300, 300);
+
+                ctx.fillStyle = '#100028';
+                ctx.fillRect(0, 0, 50, 300);
+                ctx.fillRect(250, 0, 50, 300);
+
+                ctx.fillStyle = '#0d0d1a';
+                ctx.fillRect(50, 0, 200, 300);
+
+                ctx.strokeStyle = '#ff0077';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(50, 0, 0, 300);
+                ctx.strokeRect(250, 0, 0, 300);
+
+                ctx.strokeStyle = '#00f0ff';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([18, 22]);
+                ctx.lineDashOffset = -stripeOffset;
+
+                ctx.beginPath();
+                ctx.moveTo(116, 0);
+                ctx.lineTo(116, 300);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(184, 0);
+                ctx.lineTo(184, 300);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                pickups.forEach(p => {
+                    ctx.fillStyle = '#ffff00';
+                    ctx.shadowColor = '#ffff00';
+                    ctx.shadowBlur = 8;
+                    ctx.fillRect(p.x - 6, p.y - 7, 12, 14);
+                    ctx.fillStyle = '#ff0000';
+                    ctx.fillRect(p.x - 3, p.y - 4, 6, 8);
+                });
+                ctx.shadowBlur = 0;
+
+                particles.forEach(p => {
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = p.life / p.maxLife;
+                    ctx.fillRect(p.x, p.y, 3, 3);
+                });
+                ctx.globalAlpha = 1.0;
+
+                enemies.forEach(e => {
+                    ctx.fillStyle = e.color;
+                    ctx.fillRect(e.x - e.w / 2, e.y - e.h / 2, e.w, e.h);
+
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(e.x - e.w / 2 + 3, e.y - e.h / 2 + 5, e.w - 6, 6);
+                    ctx.fillStyle = '#ff2200';
+                    ctx.fillRect(e.x - e.w / 2 + 2, e.y + e.h / 2 - 3, 4, 2);
+                    ctx.fillRect(e.x + e.w / 2 - 6, e.y + e.h / 2 - 3, 4, 2);
+                });
+
+                ctx.save();
+                ctx.translate(carX, carY);
+
+                ctx.fillStyle = turboTimer > 0 ? '#00f0ff' : '#ff0033';
+                ctx.shadowColor = turboTimer > 0 ? '#00f0ff' : '#ff0055';
+                ctx.shadowBlur = turboTimer > 0 ? 12 : 6;
+                ctx.fillRect(-carW / 2, -carH / 2, carW, carH);
+                ctx.shadowBlur = 0;
+
+                ctx.fillStyle = '#051125';
+                ctx.fillRect(-carW / 2 + 3, -carH / 2 + 8, carW - 6, 8);
+                ctx.fillStyle = turboTimer > 0 ? '#00bbdd' : '#cc0022';
+                ctx.fillRect(-carW / 2 + 4, -carH / 2 + 16, carW - 8, 8);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(-carW / 2 + 2, -carH / 2, 4, 3);
+                ctx.fillRect(carW / 2 - 6, -carH / 2, 4, 3);
+                ctx.fillStyle = '#ffdd00';
+                ctx.fillRect(-carW / 2 + 2, carH / 2 - 2, 5, 2);
+                ctx.fillRect(carW / 2 - 7, carH / 2 - 2, 5, 2);
+
+                ctx.restore();
+
+                ctx.font = '8px "Press Start 2P", monospace';
+                ctx.fillStyle = '#00ffcc';
+                ctx.fillText(turboTimer > 0 ? 'TURBO!!' : Math.floor(speed * 28) + ' MPH', 10, 20);
+
+                arcadeAnimFrame = requestAnimationFrame(loop);
+            }
+            arcadeAnimFrame = requestAnimationFrame(loop);
+        }
+
+        function runFlappyGame(canvas) {
+            const ctx = canvas.getContext('2d');
+            let birdX = 65;
+            let birdY = 140;
+            let birdVy = 0;
+            const gravity = 0.28;
+            const jumpPower = -4.8;
+            let score = 0;
+            let isGameOver = false;
+
+            let pipes = [];
+            let coins = [];
+            let particles = [];
+            let frameCount = 0;
+
+            function flap() {
+                if (isGameOver) return;
+                birdVy = jumpPower;
+                playArcadeBeep(640, 880, 0.08, 'sine');
+                for (let i = 0; i < 4; i++) {
+                    particles.push({
+                        x: birdX - 6,
+                        y: birdY + 4,
+                        vx: -1.5 - Math.random() * 1.5,
+                        vy: (Math.random() - 0.5) * 2,
+                        life: 10,
+                        maxLife: 10,
+                        color: '#00f0ff'
+                    });
+                }
+            }
+
+            function spawnPipe() {
+                const gap = 84;
+                const minTop = 40;
+                const maxTop = 175;
+                const topH = Math.floor(minTop + Math.random() * (maxTop - minTop));
+                const bottomY = topH + gap;
+                const bottomH = 300 - bottomY - 18;
+
+                pipes.push({
+                    x: 310,
+                    topH: topH,
+                    bottomY: bottomY,
+                    bottomH: bottomH,
+                    w: 38,
+                    scored: false
+                });
+
+                if (Math.random() > 0.4) {
+                    coins.push({
+                        x: 310 + 19,
+                        y: topH + gap / 2,
+                        r: 6,
+                        collected: false
+                    });
+                }
+            }
+
+            function loop() {
+                if (isGameOver) return;
+
+                if (arcadeActiveInputs.up || arcadeActiveInputs.action || arcadeDiscreteActionTriggered) {
+                    arcadeDiscreteActionTriggered = false;
+                    if (!arcadeActiveInputs._flapped) {
+                        flap();
+                        arcadeActiveInputs._flapped = true;
+                    }
+                } else {
+                    arcadeActiveInputs._flapped = false;
+                }
+
+                birdVy += gravity;
+                birdY += birdVy;
+
+                frameCount++;
+                if (frameCount % 90 === 0) {
+                    spawnPipe();
+                }
+
+                const pipeSpeed = 2.0;
+                for (let i = pipes.length - 1; i >= 0; i--) {
+                    const p = pipes[i];
+                    p.x -= pipeSpeed;
+
+                    if (!p.scored && p.x + p.w < birdX) {
+                        p.scored = true;
+                        score += 10;
+                        updateArcadeScoreDisplay(score);
+                        playArcadeBeep(520, 780, 0.06);
+                    }
+
+                    if (p.x < -p.w - 10) {
+                        pipes.splice(i, 1);
+                    }
+                }
+
+                for (let i = coins.length - 1; i >= 0; i--) {
+                    const c = coins[i];
+                    c.x -= pipeSpeed;
+                    if (!c.collected && Math.hypot(c.x - birdX, c.y - birdY) < c.r + 9) {
+                        c.collected = true;
+                        score += 25;
+                        updateArcadeScoreDisplay(score);
+                        playArcadeBeep(784, 1175, 0.1, 'triangle');
+                    }
+                    if (c.x < -20 || c.collected) {
+                        coins.splice(i, 1);
+                    }
+                }
+
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life--;
+                    if (p.life <= 0) particles.splice(i, 1);
+                }
+
+                if (birdY - 8 < 0 || birdY + 8 >= 282) {
+                    isGameOver = true;
+                    playArcadeBeep(180, 60, 0.3, 'sawtooth');
+                    showArcadeOverlay('CRASH! FINAL SCORE: ' + score);
+                    return;
+                }
+
+                for (let p of pipes) {
+                    if (birdX + 8 > p.x && birdX - 8 < p.x + p.w) {
+                        if (birdY - 7 < p.topH || birdY + 7 > p.bottomY) {
+                            isGameOver = true;
+                            playArcadeBeep(180, 60, 0.3, 'sawtooth');
+                            showArcadeOverlay('BONK! FINAL SCORE: ' + score);
+                            return;
+                        }
+                    }
+                }
+
+                ctx.fillStyle = '#050c18';
+                ctx.fillRect(0, 0, 300, 300);
+
+                ctx.fillStyle = '#0a1730';
+                ctx.fillRect(10, 200, 35, 82);
+                ctx.fillRect(55, 175, 45, 107);
+                ctx.fillRect(110, 210, 40, 72);
+                ctx.fillRect(160, 185, 50, 97);
+                ctx.fillRect(220, 195, 38, 87);
+                ctx.fillRect(265, 170, 30, 112);
+
+                ctx.fillStyle = '#004cff';
+                ctx.fillRect(0, 282, 300, 18);
+                ctx.fillStyle = '#00f0ff';
+                ctx.fillRect(0, 282, 300, 3);
+
+                ctx.shadowColor = '#00ff88';
+                ctx.shadowBlur = 4;
+                pipes.forEach(p => {
+                    ctx.fillStyle = '#00cc66';
+                    ctx.fillRect(p.x, 0, p.w, p.topH);
+                    ctx.fillRect(p.x, p.bottomY, p.w, p.bottomH);
+
+                    ctx.fillStyle = '#00ff88';
+                    ctx.fillRect(p.x - 3, p.topH - 12, p.w + 6, 12);
+                    ctx.fillRect(p.x - 3, p.bottomY, p.w + 6, 12);
+                });
+                ctx.shadowBlur = 0;
+
+                coins.forEach(c => {
+                    ctx.fillStyle = '#ffd700';
+                    ctx.beginPath();
+                    ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#fff';
+                    ctx.stroke();
+                });
+
+                particles.forEach(p => {
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = p.life / p.maxLife;
+                    ctx.fillRect(p.x, p.y, 3, 3);
+                });
+                ctx.globalAlpha = 1.0;
+
+                ctx.save();
+                ctx.translate(birdX, birdY);
+                const angle = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, birdVy * 0.1));
+                ctx.rotate(angle);
+
+                ctx.fillStyle = '#ffff00';
+                ctx.fillRect(-9, -7, 18, 14);
+                ctx.fillStyle = '#ffaa00';
+                const wingY = birdVy < 0 ? -2 : -6;
+                ctx.fillRect(-6, wingY, 8, 6);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(3, -5, 5, 5);
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(5, -4, 2, 3);
+                ctx.fillStyle = '#ff4400';
+                ctx.fillRect(8, -1, 5, 4);
+
+                ctx.restore();
+
+                arcadeAnimFrame = requestAnimationFrame(loop);
+            }
+            arcadeAnimFrame = requestAnimationFrame(loop);
+        }
+
+        function runDonkeyGame(canvas) {
+            const ctx = canvas.getContext('2d');
+            let jumpmanX = 35;
+            let jumpmanY = 256;
+            let jumpmanVy = 0;
+            let isJumping = false;
+            let isClimbing = false;
+            let score = 0;
+            let lives = 3;
+            let isGameOver = false;
+
+            let barrels = [];
+            let barrelTimer = 0;
+            let wave = 1;
+
+            const girders = [
+                { y: 270, x1: 15, x2: 285 },
+                { y: 205, x1: 15, x2: 265 },
+                { y: 140, x1: 35, x2: 285 },
+                { y: 75, x1: 15, x2: 285 }
+            ];
+
+            const ladders = [
+                { x: 250, y1: 205, y2: 270 },
+                { x: 50, y1: 140, y2: 205 },
+                { x: 230, y1: 75, y2: 140 }
+            ];
+
+            function spawnBarrel() {
+                barrels.push({
+                    x: 50,
+                    y: 60,
+                    level: 3,
+                    vx: 1.8 + wave * 0.2,
+                    rot: 0
+                });
+            }
+
+            function getCurrentGirder(x, y) {
+                for (let g of girders) {
+                    if (x >= g.x1 - 6 && x <= g.x2 + 6 && Math.abs(y - (g.y - 14)) < 8) {
+                        return g;
+                    }
+                }
+                return null;
+            }
+
+            function isNearLadder(x, y) {
+                for (let l of ladders) {
+                    if (Math.abs(x - l.x) < 8 && y >= l.y1 - 16 && y <= l.y2 + 2) {
+                        return l;
+                    }
+                }
+                return null;
+            }
+
+            function loop() {
+                if (isGameOver) return;
+
+                const ladder = isNearLadder(jumpmanX, jumpmanY);
+
+                if (ladder && (arcadeActiveInputs.up || arcadeActiveInputs.down)) {
+                    isClimbing = true;
+                    isJumping = false;
+                    jumpmanVy = 0;
+                    if (arcadeActiveInputs.up) jumpmanY = Math.max(ladder.y1 - 14, jumpmanY - 2.0);
+                    if (arcadeActiveInputs.down) jumpmanY = Math.min(ladder.y2 - 14, jumpmanY + 2.0);
+                } else {
+                    isClimbing = false;
+                }
+
+                if (!isClimbing) {
+                    if (arcadeActiveInputs.left) jumpmanX = Math.max(16, jumpmanX - 2.2);
+                    if (arcadeActiveInputs.right) jumpmanX = Math.min(276, jumpmanX + 2.2);
+
+                    if ((arcadeActiveInputs.action || (arcadeActiveInputs.up && !ladder) || arcadeDiscreteActionTriggered) && !isJumping) {
+                        arcadeDiscreteActionTriggered = false;
+                        isJumping = true;
+                        jumpmanVy = -4.8;
+                        playArcadeBeep(330, 660, 0.08, 'square');
+                    }
+
+                    if (isJumping) {
+                        jumpmanVy += 0.32;
+                        jumpmanY += jumpmanVy;
+
+                        const girder = getCurrentGirder(jumpmanX, jumpmanY);
+                        if (girder && jumpmanVy > 0 && jumpmanY >= girder.y - 14) {
+                            jumpmanY = girder.y - 14;
+                            isJumping = false;
+                            jumpmanVy = 0;
+                        }
+                    } else {
+                        const girder = getCurrentGirder(jumpmanX, jumpmanY);
+                        if (!girder && jumpmanY < 256) {
+                            isJumping = true;
+                            jumpmanVy = 1.0;
+                        }
+                    }
+                }
+
+                if (jumpmanY <= 65 && jumpmanX >= 220) {
+                    score += 500;
+                    wave++;
+                    updateArcadeScoreDisplay(score);
+                    playArcadeBeep(523, 1046, 0.3);
+                    jumpmanX = 35;
+                    jumpmanY = 256;
+                    barrels = [];
+                    barrelTimer = 0;
+                }
+
+                barrelTimer++;
+                if (barrelTimer >= Math.max(80, 140 - wave * 10)) {
+                    barrelTimer = 0;
+                    spawnBarrel();
+                }
+
+                for (let i = barrels.length - 1; i >= 0; i--) {
+                    const b = barrels[i];
+                    b.x += b.vx;
+                    b.rot += b.vx * 0.15;
+
+                    if (b.level === 3 && b.x > 270) {
+                        b.level = 2;
+                        b.y = 125;
+                        b.vx = -Math.abs(b.vx);
+                    } else if (b.level === 2 && b.x < 30) {
+                        b.level = 1;
+                        b.y = 190;
+                        b.vx = Math.abs(b.vx);
+                    } else if (b.level === 1 && b.x > 255) {
+                        b.level = 0;
+                        b.y = 255;
+                        b.vx = -Math.abs(b.vx);
+                    } else if (b.level === 0 && b.x < 10) {
+                        barrels.splice(i, 1);
+                        score += 10;
+                        continue;
+                    }
+
+                    if (!b.jumpedOver && Math.abs(b.x - jumpmanX) < 14 && jumpmanY < b.y - 12 && isJumping) {
+                        b.jumpedOver = true;
+                        score += 50;
+                        updateArcadeScoreDisplay(score);
+                        playArcadeBeep(587, 880, 0.08);
+                    }
+
+                    if (Math.abs(b.x - jumpmanX) < 13 && Math.abs(b.y - jumpmanY) < 13) {
+                        lives--;
+                        playArcadeBeep(180, 60, 0.3, 'sawtooth');
+                        if (lives <= 0) {
+                            isGameOver = true;
+                            showArcadeOverlay('FLATTENED! FINAL SCORE: ' + score);
+                            return;
+                        }
+                        jumpmanX = 35;
+                        jumpmanY = 256;
+                        isJumping = false;
+                        break;
+                    }
+                }
+
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, 300, 300);
+
+                ctx.fillStyle = '#ff0066';
+                girders.forEach(g => {
+                    ctx.fillRect(g.x1, g.y, g.x2 - g.x1, 6);
+                    ctx.fillStyle = '#00ffff';
+                    for (let rx = g.x1 + 8; rx < g.x2; rx += 20) {
+                        ctx.fillRect(rx, g.y + 1, 3, 4);
+                    }
+                    ctx.fillStyle = '#ff0066';
+                });
+
+                ladders.forEach(l => {
+                    ctx.strokeStyle = '#00f0ff';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(l.x - 7, l.y1, 14, l.y2 - l.y1);
+                    for (let ry = l.y1 + 6; ry < l.y2; ry += 8) {
+                        ctx.beginPath();
+                        ctx.moveTo(l.x - 7, ry);
+                        ctx.lineTo(l.x + 7, ry);
+                        ctx.stroke();
+                    }
+                });
+
+                ctx.fillStyle = '#884411';
+                ctx.fillRect(25, 42, 22, 24);
+                ctx.fillStyle = '#ffcc99';
+                ctx.fillRect(30, 46, 12, 10);
+                ctx.fillStyle = '#000';
+                ctx.fillRect(32, 48, 2, 2);
+                ctx.fillRect(38, 48, 2, 2);
+
+                ctx.fillStyle = '#ff3399';
+                ctx.fillRect(235, 45, 14, 20);
+                ctx.fillStyle = '#ffff66';
+                ctx.fillRect(236, 40, 12, 6);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '8px monospace';
+                ctx.fillText('HELP!', 225, 36);
+
+                barrels.forEach(b => {
+                    ctx.save();
+                    ctx.translate(b.x, b.y);
+                    ctx.rotate(b.rot);
+                    ctx.fillStyle = '#cc7722';
+                    ctx.fillRect(-7, -7, 14, 14);
+                    ctx.fillStyle = '#442200';
+                    ctx.fillRect(-7, -4, 14, 2);
+                    ctx.fillRect(-7, 2, 14, 2);
+                    ctx.restore();
+                });
+
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(jumpmanX - 5, jumpmanY - 14, 10, 14);
+                ctx.fillStyle = '#0033cc';
+                ctx.fillRect(jumpmanX - 4, jumpmanY - 9, 8, 5);
+                ctx.fillStyle = '#ffcc99';
+                ctx.fillRect(jumpmanX - 3, jumpmanY - 13, 6, 4);
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(jumpmanX - 5, jumpmanY - 15, 10, 3);
+
+                ctx.fillStyle = '#ff0000';
+                for (let i = 0; i < lives; i++) {
+                    ctx.fillRect(12 + i * 12, 288, 6, 8);
                 }
 
                 arcadeAnimFrame = requestAnimationFrame(loop);
