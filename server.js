@@ -974,9 +974,10 @@ app.post('/api/now-playing', async (req, res) => {
     const start = now - positionMs;
     const end = durationMs > 0 ? (start + durationMs) : 0;
     const sanitizedDevice = String(device || '')
-      .replace(/[\uFFFD\?â€¢]+/g, ' • ')
-      .replace(/(?:\s*[.\-•·●\u2022\u00B7\u25CF\uFFFD\?]+\s*)+/g, ' • ')
-      .replace(/^\s*•\s*|\s*•\s*$/g, '')
+      .replace(/â€¢/g, ' • ')
+      .replace(/[\uFFFD\?]+/g, ' • ')
+      .replace(/(?:\s*[.\-•·●\u2022\u00B7\u25CF•]+\s*)+/g, ' • ')
+      .replace(/^[\s\.\-•]+|[\s\.\-•]+$/g, '')
       .trim();
 
     const trackData = {

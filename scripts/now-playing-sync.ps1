@@ -128,6 +128,7 @@ Function Detect-BrowserStreamingService {
 }
 
 $lastTrack = ""
+$lastBroadcastPosition = -1
 $lastBroadcastTime = [DateTime]::MinValue
 $artworkCache = @{}
 
@@ -323,7 +324,18 @@ while ($true) {
                         $durationSec = [Math]::Round($tl.EndTime.TotalSeconds)
                     }
                     if ($tl.Position -and $tl.Position.TotalSeconds -ge 0) {
-                        $positionSec = [Math]::Round($tl.Position.TotalSeconds)
+                        $basePos = $tl.Position.TotalSeconds
+                        if ($isPlaying -and $tl.LastUpdatedTime -and $tl.LastUpdatedTime.Year -gt 2000) {
+                            $diffSec = ([DateTimeOffset]::UtcNow - $tl.LastUpdatedTime.ToUniversalTime()).TotalSeconds
+                            if ($diffSec -gt 0) {
+                                $basePos += $diffSec
+                            }
+                        }
+                        if ($durationSec -gt 0) {
+                            $positionSec = [Math]::Min($durationSec, [Math]::Max(0, [Math]::Round($basePos)))
+                        } else {
+                            $positionSec = [Math]::Max(0, [Math]::Round($basePos))
+                        }
                     }
                 }
             } catch {}
@@ -332,11 +344,22 @@ while ($true) {
             $isPlaying = ($status -eq 4 -or $status -eq "Playing")
             $trackKey = "$title - $artist - $album - $isPlaying - $sourceApp"
 
-            $shouldBroadcast = ($trackKey -ne $lastTrack) -or ($isPlaying -and ([DateTime]::UtcNow - $lastBroadcastTime).TotalSeconds -ge 45)
+            $isNewTrack = ($trackKey -ne $lastTrack)
+            $isSeek = $false
+            if (-not $isNewTrack -and $isPlaying -and $lastBroadcastPosition -ge 0) {
+                $elapsedSinceLast = ([DateTime]::UtcNow - $lastBroadcastTime).TotalSeconds
+                $expectedPos = $lastBroadcastPosition + $elapsedSinceLast
+                if ([Math]::Abs($positionSec - $expectedPos) -ge 4) {
+                    $isSeek = $true
+                }
+            }
+            $isPeriodicSync = ($isPlaying -and ([DateTime]::UtcNow - $lastBroadcastTime).TotalSeconds -ge 30)
+
+            $shouldBroadcast = $isNewTrack -or $isSeek -or $isPeriodicSync
 
             if ($title -and $shouldBroadcast) {
-                $isNewTrack = ($trackKey -ne $lastTrack)
                 $lastTrack = $trackKey
+                $lastBroadcastPosition = $positionSec
                 $lastBroadcastTime = [DateTime]::UtcNow
 
                 # Determine streaming platform
@@ -468,7 +491,13 @@ while ($true) {
                         $rawDev = "Desktop PC $bullet BitChord"
                     }
                 } else {
-                    $rawDev = "Desktop PC $bullet $deviceApp ($source)"
+                    if ($isBrowser) {
+                        $rawDev = "Desktop PC $bullet $deviceApp ($source)"
+                    } elseif ($deviceApp.ToLower().Contains($source.ToLower())) {
+                        $rawDev = "Desktop PC $bullet $deviceApp"
+                    } else {
+                        $rawDev = "Desktop PC $bullet $deviceApp ($source)"
+                    }
                 }
                 $device = ($rawDev -replace '(?:\s*[\.\-\u2022\u00B7\u25CF\uFFFD\?]+\s*)+', " $bullet ").Trim()
 
@@ -509,12 +538,15 @@ while ($true) {
 
                 $stateIcon = if ($isPlaying) { "PLAYING" } else { "PAUSED" }
                 $timeSuffix = if ($durationSec -gt 0) {
-                    $m = [int][Math]::Floor($durationSec / 60)
-                    $s = [int]($durationSec % 60)
-                    " [00:00 / {0:D2}:{1:D2}]" -f $m, $s
+                    $currM = [int][Math]::Floor($positionSec / 60)
+                    $currS = [int]($positionSec % 60)
+                    $durM = [int][Math]::Floor($durationSec / 60)
+                    $durS = [int]($durationSec % 60)
+                    " [{0:D2}:{1:D2} / {2:D2}:{3:D2}]" -f $currM, $currS, $durM, $durS
                 } else { "" }
-                if ($isNewTrack) {
-                    Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] Track Detected Instantly -> [$stateIcon] $title by $artist on $source ($device)$timeSuffix" -ForegroundColor Green
+                if ($isNewTrack -or $isSeek) {
+                    $actionPrefix = if ($isSeek) { "Seek/Jump Detected" } else { "Track Detected Instantly" }
+                    Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] $actionPrefix -> [$stateIcon] $title by $artist on $source ($device)$timeSuffix" -ForegroundColor Green
                 }
 
                 # If artwork was not cached, resolve it now and send fast enrichment update
@@ -538,6 +570,7 @@ while ($true) {
             # If playback was active but session is now closed, broadcast paused state
             if ($lastTrack -ne "") {
                 $lastTrack = ""
+                $lastBroadcastPosition = -1
                 $lastBroadcastTime = [DateTime]::MinValue
                 $payloadJson = @{
                     isPlaying = $false

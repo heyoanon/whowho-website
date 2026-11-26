@@ -29,6 +29,8 @@
 
     let lastTrackKey = '';
     let isCurrentlyPlaying = false;
+    let lastBroadcastPosition = -1;
+    let lastBroadcastTime = 0;
 
     function detectStreamingPlatform() {
         const host = window.location.hostname.toLowerCase();
@@ -155,9 +157,21 @@
             const duration = activeMedia && Number.isFinite(activeMedia.duration) ? Math.round(activeMedia.duration) : 0;
             const position = activeMedia && Number.isFinite(activeMedia.currentTime) ? Math.round(activeMedia.currentTime) : 0;
 
+            let isSeek = false;
+            if (lastBroadcastPosition >= 0 && isPlaying) {
+                const elapsedSinceLastSend = (Date.now() - lastBroadcastTime) / 1000;
+                const expectedPos = lastBroadcastPosition + elapsedSinceLastSend;
+                if (Math.abs(position - expectedPos) >= 4) {
+                    isSeek = true;
+                }
+            }
+            const isPeriodicSync = isPlaying && (Date.now() - lastBroadcastTime >= 30000);
+
             const trackKey = `${platform}:${title}:${artist}:${album}:${isPlaying}`;
-            if (title && trackKey !== lastTrackKey) {
+            if (title && (trackKey !== lastTrackKey || isSeek || isPeriodicSync)) {
                 lastTrackKey = trackKey;
+                lastBroadcastPosition = position;
+                lastBroadcastTime = Date.now();
                 isCurrentlyPlaying = isPlaying;
                 sendTrackUpdate({
                     source: platform,

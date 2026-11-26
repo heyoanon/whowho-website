@@ -1586,47 +1586,52 @@
         }
 
         function updateTrackProgress() {
-            document.querySelectorAll('.lanyard-track-timing[data-start][data-end]').forEach(timing => {
-                const startedAt = Number(timing.dataset.start);
-                const endsAt = Number(timing.dataset.end);
+            document.querySelectorAll('.lanyard-music-card').forEach(card => {
+                const timing = card.querySelector('.lanyard-track-timing');
+                const timeRange = card.querySelector('.lanyard-track-time-range');
+
+                const startedAt = timing?.dataset.start ? Number(timing.dataset.start) : (timeRange?.dataset.start ? Number(timeRange.dataset.start) : 0);
+                const endsAt = timing?.dataset.end ? Number(timing.dataset.end) : (timeRange?.dataset.end ? Number(timeRange.dataset.end) : 0);
+
+                if (!startedAt || !endsAt || endsAt <= startedAt) return;
+
                 const durationSeconds = Math.floor((endsAt - startedAt) / 1000);
                 const elapsedSeconds = Math.min(durationSeconds, Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
                 const progressPercent = durationSeconds > 0 ? (elapsedSeconds / durationSeconds) * 100 : 0;
-                const elapsedTime = timing.querySelector('[data-elapsed-time]');
-                const totalTime = timing.querySelector('[data-total-time]');
-                const progress = timing.querySelector('[role="progressbar"]');
-                const progressFill = timing.querySelector('.lanyard-track-progress-fill');
+                const formattedElapsed = formatTrackTime(elapsedSeconds);
+                const formattedTotal = formatTrackTime(durationSeconds);
 
-                if (!elapsedTime || !totalTime || !progress || !progressFill || durationSeconds <= 0) return;
+                // Update bottom timing progress bar
+                if (timing) {
+                    const elapsedTime = timing.querySelector('[data-elapsed-time]');
+                    const totalTime = timing.querySelector('[data-total-time]');
+                    const progress = timing.querySelector('[role="progressbar"]');
+                    const progressFill = timing.querySelector('.lanyard-track-progress-fill');
 
-                elapsedTime.textContent = formatTrackTime(elapsedSeconds);
-                totalTime.textContent = formatTrackTime(durationSeconds);
-                progress.setAttribute('aria-valuenow', String(Math.round(progressPercent)));
-                progressFill.style.width = `${progressPercent}%`;
-                timing.hidden = false;
+                    if (elapsedTime) elapsedTime.textContent = formattedElapsed;
+                    if (totalTime) totalTime.textContent = formattedTotal;
+                    if (progress) progress.setAttribute('aria-valuenow', String(Math.round(progressPercent)));
+                    if (progressFill) progressFill.style.width = `${progressPercent}%`;
+                    timing.hidden = false;
 
-                // Instant detection when track ends: query next track immediately
-                if (elapsedSeconds >= durationSeconds) {
-                    if (!timing.dataset.trackEnded) {
-                        timing.dataset.trackEnded = 'true';
-                        fetchLanyardPresence();
-                        setTimeout(fetchLanyardPresence, 1200);
+                    // Instant detection when track ends: query next track immediately
+                    if (elapsedSeconds >= durationSeconds) {
+                        if (!timing.dataset.trackEnded) {
+                            timing.dataset.trackEnded = 'true';
+                            fetchLanyardPresence();
+                            setTimeout(fetchLanyardPresence, 1200);
+                        }
                     }
                 }
-            });
 
-            // Real-time ticking for start-to-finish track duration after album name
-            document.querySelectorAll('.lanyard-track-time-range[data-start][data-end]').forEach(el => {
-                const startedAt = Number(el.dataset.start);
-                const endsAt = Number(el.dataset.end);
-                const durationSeconds = Math.floor((endsAt - startedAt) / 1000);
-                if (durationSeconds <= 0) return;
-                const elapsedSeconds = Math.min(durationSeconds, Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
-                const elapsedEl = el.querySelector('[data-elapsed-time]');
-                const totalEl = el.querySelector('[data-total-time]');
-                if (elapsedEl) elapsedEl.textContent = formatTrackTime(elapsedSeconds);
-                if (totalEl) totalEl.textContent = formatTrackTime(durationSeconds);
-                el.style.display = 'inline-flex';
+                // Update top time range in absolute lockstep
+                if (timeRange) {
+                    const elapsedEl = timeRange.querySelector('[data-elapsed-time]');
+                    const totalEl = timeRange.querySelector('[data-total-time]');
+                    if (elapsedEl) elapsedEl.textContent = formattedElapsed;
+                    if (totalEl) totalEl.textContent = formattedTotal;
+                    timeRange.style.display = 'inline-flex';
+                }
             });
         }
 
@@ -2351,7 +2356,7 @@
                 const elapsedSec = Math.min(durationSec, Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
                 timeRangeSpan.dataset.start = String(startMs);
                 timeRangeSpan.dataset.end = String(endMs);
-                timeRangeSpan.innerHTML = `<span class="time-sep">•</span> <span class="time-elapsed" data-elapsed-time>${formatTrackTime(elapsedSec)}</span> / <span class="time-total" data-total-time>${formatTrackTime(durationSec)}</span>`;
+                timeRangeSpan.innerHTML = `<span class="time-sep">•</span> <span class="time-elapsed" data-elapsed-time>${formatTrackTime(elapsedSec)}</span> <span class="time-slash" style="margin: 0 4px; color: #ffd700;">/</span> <span class="time-total" data-total-time>${formatTrackTime(durationSec)}</span>`;
                 timeRangeSpan.style.display = 'inline-flex';
             } else {
                 timeRangeSpan.style.display = 'none';
@@ -2391,7 +2396,7 @@
                             const durSec = Math.floor(res.durationMs / 1000);
                             timeRangeSpan.dataset.start = String(s);
                             timeRangeSpan.dataset.end = String(e);
-                            timeRangeSpan.innerHTML = `<span class="time-sep">•</span> <span class="time-elapsed" data-elapsed-time>00:00</span> / <span class="time-total" data-total-time>${formatTrackTime(durSec)}</span>`;
+                            timeRangeSpan.innerHTML = `<span class="time-sep">•</span> <span class="time-elapsed" data-elapsed-time>00:00</span> <span class="time-slash" style="margin: 0 4px; color: #ffd700;">/</span> <span class="time-total" data-total-time>${formatTrackTime(durSec)}</span>`;
                             timeRangeSpan.style.display = 'inline-flex';
                             if (!albumContainer.parentElement) {
                                 trackDetails.insertBefore(albumContainer, serviceBadge);
@@ -2422,9 +2427,10 @@
             }
 
             const cleanDev = String(deviceRaw || '')
-                .replace(/[\uFFFD\?â€¢]+/g, ' • ')
-                .replace(/(?:\s*[.\-•·●\u2022\u00B7\u25CF\uFFFD\?]+\s*)+/g, ' • ')
-                .replace(/^\s*•\s*|\s*•\s*$/g, '')
+                .replace(/â€¢/g, ' • ')
+                .replace(/[\uFFFD\?]+/g, ' • ')
+                .replace(/(?:\s*[.\-•·●\u2022\u00B7\u25CF•]+\s*)+/g, ' • ')
+                .replace(/^[\s\.\-•]+|[\s\.\-•]+$/g, '')
                 .trim();
             if (cleanDev) {
                 if (/^playing\s+(on|via)/i.test(cleanDev)) {
@@ -2625,11 +2631,19 @@
                 if (!force && newKey === currentlyRenderedTrackKey && musicList.children.length > 0 && !musicList.querySelector('.standby-card')) {
                     // Track has NOT changed: keep existing DOM intact so animations/equalizers don't reset or flicker!
                     if (primaryTrack.timestamps && (primaryTrack.timestamps.start !== undefined || primaryTrack.timestamps.end !== undefined)) {
+                        const newStart = String(primaryTrack.timestamps.start || 0);
+                        const newEnd = String(primaryTrack.timestamps.end || 0);
                         const timing = musicList.querySelector('.lanyard-track-timing');
                         if (timing) {
-                            timing.dataset.start = String(primaryTrack.timestamps.start || 0);
-                            timing.dataset.end = String(primaryTrack.timestamps.end || 0);
+                            timing.dataset.start = newStart;
+                            timing.dataset.end = newEnd;
                         }
+                        const timeRange = musicList.querySelector('.lanyard-track-time-range');
+                        if (timeRange) {
+                            timeRange.dataset.start = newStart;
+                            timeRange.dataset.end = newEnd;
+                        }
+                        updateTrackProgress();
                     }
                     return;
                 }
