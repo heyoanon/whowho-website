@@ -1429,38 +1429,7 @@
         }
 
         function connectDirectStream() {
-            if (typeof EventSource === 'undefined') return;
-            if (directEventSource) return;
-
-            try {
-                directEventSource = new EventSource('/api/now-playing/stream');
-                directEventSource.onmessage = (event) => {
-                    try {
-                        const data = JSON.parse(event.data);
-                        if (data) {
-                            latestDirectTrack = data.isPlaying ? data : null;
-                            if (editingSection === 'nowPlaying') {
-                                if (typeof triggerAutofillCurrentTrack === 'function') {
-                                    triggerAutofillCurrentTrack(true, false);
-                                }
-                            } else {
-                                renderUnifiedMusic();
-                            }
-                        }
-                    } catch {}
-                };
-                directEventSource.onerror = () => {
-                    if (directEventSource) {
-                        directEventSource.close();
-                        directEventSource = null;
-                    }
-                    setTimeout(() => {
-                        if (!directEventSource) {
-                            connectDirectStream();
-                        }
-                    }, 1000);
-                };
-            } catch {}
+            // Decoupled in favor of ultra-reliable 750ms direct poller to prevent Vercel serverless connection locks
         }
 
         function connectLanyardSocket() {

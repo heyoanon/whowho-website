@@ -1028,24 +1028,11 @@ app.delete('/api/now-playing', async (req, res) => {
 app.get('/api/now-playing/stream', async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache, no-transform');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders?.();
-
-  sseNowPlayingClients.add(res);
+  res.setHeader('Connection', 'close');
 
   const directTrack = await getStoredNowPlaying();
   res.write(`data: ${JSON.stringify(directTrack || { isPlaying: false })}\n\n`);
-
-  const keepAlive = setInterval(() => {
-    try {
-      res.write(': keep-alive\n\n');
-    } catch { }
-  }, 15000);
-
-  req.on('close', () => {
-    clearInterval(keepAlive);
-    sseNowPlayingClients.delete(res);
-  });
+  res.end();
 });
 
 app.get('/api/now-playing', async (req, res) => {
