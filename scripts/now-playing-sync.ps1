@@ -7,13 +7,20 @@ param(
     [string]$Secret = ""
 )
 
-# Terminate any duplicate previous instance of now-playing-sync to avoid overlapping loops
-$myPid = $PID
-Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object {
-    $_.ProcessId -ne $myPid -and $_.Name -match "powershell" -and $_.CommandLine -match "(-File\s+.*now-playing-sync\.ps1)"
-} | ForEach-Object {
-    try { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue } catch {}
+# Terminate any duplicate previous instance of now-playing-sync via instant PID check
+$pidFile = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "whowho-now-playing-sync.pid")
+if (Test-Path $pidFile) {
+    try {
+        $oldPid = [int](Get-Content $pidFile -ErrorAction SilentlyContinue)
+        if ($oldPid -and $oldPid -ne $PID) {
+            $oldProc = Get-Process -Id $oldPid -ErrorAction SilentlyContinue
+            if ($oldProc -and $oldProc.ProcessName -match "powershell") {
+                Stop-Process -Id $oldPid -Force -ErrorAction SilentlyContinue
+            }
+        }
+    } catch {}
 }
+try { [System.IO.File]::WriteAllText($pidFile, "$PID") } catch {}
 
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host "  ★ WHOAMI NOW PLAYING MULTI-STREAMING SYNC (WINDOWS)" -ForegroundColor Cyan
@@ -38,6 +45,9 @@ try {
     }
 
     [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager, Windows.Media.Control, ContentType = WindowsRuntime] | Out-Null
+    [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionMediaProperties, Windows.Media.Control, ContentType = WindowsRuntime] | Out-Null
+    [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionTimelineProperties, Windows.Media.Control, ContentType = WindowsRuntime] | Out-Null
+    [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionPlaybackInfo, Windows.Media.Control, ContentType = WindowsRuntime] | Out-Null
     $op = [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync()
     $manager = Await-WinRT $op ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager])
     Write-Host "[OK] Connected to Windows System Media Transport Controls." -ForegroundColor Green
@@ -46,8 +56,15 @@ try {
     exit 1
 }
 
+$cachedStreamingService = $null
+$lastStreamingServiceCheck = [DateTime]::MinValue
+
 # Automatically detects which streaming service is active in the user's web browsers
 Function Detect-BrowserStreamingService {
+    # Cache for 20 seconds to prevent blocking disk I/O on every 200ms iteration!
+    if ($cachedStreamingService -and ([DateTime]::UtcNow - $lastStreamingServiceCheck).TotalSeconds -lt 20) {
+        return $cachedStreamingService
+    }
     $paths = @(
         "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data\Default\IndexedDB",
         "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data\*\IndexedDB",
@@ -98,6 +115,8 @@ Function Detect-BrowserStreamingService {
             }
         }
     }
+    $script:cachedStreamingService = $bestService
+    $script:lastStreamingServiceCheck = [DateTime]::UtcNow
     return $bestService
 }
 
@@ -211,34 +230,71 @@ Function Test-IsAdvertisement {
 
 while ($true) {
     try {
-        $session = $manager.GetCurrentSession()
-        $isPlayingCurrent = $false
-        if ($session) {
-            $pb = $session.GetPlaybackInfo()
-            if ($pb -and ($pb.PlaybackStatus -eq 4 -or $pb.PlaybackStatus -eq "Playing")) {
-                $isPlayingCurrent = $true
+        # Ensure manager is valid
+        if (-not $manager) {
+            try {
+                $op = [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync()
+                $manager = Await-WinRT $op ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager])
+            } catch {
+                Start-Sleep -Milliseconds 500
+                continue
             }
         }
 
-        # If current focused session is not playing, check all sessions for any active background playing session
-        if (-not $isPlayingCurrent) {
-            $allSessions = $manager.GetSessions()
-            $playingSession = $allSessions | Where-Object {
-                $pb = $_.GetPlaybackInfo()
-                $pb -and ($pb.PlaybackStatus -eq 4 -or $pb.PlaybackStatus -eq "Playing")
-            } | Select-Object -First 1
+        $session = $null
+        try {
+            $cur = $manager.GetCurrentSession()
+            if ($cur) {
+                $pb = $cur.GetPlaybackInfo()
+                if ($pb -and ($pb.PlaybackStatus -eq 4 -or $pb.PlaybackStatus -eq "Playing")) {
+                    $session = $cur
+                }
+            }
+        } catch {
+            $manager = $null
+        }
 
-            if ($playingSession) {
-                $session = $playingSession
+        # If current focused session is not playing, check all sessions for active background playback
+        if (-not $session -and $manager) {
+            try {
+                $allSessions = $manager.GetSessions()
+                if ($allSessions) {
+                    foreach ($s in $allSessions) {
+                        try {
+                            $pb = $s.GetPlaybackInfo()
+                            if ($pb -and ($pb.PlaybackStatus -eq 4 -or $pb.PlaybackStatus -eq "Playing")) {
+                                $session = $s
+                                break
+                            }
+                        } catch {}
+                    }
+                }
+            } catch {
+                $manager = $null
             }
         }
 
-        if ($session) {
-            $propOp = $session.TryGetMediaPropertiesAsync()
-            $mediaInfo = Await-WinRT $propOp ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionMediaProperties])
-            $playbackInfo = $session.GetPlaybackInfo()
-            $status = $playbackInfo.PlaybackStatus
+        # If still no playing session found, check if there is at least an existing session with metadata
+        if (-not $session -and $manager) {
+            try {
+                $session = $manager.GetCurrentSession()
+            } catch {}
+        }
 
+        $mediaInfo = $null
+        $playbackInfo = $null
+        if ($session) {
+            try {
+                $propOp = $session.TryGetMediaPropertiesAsync()
+                $mediaInfo = Await-WinRT $propOp ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionMediaProperties])
+                $playbackInfo = $session.GetPlaybackInfo()
+            } catch {
+                $session = $null
+            }
+        }
+
+        if ($session -and $mediaInfo -and $mediaInfo.Title) {
+            $status = if ($playbackInfo) { $playbackInfo.PlaybackStatus } else { 0 }
             $title = $mediaInfo.Title
             $artist = $mediaInfo.Artist
             $album = $mediaInfo.AlbumTitle
@@ -468,14 +524,17 @@ while ($true) {
                 $payloadJson = @{
                     isPlaying = $false
                     title = ""
-                } | ConvertTo-Json
+                } | ConvertTo-Json -Compress
                 $payloadBytes = [System.Text.Encoding]::UTF8.GetBytes($payloadJson)
-                Invoke-RestMethod -Uri $ApiUrl -Method POST -Body $payloadBytes -ContentType "application/json; charset=utf-8" -TimeoutSec 3 | Out-Null
-                Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] Playback stopped. Broadcasted standby." -ForegroundColor Yellow
+                try {
+                    Invoke-RestMethod -Uri $ApiUrl -Method POST -Body $payloadBytes -ContentType "application/json; charset=utf-8" -TimeoutSec 3 | Out-Null
+                    Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] Playback stopped. Broadcasted standby." -ForegroundColor Yellow
+                } catch {}
             }
         }
     } catch {
-        # ignore transient COM or network errors
+        Write-Host "LOOP ERROR: $($_.Exception.Message)" -ForegroundColor Red
+        Start-Sleep -Milliseconds 500
     }
 
     # Ultra-responsive 200ms check for instant track start detection

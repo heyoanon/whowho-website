@@ -15,7 +15,15 @@ const rawAdminPassword = (process.env.ADMIN_PASSWORD ? String(process.env.ADMIN_
 const ADMIN_PASSWORD = rawAdminPassword.replace(/^["']|["']$/g, '').trim() || 'admin123';
 const messagesFile = path.join(__dirname, 'messages.json');
 const profileFile = path.join(__dirname, 'profile.json');
-const database = process.env.DATABASE_URL ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }) : null;
+const database = process.env.DATABASE_URL
+  ? new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+      connectionTimeoutMillis: 3500,
+      idleTimeoutMillis: 10000,
+      max: 5
+    })
+  : null;
 let messages = [];
 let memoryProfileData = null;
 
@@ -481,7 +489,7 @@ async function saveNowPlaying(trackData) {
   if (!database) return;
 
   try {
-    await database.query(`
+    const dbPromise = database.query(`
       INSERT INTO now_playing (id, source, title, artist, album, artwork_url, track_url, duration_ms, started_at, ends_at, is_playing, device, device_type, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
       ON CONFLICT (id) DO UPDATE SET
@@ -513,16 +521,25 @@ async function saveNowPlaying(trackData) {
       trackData.device || '',
       trackData.deviceType || ''
     ]);
+
+    await Promise.race([
+      dbPromise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('DB persist timeout')), 2000))
+    ]);
   } catch (err) {
-    console.error('Unable to persist now_playing:', err.message);
+    console.warn('Unable to persist now_playing:', err.message);
   }
 }
 
 async function getStoredNowPlaying() {
   if (database) {
     try {
-      const res = await database.query('SELECT * FROM now_playing WHERE id = $1', ['current']);
-      if (res.rows.length > 0) {
+      const dbPromise = database.query('SELECT * FROM now_playing WHERE id = $1', ['current']);
+      const res = await Promise.race([
+        dbPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('DB query timeout')), 2000))
+      ]);
+      if (res && res.rows && res.rows.length > 0) {
         const row = res.rows[0];
         const ageMs = Date.now() - new Date(row.updated_at).getTime();
         const durationMs = row.duration_ms || (5 * 60 * 1000);
@@ -538,13 +555,14 @@ async function getStoredNowPlaying() {
             url: row.track_url || '',
             device: row.device || '',
             deviceType: row.device_type || '',
+            durationMs: row.duration_ms || 0,
             timestamps: (row.started_at && row.ends_at) ? { start: Number(row.started_at), end: Number(row.ends_at) } : null,
             updatedAt: row.updated_at
           };
         }
       }
     } catch (err) {
-      console.error('Unable to read stored now_playing:', err.message);
+      console.warn('Unable to read stored now_playing:', err.message);
     }
   }
 
@@ -968,7 +986,7 @@ app.post('/api/now-playing', async (req, res) => {
   };
 
   // BROADCAST IMMEDIATELY: 0ms latency for track start detection
-  await saveNowPlaying(trackData);
+  saveNowPlaying(trackData).catch(() => {});
   res.json({ success: true, track: trackData });
 
   // Background artwork & album resolution: enriches artwork without blocking track detection
@@ -1001,7 +1019,7 @@ app.delete('/api/now-playing', async (req, res) => {
     return res.status(401).json({ error: 'Unauthorized.' });
   }
 
-  await saveNowPlaying({ isPlaying: false, title: '', updatedAtMs: Date.now() });
+  saveNowPlaying({ isPlaying: false, title: '', updatedAtMs: Date.now() }).catch(() => {});
   return res.json({ success: true, message: 'Now playing cleared.' });
 });
 

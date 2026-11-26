@@ -141,7 +141,7 @@
             const artworkUrl = meta.artwork && meta.artwork.length ? meta.artwork[meta.artwork.length - 1].src : '';
 
             const mediaElements = Array.from(document.querySelectorAll('audio, video'));
-            const activeMedia = mediaElements.find(el => !el.paused && !el.ended && el.currentTime > 0);
+            const activeMedia = mediaElements.find(el => !el.paused && !el.ended);
             const isPlaying = Boolean(activeMedia || (navigator.mediaSession.playbackState === 'playing'));
             const duration = activeMedia && Number.isFinite(activeMedia.duration) ? Math.round(activeMedia.duration) : 0;
             const position = activeMedia && Number.isFinite(activeMedia.currentTime) ? Math.round(activeMedia.currentTime) : 0;
