@@ -823,17 +823,69 @@ async function fetchSpotifyCurrentlyPlaying() {
   }
 }
 
+const artworkMemoryCache = new Map();
+
+function cleanMusicTitle(str) {
+  let s = String(str || '').trim();
+  // Strip bracketed video, audio, sub, and remaster info
+  s = s.replace(/\s*[\(\[\{【〔「『][^\)\]\}】〕」』]*(?:official|video|music video|mv\b|audio|lyrics?|remaster|deluxe|version|ver\b|edit|mix|feat|ft\.|live|bonus|explicit|visualizer|clip|special|soundtrack|ost|performance|stage|fancam|4k|hd|sub|eng|thai|rom|color\s*coded|side\s*[ab])[^\)\]\}】〕」』]*[\)\]\}】〕」』]/gi, ' ');
+  // Strip standalone video and audio indicator phrases
+  s = s.replace(/\b(?:official\s+(?:music\s+)?video|official\s+audio|official\s+mv|music\s+video|lyric\s+video|visualizer|color\s+coded\s+lyrics?|audio\s+only|audio\b|m\/?v\b|full\s+audio)\b/gi, ' ');
+  // Strip quote wrappers and punctuation
+  s = s.replace(/[\"\'\`「」『』?!,.:;~@#$%^&*_+=\/\\|<>]/g, ' ');
+  return s.replace(/\s+/g, ' ').trim();
+}
+
+function cleanMusicArtist(str) {
+  let a = String(str || '').trim();
+  a = a.split(/[,&/]|feat\.|ft\.|with\s+/i)[0];
+  a = a.replace(/\s*[\(\[\{【〔「『][^\)\]\}】〕」』]*[\)\]\}】〕」』]/g, ' ');
+  a = a.replace(/[\"\'\`「」『』?!,.:;~@#$%^&*_+=\/\\|<>]/g, ' ');
+  return a.replace(/\s+/g, ' ').trim();
+}
+
+function parseArtistAndTitle(rawArtist, rawTitle) {
+  let artist = String(rawArtist || '').trim();
+  let title = String(rawTitle || '').trim();
+
+  const isGenericArtist = !artist || /^(bitchord|youtube music|spotify|apple music|music|unknown|radio|web browser|chrome|edge|firefox|opera|safari)$/i.test(artist);
+
+  // Check for common separators: " - ", " – ", " — ", " | ", " // ", " : "
+  const sepMatch = title.match(/^(.*?)\s+(?:[-–—|]|(?:\/\/)|\:)\s+(.*)$/);
+  if (sepMatch) {
+    const left = sepMatch[1].trim();
+    const right = sepMatch[2].trim();
+    if (isGenericArtist) {
+      artist = left;
+      title = right;
+    } else if (left.toLowerCase().includes(artist.toLowerCase())) {
+      title = right;
+    }
+  } else if (title.toLowerCase().includes(' by ') && isGenericArtist) {
+    const byParts = title.split(/\s+by\s+/i);
+    if (byParts.length >= 2) {
+      title = byParts[0].trim();
+      artist = byParts.slice(1).join(' by ').trim();
+    }
+  }
+
+  const cleanA = cleanMusicArtist(artist);
+  const cleanT = cleanMusicTitle(title);
+
+  return {
+    artist: cleanA || cleanMusicArtist(rawArtist),
+    title: cleanT || cleanMusicTitle(rawTitle) || title,
+    rawArtist,
+    rawTitle
+  };
+}
+
 function cleanMusicString(str) {
-  return String(str || '')
-    .replace(/\s*[\(\[\{][^\)\]\}]*(?:remaster|deluxe|version|edition|mix|feat|ft|live|bonus|explicit)[^\)\]\}]*[\)\]\}]/gi, '')
-    .replace(/[?!,.:;"'`~@#$%^&*_+=\/\\|<>]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return cleanMusicTitle(str);
 }
 
 function getPrimaryArtist(artistStr) {
-  const first = String(artistStr || '').split(/[,&/]|feat\.|ft\.|with\s+/i)[0];
-  return cleanMusicString(first);
+  return cleanMusicArtist(artistStr);
 }
 
 function isAdvertisementTrack(title, artist, album) {
@@ -849,30 +901,82 @@ function isAdvertisementTrack(title, artist, album) {
   return false;
 }
 
-async function resolveTrackArtwork(artist, title, album = '') {
-  if (!title) return { artworkUrl: '', album: album || '', url: '' };
+async function searchSpotifyTrackArtwork(artist, title) {
+  try {
+    const token = await getSpotifyAccessToken();
+    if (!token) return null;
+    const q = encodeURIComponent(`track:${title} artist:${artist}`);
+    const res = await fetch(`https://api.spotify.com/v1/search?q=${q}&type=track&limit=3`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const items = data.tracks?.items;
+      if (items && items.length > 0) {
+        const item = items[0];
+        const art = item.album?.images?.[0]?.url || '';
+        if (art) {
+          return {
+            artworkUrl: art,
+            album: item.album?.name || '',
+            url: item.external_urls?.spotify || '',
+            durationMs: item.duration_ms || 0
+          };
+        }
+      }
+    }
+  } catch {}
+  return null;
+}
 
+async function resolveTrackArtwork(artist, title, album = '') {
   const rawArtist = String(artist || '').trim();
   const rawTitle = String(title || '').trim();
   const rawAlbum = String(album || '').trim();
 
-  const primaryArtist = getPrimaryArtist(rawArtist);
-  const cleanTitle = cleanMusicString(rawTitle);
-  const cleanAlbum = cleanMusicString(rawAlbum);
+  if (!rawTitle && !rawArtist) return { artworkUrl: '', album: rawAlbum, url: '' };
 
-  // 1. Try Deezer Search API (ultra accurate, verified against artist name and album title)
-  const deezerQueries = [
-    cleanAlbum ? `${primaryArtist} ${cleanTitle} ${cleanAlbum}` : null,
-    `${primaryArtist} ${cleanTitle}`,
-    cleanAlbum ? `${primaryArtist} ${cleanAlbum}` : null,
-    cleanTitle
+  const parsed = parseArtistAndTitle(rawArtist, rawTitle);
+  const cleanArtist = parsed.artist;
+  const cleanTitle = parsed.title;
+  const cleanAlbum = cleanMusicTitle(rawAlbum);
+
+  const cacheKey = `${cleanArtist.toLowerCase()}:::${cleanTitle.toLowerCase()}`;
+  if (artworkMemoryCache.has(cacheKey)) {
+    return artworkMemoryCache.get(cacheKey);
+  }
+
+  // 1. Try Spotify Catalog Search first if token is available (fastest and highest fidelity CDN)
+  if (cleanTitle && cleanArtist) {
+    const spotRes = await searchSpotifyTrackArtwork(cleanArtist, cleanTitle);
+    if (spotRes && spotRes.artworkUrl) {
+      const resultObj = {
+        artworkUrl: spotRes.artworkUrl,
+        album: spotRes.album || rawAlbum,
+        url: spotRes.url || '',
+        durationMs: spotRes.durationMs || 0
+      };
+      if (artworkMemoryCache.size > 500) artworkMemoryCache.clear();
+      artworkMemoryCache.set(cacheKey, resultObj);
+      return resultObj;
+    }
+  }
+
+  // Multi-tier query candidates
+  const queries = [
+    cleanArtist && cleanAlbum ? `${cleanArtist} ${cleanTitle} ${cleanAlbum}` : null,
+    cleanArtist ? `${cleanArtist} ${cleanTitle}` : null,
+    cleanArtist ? `${cleanTitle} ${cleanArtist}` : null,
+    cleanTitle,
+    cleanArtist && cleanAlbum ? `${cleanArtist} ${cleanAlbum}` : null
   ].filter(Boolean);
 
-  for (const query of deezerQueries) {
+  // 2. Try Deezer Search API (ultra accurate, server-to-server with high-res cover_xl)
+  for (const query of queries) {
     try {
       const encoded = encodeURIComponent(query);
-      const res = await fetch(`https://api.deezer.com/search?q=${encoded}&limit=10`, {
-        headers: { 'User-Agent': 'WhoamiMusicResolver/2.0' }
+      const res = await fetch(`https://api.deezer.com/search?q=${encoded}&limit=8`, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
       });
       if (res.ok) {
         const json = await res.json();
@@ -882,7 +986,7 @@ async function resolveTrackArtwork(artist, title, album = '') {
             const itemTitle = (item.title || item.title_short || '').toLowerCase();
             const itemAlbum = (item.album?.title || '').toLowerCase();
 
-            const pArtist = primaryArtist.toLowerCase();
+            const pArtist = cleanArtist.toLowerCase();
             const cTitle = cleanTitle.toLowerCase();
             const cAlbum = cleanAlbum.toLowerCase();
 
@@ -893,33 +997,33 @@ async function resolveTrackArtwork(artist, title, album = '') {
             if (artistMatches && (titleMatches || albumMatches)) return true;
             if (!pArtist && titleMatches) return true;
             return false;
-          });
+          }) || (cleanArtist && json.data[0]); // Rank 1 fallback if query contained specific artist
 
           if (match && match.album) {
-            return {
-              artworkUrl: match.album.cover_xl || match.album.cover_big || match.album.cover_medium,
-              album: match.album.title || rawAlbum,
-              url: match.link || '',
-              durationMs: match.duration ? (match.duration * 1000) : 0
-            };
+            const art = match.album.cover_xl || match.album.cover_big || match.album.cover_medium || match.album.cover;
+            if (art) {
+              const resultObj = {
+                artworkUrl: art,
+                album: match.album.title || rawAlbum,
+                url: match.link || '',
+                durationMs: match.duration ? (match.duration * 1000) : 0
+              };
+              if (artworkMemoryCache.size > 500) artworkMemoryCache.clear();
+              artworkMemoryCache.set(cacheKey, resultObj);
+              return resultObj;
+            }
           }
         }
       }
     } catch { }
   }
 
-  // 2. Try iTunes Search API with candidate artist verification
-  const itunesQueries = [
-    `${primaryArtist} ${cleanTitle}`,
-    cleanAlbum ? `${primaryArtist} ${cleanAlbum}` : null,
-    cleanTitle
-  ].filter(Boolean);
-
-  for (const query of itunesQueries) {
+  // 3. Try iTunes Search API with high-resolution upgrade (600x600bb.jpg)
+  for (const query of queries) {
     try {
       const term = encodeURIComponent(query);
       const res = await fetch(`https://itunes.apple.com/search?term=${term}&entity=song&limit=5`, {
-        headers: { 'User-Agent': 'WhoamiMusicResolver/2.0' }
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
       });
       if (res.ok) {
         const json = await res.json();
@@ -929,7 +1033,7 @@ async function resolveTrackArtwork(artist, title, album = '') {
             const itemTrack = (item.trackName || '').toLowerCase();
             const itemAlbum = (item.collectionName || '').toLowerCase();
 
-            const pArtist = primaryArtist.toLowerCase();
+            const pArtist = cleanArtist.toLowerCase();
             const cTitle = cleanTitle.toLowerCase();
             const cAlbum = cleanAlbum.toLowerCase();
 
@@ -938,24 +1042,30 @@ async function resolveTrackArtwork(artist, title, album = '') {
             const albumMatches = cAlbum && (itemAlbum.includes(cAlbum) || cAlbum.includes(itemAlbum));
 
             return (artistMatches && (titleMatches || albumMatches)) || (!pArtist && titleMatches);
-          });
+          }) || json.results[0]; // Top search relevance result
 
           if (match) {
             const rawArt = match.artworkUrl100 || match.artworkUrl60 || '';
             const artworkUrl = rawArt ? rawArt.replace(/\/\d+x\d+bb\./, '/600x600bb.') : '';
-            return {
-              artworkUrl,
-              album: match.collectionName || rawAlbum,
-              url: match.trackViewUrl || '',
-              durationMs: match.trackTimeMillis || 0
-            };
+            if (artworkUrl) {
+              const resultObj = {
+                artworkUrl,
+                album: match.collectionName || rawAlbum,
+                url: match.trackViewUrl || '',
+                durationMs: match.trackTimeMillis || 0
+              };
+              if (artworkMemoryCache.size > 500) artworkMemoryCache.clear();
+              artworkMemoryCache.set(cacheKey, resultObj);
+              return resultObj;
+            }
           }
         }
       }
     } catch { }
   }
 
-  return { artworkUrl: '', album: rawAlbum, url: '' };
+  const fallbackEmpty = { artworkUrl: '', album: rawAlbum, url: '' };
+  return fallbackEmpty;
 }
 
 async function fetchArtworkFromItunes(artist, title) {
@@ -1214,17 +1324,21 @@ app.get('/api/now-playing', async (req, res) => {
     if (directStreams && directStreams.length > 0) {
       const validStreams = directStreams.filter(s => !isAdvertisementTrack(s.title, s.artist, s.album));
       if (validStreams.length > 0) {
+        // Concurrently resolve artwork across all active device streams
+        await Promise.all(validStreams.map(async (stream) => {
+          if (!stream.artworkUrl && stream.title) {
+            try {
+              const resolved = await resolveTrackArtwork(stream.artist, stream.title, stream.album);
+              if (resolved && resolved.artworkUrl) {
+                stream.artworkUrl = resolved.artworkUrl;
+                if (!stream.album && resolved.album) stream.album = resolved.album;
+                saveNowPlaying({ ...stream, isPlaying: true }).catch(() => { });
+              }
+            } catch { }
+          }
+        }));
+
         const primaryTrack = validStreams[0];
-        if (!primaryTrack.artworkUrl && primaryTrack.title) {
-          try {
-            const resolved = await resolveTrackArtwork(primaryTrack.artist, primaryTrack.title, primaryTrack.album);
-            if (resolved.artworkUrl) {
-              primaryTrack.artworkUrl = resolved.artworkUrl;
-              if (!primaryTrack.album && resolved.album) primaryTrack.album = resolved.album;
-              saveNowPlaying({ ...primaryTrack, isPlaying: true }).catch(() => { });
-            }
-          } catch { }
-        }
         return res.json({
           isPlaying: true,
           provider: 'direct-broadcast',
@@ -1385,6 +1499,26 @@ app.get('/api/now-playing', async (req, res) => {
   } catch (error) {
     console.error('GET /api/now-playing error:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+app.get('/api/artwork', async (req, res) => {
+  res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=86400');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  const artist = String(req.query.artist || '').trim();
+  const title = String(req.query.title || '').trim();
+  const album = String(req.query.album || '').trim();
+
+  if (!title && !artist) {
+    return res.status(400).json({ error: 'artist or title query parameter required', artworkUrl: '' });
+  }
+
+  try {
+    const result = await resolveTrackArtwork(artist, title, album);
+    return res.json(result);
+  } catch (err) {
+    console.warn('Artwork resolution error:', err.message);
+    return res.status(500).json({ error: err.message, artworkUrl: '' });
   }
 });
 

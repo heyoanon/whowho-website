@@ -1,4 +1,4 @@
-# Windows Now Playing Broadcast Script for Whoami
+﻿# Windows Now Playing Broadcast Script for Whoami
 # Automatically detects current audio playback from Spotify, YouTube Music, Apple Music, and any browser/desktop app
 # and syncs it in real-time to your Whoami website whenever a track changes or pauses, including streaming service & device location.
 
@@ -155,14 +155,32 @@ Function Get-TrackArtwork {
         return $artworkCache[$cacheKey]
     }
 
-    $cleanTitle = $title -replace '[\(\[\{].*?[\)\]\}]', '' -replace '[\?\!\,\.\:\;]', ' ' -replace '\s+', ' '
+    $rawArtist = $artist.Trim()
+    $rawTitle = $title.Trim()
+    $isGeneric = (-not $rawArtist) -or ($rawArtist -match "^(bitchord|youtube music|spotify|apple music|music|unknown|radio)$")
+
+    # If artist is generic or empty, attempt title separation
+    if ($isGeneric -and ($rawTitle -match "^(.*?)\s+[-–—|:]\s+(.*)$")) {
+        $rawArtist = $matches[1].Trim()
+        $rawTitle = $matches[2].Trim()
+    }
+
+    # Clean title: strip video/audio tags, quotes, etc.
+    $cleanTitle = $rawTitle -replace '\s*[\(\[\{【〔「『][^\)\]\}】〕」』]*(?:official|video|music video|mv\b|audio|lyrics?|remaster|deluxe|version|ver\b|edit|mix|feat|ft\.|live|bonus|explicit|visualizer|clip|special|soundtrack|ost|performance|stage|fancam|4k|hd|sub|eng|thai|rom|color\s*coded|side\s*[ab])[^\)\]\}】〕」』]*[\)\]\}】〕」』]', ' '
+    $cleanTitle = $cleanTitle -replace '\b(?:official\s+(?:music\s+)?video|official\s+audio|official\s+mv|music\s+video|lyric\s+video|visualizer|color\s+coded\s+lyrics?|audio\s+only|audio\b|m\/?v\b|full\s+audio)\b', ' '
+    $cleanTitle = $cleanTitle -replace '[\"''`「」『』?!,.:;~@#$%^&*_+=\/\\|<>]', ' ' -replace '\s+', ' '
     $cleanTitle = $cleanTitle.Trim()
-    $primaryArtist = ($artist -split '[,&/]|feat\.|ft\.')[0] -replace '[\?\!\,\.\:\;]', ' ' -replace '\s+', ' '
+
+    # Clean artist
+    $primaryArtist = ($rawArtist -split '[,&/]|feat\.|ft\.|with\s+')[0]
+    $primaryArtist = $primaryArtist -replace '\s*[\(\[\{【〔「『][^\)\]\}】〕」』]*[\)\]\}】〕」』]', ' '
+    $primaryArtist = $primaryArtist -replace '[\"''`「」『』?!,.:;~@#$%^&*_+=\/\\|<>]', ' ' -replace '\s+', ' '
     $primaryArtist = $primaryArtist.Trim()
 
     $queries = @(
         "$primaryArtist $cleanTitle $album",
         "$primaryArtist $cleanTitle",
+        "$cleanTitle $primaryArtist",
         "$cleanTitle"
     )
 
@@ -171,7 +189,7 @@ Function Get-TrackArtwork {
         if (-not $trimmedQ) { continue }
         try {
             $enc = [System.Uri]::EscapeDataString($trimmedQ)
-            $url = "https://api.deezer.com/search?q=$enc&limit=5"
+            $url = "https://api.deezer.com/search?q=$enc&limit=6"
             $resp = Invoke-RestMethod -Uri $url -Method GET -TimeoutSec 3 -ErrorAction SilentlyContinue
             if ($resp -and $resp.data -and $resp.data.Count -gt 0) {
                 $match = $resp.data | Where-Object {
@@ -183,6 +201,10 @@ Function Get-TrackArtwork {
                     $titleOk = (-not $titleLower) -or $itemTitle.Contains($titleLower) -or $titleLower.Contains($itemTitle)
                     $artistOk -and $titleOk
                 } | Select-Object -First 1
+
+                if (-not $match -and $primaryArtist) {
+                    $match = $resp.data[0]
+                }
 
                 if ($match -and $match.album) {
                     $art = if ($match.album.cover_xl) { $match.album.cover_xl } elseif ($match.album.cover_big) { $match.album.cover_big } else { $match.album.cover_medium }
@@ -197,30 +219,38 @@ Function Get-TrackArtwork {
     }
 
     # 2. Try iTunes Search API as secondary fallback
-    try {
-        $term = [System.Uri]::EscapeDataString("$primaryArtist $cleanTitle")
-        $itUrl = "https://itunes.apple.com/search?term=$term&entity=song&limit=5"
-        $itResp = Invoke-RestMethod -Uri $itUrl -Method GET -TimeoutSec 3 -ErrorAction SilentlyContinue
-        if ($itResp -and $itResp.results -and $itResp.results.Count -gt 0) {
-            $itMatch = $itResp.results | Where-Object {
-                $a = if ($_.artistName) { $_.artistName.ToLower() } else { "" }
-                $t = if ($_.trackName) { $_.trackName.ToLower() } else { "" }
-                $p = $primaryArtist.ToLower()
-                $c = $cleanTitle.ToLower()
-                ((-not $p) -or $a.Contains($p) -or $p.Contains($a)) -and ((-not $c) -or $t.Contains($c) -or $c.Contains($t))
-            } | Select-Object -First 1
+    foreach ($q in @("$primaryArtist $cleanTitle", "$cleanTitle")) {
+        $trimmedQ = $q.Trim()
+        if (-not $trimmedQ) { continue }
+        try {
+            $term = [System.Uri]::EscapeDataString($trimmedQ)
+            $itUrl = "https://itunes.apple.com/search?term=$term&entity=song&limit=5"
+            $itResp = Invoke-RestMethod -Uri $itUrl -Method GET -TimeoutSec 3 -ErrorAction SilentlyContinue
+            if ($itResp -and $itResp.results -and $itResp.results.Count -gt 0) {
+                $itMatch = $itResp.results | Where-Object {
+                    $a = if ($_.artistName) { $_.artistName.ToLower() } else { "" }
+                    $t = if ($_.trackName) { $_.trackName.ToLower() } else { "" }
+                    $p = $primaryArtist.ToLower()
+                    $c = $cleanTitle.ToLower()
+                    ((-not $p) -or $a.Contains($p) -or $p.Contains($a)) -and ((-not $c) -or $t.Contains($c) -or $c.Contains($t))
+                } | Select-Object -First 1
 
-            if ($itMatch) {
-                $rawArt = if ($itMatch.artworkUrl100) { $itMatch.artworkUrl100 } else { $itMatch.artworkUrl60 }
-                $art = if ($rawArt) { $rawArt -replace '\/\d+x\d+bb\.', '/600x600bb.' } else { "" }
-                $alb = if ($album) { $album } else { $itMatch.collectionName }
-                $dur = if ($itMatch.trackTimeMillis -and $itMatch.trackTimeMillis -gt 0) { [Math]::Round($itMatch.trackTimeMillis / 1000) } else { 0 }
-                $res = @{ artworkUrl = $art; album = $alb; durationSec = $dur }
-                $artworkCache[$cacheKey] = $res
-                return $res
+                if (-not $itMatch) {
+                    $itMatch = $itResp.results[0]
+                }
+
+                if ($itMatch) {
+                    $rawArt = if ($itMatch.artworkUrl100) { $itMatch.artworkUrl100 } else { $itMatch.artworkUrl60 }
+                    $art = if ($rawArt) { $rawArt -replace '\/\d+x\d+bb\.', '/600x600bb.' } else { "" }
+                    $alb = if ($album) { $album } else { $itMatch.collectionName }
+                    $dur = if ($itMatch.trackTimeMillis -and $itMatch.trackTimeMillis -gt 0) { [Math]::Round($itMatch.trackTimeMillis / 1000) } else { 0 }
+                    $res = @{ artworkUrl = $art; album = $alb; durationSec = $dur }
+                    $artworkCache[$cacheKey] = $res
+                    return $res
+                }
             }
-        }
-    } catch {}
+        } catch {}
+    }
 
     $res = @{ artworkUrl = ""; album = $album; durationSec = 0 }
     $artworkCache[$cacheKey] = $res
