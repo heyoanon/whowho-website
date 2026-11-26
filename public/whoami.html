@@ -91,6 +91,62 @@
                 url: 'https://open.spotify.com/track/712roG90pcuZ9mQdrwUojT',
                 source: 'On Repeat'
             },
+            inTheLoop: [
+                {
+                    id: 'loop-1',
+                    title: 'Supernova',
+                    artist: 'aespa',
+                    album: 'Armageddon - The 1st Album',
+                    source: 'Spotify',
+                    url: 'https://open.spotify.com/track/712roG90pcuZ9mQdrwUojT',
+                    artworkUrl: 'https://cdn-images.dzcdn.net/images/cover/185323bb418693348a930cc4ea80e61d/1000x1000-000000-80-0-0.jpg'
+                },
+                {
+                    id: 'loop-2',
+                    title: 'Whiplash',
+                    artist: 'aespa',
+                    album: 'Whiplash - The 5th Mini Album',
+                    source: 'Spotify',
+                    url: 'https://open.spotify.com/track/3FPuk3O0b3s9Z6kE6w0tqG',
+                    artworkUrl: 'https://cdn-images.dzcdn.net/images/cover/b62a48fd60d20e78af31bc1677c16114/1000x1000-000000-80-0-0.jpg'
+                },
+                {
+                    id: 'loop-3',
+                    title: 'Cosmic',
+                    artist: 'Red Velvet',
+                    album: 'Cosmic',
+                    source: 'Spotify',
+                    url: 'https://open.spotify.com/track/4l4K3N82jR8q4H8Q03l7vG',
+                    artworkUrl: 'https://cdn-images.dzcdn.net/images/cover/7031325f5693a709234aef2d5fb924ba/1000x1000-000000-80-0-0.jpg'
+                },
+                {
+                    id: 'loop-4',
+                    title: 'DASH',
+                    artist: 'NMIXX',
+                    album: 'Fe3O4: BREAK',
+                    source: 'Spotify',
+                    url: 'https://open.spotify.com/track/2Z1w4Fz1x4j1k4y4k4m4m4',
+                    artworkUrl: 'https://cdn-images.dzcdn.net/images/cover/b1163cf61f2591b309037aabdfede590/1000x1000-000000-80-0-0.jpg'
+                },
+                {
+                    id: 'loop-5',
+                    title: 'Talk that Talk',
+                    artist: 'TWICE',
+                    album: 'BETWEEN 1&2',
+                    source: 'Spotify',
+                    url: 'https://open.spotify.com/track/0wODX2g6d6s4x8o6y8p6y8',
+                    artworkUrl: 'https://cdn-images.dzcdn.net/images/cover/0824c80571e9cee63eaacc5a52a8e6d8/1000x1000-000000-80-0-0.jpg'
+                },
+                {
+                    id: 'loop-6',
+                    title: 'RUN2U',
+                    artist: 'STAYC',
+                    album: 'YOUNG-LUV.COM',
+                    source: 'Spotify',
+                    url: 'https://open.spotify.com/track/0x9x8y7w6v5u4t3s2r1q0p',
+                    artworkUrl: 'https://cdn-images.dzcdn.net/images/cover/854e85f55093e7bad0e6883cbee61da0/1000x1000-000000-80-0-0.jpg'
+                }
+            ],
             lastfmUser: ''
         };
 
@@ -142,6 +198,7 @@
 
         let currentProfileData = JSON.parse(JSON.stringify(defaultProfileData));
         let editingSection = null;
+        let editingLoopTrackIndex = null;
         let isEditingSideQuests = false;
                 let isAdminLoggedIn = false;
 
@@ -339,6 +396,19 @@
             });
         }
 
+        function normalizeLoopTracks(tracks) {
+            if (!Array.isArray(tracks)) return [];
+            return tracks.filter(t => t && (t.title || t.artist)).map((t, idx) => ({
+                id: (t && t.id) ? t.id : `loop-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 4)}`,
+                title: String(t.title || '').trim(),
+                artist: String(t.artist || '').trim(),
+                album: String(t.album || '').trim(),
+                source: String(t.source || 'Spotify').trim() || 'Spotify',
+                url: String(t.url || '').trim(),
+                artworkUrl: String(t.artworkUrl || '').trim()
+            }));
+        }
+
         function escapeHtml(str) {
             if (typeof str !== 'string') return String(str || '');
             return str
@@ -364,6 +434,16 @@
                         if (Array.isArray(parsed.hobbies)) currentProfileData.hobbies = parsed.hobbies;
                         if (!Array.isArray(currentProfileData.hobbies) || currentProfileData.hobbies.length === 0) currentProfileData.hobbies = [...defaultProfileData.hobbies];
                         if (Array.isArray(parsed.sidequests)) currentProfileData.sidequests = normalizeQuests(parsed.sidequests);
+                        if (Array.isArray(parsed.inTheLoop) && parsed.inTheLoop.length > 0) {
+                            currentProfileData.inTheLoop = normalizeLoopTracks(parsed.inTheLoop);
+                        } else if (parsed.onRepeat && parsed.onRepeat.title) {
+                            currentProfileData.inTheLoop = normalizeLoopTracks([parsed.onRepeat]);
+                        } else {
+                            currentProfileData.inTheLoop = normalizeLoopTracks(defaultProfileData.inTheLoop);
+                        }
+                        if (currentProfileData.inTheLoop.length > 0) {
+                            currentProfileData.onRepeat = currentProfileData.inTheLoop[0];
+                        }
                     }
                 }
             } catch {}
@@ -383,6 +463,16 @@
                         if (Array.isArray(s.hobbies)) currentProfileData.hobbies = s.hobbies;
                         if (!Array.isArray(currentProfileData.hobbies) || currentProfileData.hobbies.length === 0) currentProfileData.hobbies = [...defaultProfileData.hobbies];
                         if (Array.isArray(s.sidequests)) currentProfileData.sidequests = normalizeQuests(s.sidequests);
+                        if (Array.isArray(s.inTheLoop) && s.inTheLoop.length > 0) {
+                            currentProfileData.inTheLoop = normalizeLoopTracks(s.inTheLoop);
+                        } else if (s.onRepeat && s.onRepeat.title) {
+                            currentProfileData.inTheLoop = normalizeLoopTracks([s.onRepeat]);
+                        } else if (!Array.isArray(currentProfileData.inTheLoop) || currentProfileData.inTheLoop.length === 0) {
+                            currentProfileData.inTheLoop = normalizeLoopTracks(defaultProfileData.inTheLoop);
+                        }
+                        if (currentProfileData.inTheLoop.length > 0) {
+                            currentProfileData.onRepeat = currentProfileData.inTheLoop[0];
+                        }
                         try {
                             localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
                         } catch {}
@@ -511,19 +601,10 @@
 
         function toggleEditNowPlaying() {
             playArcadeBeep();
-            if (!isAdminLoggedIn) {
-                showAdminPasswordModal('Only the owner of the website can edit Now Playing settings.', () => {
-                    editingSection = 'nowPlaying';
-                    renderPage('nowPlaying', false);
-                    connectDirectStream();
-                    setTimeout(() => { if (typeof triggerAutofillCurrentTrack === 'function') triggerAutofillCurrentTrack(true, false); }, 180);
-                });
-                return;
-            }
             editingSection = 'nowPlaying';
+            editingLoopTrackIndex = null;
             renderPage('nowPlaying', false);
             connectDirectStream();
-            setTimeout(() => { if (typeof triggerAutofillCurrentTrack === 'function') triggerAutofillCurrentTrack(true, false); }, 180);
         }
         window.toggleEditNowPlaying = toggleEditNowPlaying;
 
@@ -605,111 +686,481 @@
             );
         }
 
+        function getLoopServiceClass(source) {
+            const s = String(source || '').toLowerCase();
+            if (s.includes('spotify')) return 'spotify';
+            if (s.includes('youtube') || s.includes('ytm')) return 'ytm';
+            if (s.includes('apple')) return 'apple';
+            if (s.includes('bitchord')) return 'bitchord';
+            return '';
+        }
+        window.getLoopServiceClass = getLoopServiceClass;
+
+        function autofillLoopFromCurrentSong() {
+            playArcadeBeep();
+            const track = latestDirectTrack || (latestLanyardPresence && latestLanyardPresence.spotify ? {
+                title: latestLanyardPresence.spotify.song,
+                artist: latestLanyardPresence.spotify.artist,
+                album: latestLanyardPresence.spotify.album,
+                artworkUrl: latestLanyardPresence.spotify.album_art_url,
+                url: latestLanyardPresence.spotify.track_id ? `https://open.spotify.com/track/${latestLanyardPresence.spotify.track_id}` : '',
+                source: 'Spotify'
+            } : null);
+
+            if (!track || !track.title) {
+                showToast('NO ACTIVE TRACK DETECTED ON DEVICE.');
+                return;
+            }
+
+            const titleEl = document.getElementById('loop-new-title');
+            const artistEl = document.getElementById('loop-new-artist');
+            const albumEl = document.getElementById('loop-new-album');
+            const sourceEl = document.getElementById('loop-new-source');
+            const urlEl = document.getElementById('loop-new-url');
+            const artworkEl = document.getElementById('loop-new-artwork');
+
+            if (titleEl) titleEl.value = track.title || '';
+            if (artistEl) artistEl.value = track.artist || '';
+            if (albumEl) albumEl.value = track.album || '';
+            if (sourceEl) sourceEl.value = track.source || 'Spotify';
+            if (urlEl) urlEl.value = track.url || '';
+            if (artworkEl) artworkEl.value = track.artworkUrl || '';
+
+            if (track.title && track.artist && (!track.artworkUrl || !track.album)) {
+                fetchArtworkAndAlbumForTrack(track.artist, track.title, track.album).then(res => {
+                    if (res) {
+                        if (albumEl && !albumEl.value && res.album) albumEl.value = res.album;
+                        if (artworkEl && !artworkEl.value && res.artworkUrl) artworkEl.value = res.artworkUrl;
+                    }
+                });
+            }
+
+            showToast(`⚡ AUTO-FILLED: "${(track.title || '').toUpperCase()}"!`);
+        }
+        window.autofillLoopFromCurrentSong = autofillLoopFromCurrentSong;
+
+        function handleAddTrackToLoop() {
+            playArcadeBeep();
+            const action = () => {
+                const titleEl = document.getElementById('loop-new-title');
+                const artistEl = document.getElementById('loop-new-artist');
+                const albumEl = document.getElementById('loop-new-album');
+                const sourceEl = document.getElementById('loop-new-source');
+                const urlEl = document.getElementById('loop-new-url');
+                const artworkEl = document.getElementById('loop-new-artwork');
+
+                const title = (titleEl ? titleEl.value : '').trim();
+                const artist = (artistEl ? artistEl.value : '').trim();
+
+                if (!title || !artist) {
+                    showToast('TITLE AND ARTIST ARE REQUIRED!');
+                    return;
+                }
+
+                const newTrack = {
+                    id: `loop-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+                    title,
+                    artist,
+                    album: (albumEl ? albumEl.value : '').trim(),
+                    source: (sourceEl ? sourceEl.value : 'Spotify').trim() || 'Spotify',
+                    url: (urlEl ? urlEl.value : '').trim(),
+                    artworkUrl: (artworkEl ? artworkEl.value : '').trim()
+                };
+
+                if (!Array.isArray(currentProfileData.inTheLoop)) {
+                    currentProfileData.inTheLoop = [];
+                }
+
+                currentProfileData.inTheLoop.push(newTrack);
+                currentProfileData.onRepeat = currentProfileData.inTheLoop[0];
+
+                try {
+                    localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+                } catch {}
+                saveProfileToServer(currentProfileData);
+
+                showToast(`SAVED "${newTrack.title.toUpperCase()}" UNDER THE LOOP!`);
+                renderPage('nowPlaying', false);
+            };
+
+            if (!isAdminLoggedIn) {
+                showAdminPasswordModal('Owner access required to add tracks to What\'s in the loop.', action);
+            } else {
+                action();
+            }
+        }
+        window.handleAddTrackToLoop = handleAddTrackToLoop;
+
+        function moveLoopTrackUp(index) {
+            playArcadeBeep();
+            const action = () => {
+                if (!Array.isArray(currentProfileData.inTheLoop) || index <= 0 || index >= currentProfileData.inTheLoop.length) return;
+                const temp = currentProfileData.inTheLoop[index];
+                currentProfileData.inTheLoop[index] = currentProfileData.inTheLoop[index - 1];
+                currentProfileData.inTheLoop[index - 1] = temp;
+                currentProfileData.onRepeat = currentProfileData.inTheLoop[0];
+
+                try {
+                    localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+                } catch {}
+                saveProfileToServer(currentProfileData);
+
+                showToast('TRACK MOVED UP!');
+                renderPage('nowPlaying', false);
+            };
+
+            if (!isAdminLoggedIn) {
+                showAdminPasswordModal('Owner access required to reorder tracks.', action);
+            } else {
+                action();
+            }
+        }
+        window.moveLoopTrackUp = moveLoopTrackUp;
+
+        function moveLoopTrackDown(index) {
+            playArcadeBeep();
+            const action = () => {
+                if (!Array.isArray(currentProfileData.inTheLoop) || index < 0 || index >= currentProfileData.inTheLoop.length - 1) return;
+                const temp = currentProfileData.inTheLoop[index];
+                currentProfileData.inTheLoop[index] = currentProfileData.inTheLoop[index + 1];
+                currentProfileData.inTheLoop[index + 1] = temp;
+                currentProfileData.onRepeat = currentProfileData.inTheLoop[0];
+
+                try {
+                    localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+                } catch {}
+                saveProfileToServer(currentProfileData);
+
+                showToast('TRACK MOVED DOWN!');
+                renderPage('nowPlaying', false);
+            };
+
+            if (!isAdminLoggedIn) {
+                showAdminPasswordModal('Owner access required to reorder tracks.', action);
+            } else {
+                action();
+            }
+        }
+        window.moveLoopTrackDown = moveLoopTrackDown;
+
+        function startEditLoopTrack(index) {
+            playArcadeBeep();
+            const action = () => {
+                editingLoopTrackIndex = index;
+                renderPage('nowPlaying', false);
+            };
+
+            if (!isAdminLoggedIn) {
+                showAdminPasswordModal('Owner access required to edit tracks in the loop.', action);
+            } else {
+                action();
+            }
+        }
+        window.startEditLoopTrack = startEditLoopTrack;
+
+        function cancelEditLoopTrack() {
+            playArcadeBeep();
+            editingLoopTrackIndex = null;
+            renderPage('nowPlaying', false);
+        }
+        window.cancelEditLoopTrack = cancelEditLoopTrack;
+
+        function saveEditedLoopTrack(index) {
+            playArcadeBeep();
+            const action = () => {
+                if (!Array.isArray(currentProfileData.inTheLoop) || !currentProfileData.inTheLoop[index]) return;
+
+                const titleEl = document.getElementById(`edit-loop-title-${index}`);
+                const artistEl = document.getElementById(`edit-loop-artist-${index}`);
+                const albumEl = document.getElementById(`edit-loop-album-${index}`);
+                const sourceEl = document.getElementById(`edit-loop-source-${index}`);
+                const urlEl = document.getElementById(`edit-loop-url-${index}`);
+                const artworkEl = document.getElementById(`edit-loop-artwork-${index}`);
+
+                const title = (titleEl ? titleEl.value : '').trim();
+                const artist = (artistEl ? artistEl.value : '').trim();
+
+                if (!title || !artist) {
+                    showToast('TITLE AND ARTIST ARE REQUIRED!');
+                    return;
+                }
+
+                const existing = currentProfileData.inTheLoop[index];
+                currentProfileData.inTheLoop[index] = {
+                    id: existing.id || `loop-${Date.now()}-${index}`,
+                    title,
+                    artist,
+                    album: (albumEl ? albumEl.value : '').trim(),
+                    source: (sourceEl ? sourceEl.value : 'Spotify').trim() || 'Spotify',
+                    url: (urlEl ? urlEl.value : '').trim(),
+                    artworkUrl: (artworkEl ? artworkEl.value : '').trim()
+                };
+
+                currentProfileData.onRepeat = currentProfileData.inTheLoop[0];
+                editingLoopTrackIndex = null;
+
+                try {
+                    localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+                } catch {}
+                saveProfileToServer(currentProfileData);
+
+                showToast('TRACK UPDATED IN THE LOOP!');
+                renderPage('nowPlaying', false);
+            };
+
+            if (!isAdminLoggedIn) {
+                showAdminPasswordModal('Owner access required to save track edits.', action);
+            } else {
+                action();
+            }
+        }
+        window.saveEditedLoopTrack = saveEditedLoopTrack;
+
+        function removeLoopTrack(index) {
+            playArcadeBeep();
+            if (!Array.isArray(currentProfileData.inTheLoop) || !currentProfileData.inTheLoop[index]) return;
+            const track = currentProfileData.inTheLoop[index];
+
+            showConfirmationModal(
+                'REMOVE FROM LOOP?',
+                `Are you sure you want to remove "${track.title}" from What's in the loop?`,
+                () => {
+                    const deleteAction = () => {
+                        currentProfileData.inTheLoop.splice(index, 1);
+                        if (currentProfileData.inTheLoop.length > 0) {
+                            currentProfileData.onRepeat = currentProfileData.inTheLoop[0];
+                        }
+                        editingLoopTrackIndex = null;
+
+                        try {
+                            localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+                        } catch {}
+                        saveProfileToServer(currentProfileData);
+
+                        showToast(`REMOVED "${track.title.toUpperCase()}" FROM LOOP.`);
+                        renderPage('nowPlaying', false);
+                    };
+
+                    if (!isAdminLoggedIn) {
+                        showAdminPasswordModal('Owner access required to remove tracks.', deleteAction);
+                    } else {
+                        deleteAction();
+                    }
+                }
+            );
+        }
+        window.removeLoopTrack = removeLoopTrack;
+
+        function saveLastFmUserFromLoop() {
+            playArcadeBeep();
+            const action = () => {
+                const input = document.getElementById('loop-lastfm-user');
+                if (input) {
+                    currentProfileData.lastfmUser = input.value.trim();
+                    try {
+                        localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+                    } catch {}
+                    saveProfileToServer(currentProfileData);
+                    showToast('LAST.FM USERNAME SAVED!');
+                }
+            };
+            if (!isAdminLoggedIn) {
+                showAdminPasswordModal('Owner access required to update Last.fm username.', action);
+            } else {
+                action();
+            }
+        }
+        window.saveLastFmUserFromLoop = saveLastFmUserFromLoop;
+
         function getNowPlayingContent() {
             const isEditing = editingSection === 'nowPlaying';
             if (isEditing) {
-                const currentVibe = currentProfileData.onRepeat || { title: '', artist: '', album: '', url: '', artworkUrl: '' };
-                return `
-                    <div class="panel-content now-playing-panel">
-                        <div class="profile-header-row">
-                            <h2>EDIT NOW PLAYING</h2>
+                const loopTracks = (Array.isArray(currentProfileData.inTheLoop) && currentProfileData.inTheLoop.length > 0)
+                    ? currentProfileData.inTheLoop
+                    : normalizeLoopTracks(defaultProfileData.inTheLoop);
+
+                let loopTracksHtml = '';
+                if (loopTracks.length === 0) {
+                    loopTracksHtml = `
+                        <div class="loop-empty-msg">
+                            <p>No tracks in the loop yet.</p>
+                            <p style="font-size:9px; color:#9ab7ff; margin-top:6px;">Add a song above or click "AUTOFILL CURRENT SONG"!</p>
                         </div>
-                        <div class="fact-box scrollable-facts-box">
-                            <!-- 0. Live Device Playback Detector & Autofill Banner -->
-                            <div class="autofill-detection-box" id="autofill-detection-box">
-                                <div class="autofill-status-header">
-                                    <span class="live-pulse" id="autofill-pulse"></span>
-                                    <span id="autofill-status-title">DETECTING WHAT'S PLAYING ON DEVICE...</span>
+                    `;
+                } else {
+                    loopTracksHtml = loopTracks.map((track, i) => {
+                        const isThisEditing = editingLoopTrackIndex === i;
+                        if (isThisEditing) {
+                            return `
+                                <div class="loop-track-card editing" id="loop-track-edit-${i}">
+                                    <div class="loop-edit-header">
+                                        <span class="loop-edit-title">✎ EDITING TRACK #${i + 1}</span>
+                                    </div>
+                                    <form id="form-edit-loop-${i}" onsubmit="event.preventDefault(); saveEditedLoopTrack(${i});">
+                                        <div class="loop-form-grid">
+                                            <div class="profile-form-group">
+                                                <label class="profile-form-label">SONG TITLE *</label>
+                                                <input class="profile-input-field" id="edit-loop-title-${i}" value="${escapeHtml(track.title || '')}" required autocomplete="off">
+                                            </div>
+                                            <div class="profile-form-group">
+                                                <label class="profile-form-label">ARTIST *</label>
+                                                <input class="profile-input-field" id="edit-loop-artist-${i}" value="${escapeHtml(track.artist || '')}" required autocomplete="off">
+                                            </div>
+                                            <div class="profile-form-group">
+                                                <label class="profile-form-label">ALBUM</label>
+                                                <input class="profile-input-field" id="edit-loop-album-${i}" value="${escapeHtml(track.album || '')}" autocomplete="off">
+                                            </div>
+                                            <div class="profile-form-group">
+                                                <label class="profile-form-label">STREAMING SERVICE</label>
+                                                <input class="profile-input-field" id="edit-loop-source-${i}" value="${escapeHtml(track.source || 'Spotify')}" autocomplete="off">
+                                            </div>
+                                            <div class="profile-form-group loop-span-full">
+                                                <label class="profile-form-label">SONG LINK (URL)</label>
+                                                <input class="profile-input-field" id="edit-loop-url-${i}" value="${escapeHtml(track.url || '')}" autocomplete="off">
+                                            </div>
+                                            <div class="profile-form-group loop-span-full">
+                                                <label class="profile-form-label">ALBUM ARTWORK URL</label>
+                                                <input class="profile-input-field" id="edit-loop-artwork-${i}" value="${escapeHtml(track.artworkUrl || '')}" autocomplete="off">
+                                            </div>
+                                        </div>
+                                        <div class="loop-edit-actions">
+                                            <button type="submit" class="btn-save-profile">💾 SAVE CHANGES</button>
+                                            <button type="button" class="btn-cancel-profile" onclick="cancelEditLoopTrack()">CANCEL</button>
+                                        </div>
+                                    </form>
                                 </div>
-                                <div class="autofill-detected-info" id="autofill-detected-info">
-                                    Scanning device audio across Spotify, YouTube Music, Apple Music & browser...
+                            `;
+                        }
+
+                        const sClass = getLoopServiceClass(track.source);
+                        const sLabel = escapeHtml((track.source || 'Spotify').toUpperCase());
+                        return `
+                            <div class="loop-track-card" id="loop-track-card-${i}">
+                                <div class="loop-track-num">#${i + 1}</div>
+                                <div class="loop-track-thumb-wrap">
+                                    <img class="loop-track-thumb" src="${escapeHtml(track.artworkUrl || fallbackVinylSvg)}" alt="${escapeHtml(track.title || '')}" onerror="this.src='${fallbackVinylSvg}'">
                                 </div>
-                                <div class="autofill-actions-row">
-                                    <button type="button" class="btn-autofill-action" onclick="triggerAutofillCurrentTrack(false)">
-                                        ⚡ AUTOFILL WHAT'S PLAYING
+                                <div class="loop-track-body">
+                                    <div class="loop-track-title">${escapeHtml(track.title || 'Untitled Track')}</div>
+                                    <div class="loop-track-artist">${escapeHtml(track.artist || 'Unknown Artist')}</div>
+                                    ${track.album ? `<div class="loop-track-album">${escapeHtml(track.album)}</div>` : ''}
+                                    <div class="loop-track-meta-row">
+                                        <span class="loop-service-pill ${sClass}">${sLabel}</span>
+                                        ${track.url ? `<a href="${escapeHtml(track.url)}" target="_blank" rel="noopener noreferrer" class="loop-listen-btn">▶ LISTEN</a>` : ''}
+                                    </div>
+                                </div>
+                                <div class="loop-track-actions">
+                                    <button type="button" class="loop-icon-btn reorder-btn" title="Move Up" onclick="moveLoopTrackUp(${i})" ${i === 0 ? 'disabled' : ''}>▲</button>
+                                    <button type="button" class="loop-icon-btn reorder-btn" title="Move Down" onclick="moveLoopTrackDown(${i})" ${i === loopTracks.length - 1 ? 'disabled' : ''}>▼</button>
+                                    <button type="button" class="loop-icon-btn edit-btn" title="Edit Track" onclick="startEditLoopTrack(${i})">✎</button>
+                                    <button type="button" class="loop-icon-btn delete-btn" title="Remove Track" onclick="removeLoopTrack(${i})">🗑</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                return `
+                    <div class="panel-content now-playing-panel loop-panel">
+                        <div class="profile-header-row">
+                            <h2>🔁 WHAT'S IN THE LOOP</h2>
+                            <button type="button" class="btn-cancel-profile" onclick="cancelEditProfile('nowPlaying')" title="Back to live playback">✕ CLOSE</button>
+                        </div>
+                        <div class="fact-box scrollable-facts-box loop-facts-box">
+                            <!-- 1. ADD INTO THE LOOP CARD -->
+                            <div class="loop-add-card">
+                                <div class="loop-add-header">
+                                    <span class="loop-add-title">➕ ADD INTO THE LOOP</span>
+                                    <button type="button" class="btn-autofill-action" onclick="autofillLoopFromCurrentSong()">
+                                        ⚡ AUTOFILL CURRENT SONG
                                     </button>
-                                    <button type="button" class="btn-autofill-action save" onclick="triggerAutofillCurrentTrack(true)">
-                                        💾 AUTOFILL & SAVE (BOTH ON-REPEAT & LIVE)
-                                    </button>
+                                </div>
+                                <p class="loop-add-desc">Add a track into your loop rotation. Saved tracks appear directly below.</p>
+                                <form id="form-add-to-loop" onsubmit="event.preventDefault(); handleAddTrackToLoop();">
+                                    <div class="loop-form-grid">
+                                        <div class="profile-form-group">
+                                            <label class="profile-form-label">SONG TITLE *</label>
+                                            <input class="profile-input-field" id="loop-new-title" placeholder="e.g. Supernova" required autocomplete="off">
+                                        </div>
+                                        <div class="profile-form-group">
+                                            <label class="profile-form-label">ARTIST *</label>
+                                            <input class="profile-input-field" id="loop-new-artist" placeholder="e.g. aespa" required autocomplete="off">
+                                        </div>
+                                        <div class="profile-form-group">
+                                            <label class="profile-form-label">ALBUM</label>
+                                            <input class="profile-input-field" id="loop-new-album" placeholder="e.g. Armageddon - The 1st Album" autocomplete="off">
+                                        </div>
+                                        <div class="profile-form-group">
+                                            <label class="profile-form-label">STREAMING SERVICE</label>
+                                            <input class="profile-input-field" id="loop-new-source" placeholder="Spotify, YouTube Music, Apple Music, BitChord..." value="Spotify" autocomplete="off">
+                                        </div>
+                                        <div class="profile-form-group loop-span-full">
+                                            <label class="profile-form-label">SONG LINK (URL)</label>
+                                            <input class="profile-input-field" id="loop-new-url" placeholder="https://open.spotify.com/track/..." autocomplete="off">
+                                        </div>
+                                        <div class="profile-form-group loop-span-full">
+                                            <label class="profile-form-label">ALBUM ARTWORK URL</label>
+                                            <input class="profile-input-field" id="loop-new-artwork" placeholder="https://i.scdn.co/image/..." autocomplete="off">
+                                        </div>
+                                    </div>
+                                    <div class="loop-add-actions">
+                                        <button type="submit" class="btn-save-profile loop-submit-btn">➕ ADD INTO THE LOOP</button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- 2. TRACKS IN THE LOOP LIST -->
+                            <div class="loop-tracks-section">
+                                <div class="loop-section-title-row">
+                                    <span class="loop-section-title">★ TRACKS IN THE LOOP (${loopTracks.length})</span>
+                                    <span class="loop-section-sub">Use ▲ / ▼ to re-order • ✎ to edit • 🗑 to remove</span>
+                                </div>
+                                <div class="loop-tracks-list" id="loop-tracks-list">
+                                    ${loopTracksHtml}
                                 </div>
                             </div>
 
-                            <!-- 1. Live Streaming Broadcaster (Spotify, YouTube Music, Apple Music) -->
-                            <div class="streaming-sync-box">
-                                <div class="streaming-sync-title">📡 BROADCAST WHAT'S PLAYING LIVE</div>
-                                <p style="font-size:10px; color:#9ab7ff; line-height:1.7; margin-bottom:12px;">
-                                    Select your streaming platform to broadcast a live track to the site right now:
-                                </p>
-                                <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
-                                    <button type="button" class="streaming-service-pill spotify active" id="pill-spotify" onclick="selectStreamingService('Spotify')">🟢 SPOTIFY</button>
-                                    <button type="button" class="streaming-service-pill ytm" id="pill-ytm" onclick="selectStreamingService('YouTube Music')">🔴 YOUTUBE MUSIC</button>
-                                    <button type="button" class="streaming-service-pill apple" id="pill-apple" onclick="selectStreamingService('Apple Music')">🍎 APPLE MUSIC</button>
-                                    <button type="button" class="streaming-service-pill bitchord" id="pill-bitchord" onclick="selectStreamingService('BitChord')">⚡ BITCHORD</button>
+                            <!-- 3. ADVANCED BROADCAST & LAST.FM OPTIONS -->
+                            <details class="loop-advanced-sync">
+                                <summary class="loop-advanced-summary">⚙ ADVANCED LIVE BROADCAST & LAST.FM</summary>
+                                <div class="loop-advanced-body">
+                                    <div class="streaming-sync-box" style="margin-top: 10px;">
+                                        <div class="streaming-sync-title">📡 BROADCAST WHAT'S PLAYING LIVE</div>
+                                        <p style="font-size:10px; color:#9ab7ff; line-height:1.7; margin-bottom:12px;">
+                                            Broadcast a live track across Spotify, YouTube Music, Apple Music or BitChord:
+                                        </p>
+                                        <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+                                            <button type="button" class="streaming-service-pill spotify active" id="pill-spotify" onclick="selectStreamingService('Spotify')">🟢 SPOTIFY</button>
+                                            <button type="button" class="streaming-service-pill ytm" id="pill-ytm" onclick="selectStreamingService('YouTube Music')">🔴 YOUTUBE MUSIC</button>
+                                            <button type="button" class="streaming-service-pill apple" id="pill-apple" onclick="selectStreamingService('Apple Music')">🍎 APPLE MUSIC</button>
+                                            <button type="button" class="streaming-service-pill bitchord" id="pill-bitchord" onclick="selectStreamingService('BitChord')">⚡ BITCHORD</button>
+                                        </div>
+                                        <input type="hidden" id="live-stream-service" value="Spotify">
+                                        <div class="profile-form-group">
+                                            <label class="profile-form-label" style="display:flex; justify-content:space-between; align-items:center;">
+                                                <span>CURRENT SONG TITLE</span>
+                                                <button type="button" class="inline-autofill-link" onclick="triggerAutofillCurrentTrack(false)">⚡ AUTOFILL</button>
+                                            </label>
+                                            <input class="profile-input-field" id="live-stream-title" placeholder="e.g. Supernova" autocomplete="off">
+                                        </div>
+                                        <div class="profile-form-group">
+                                            <label class="profile-form-label">ARTIST</label>
+                                            <input class="profile-input-field" id="live-stream-artist" placeholder="e.g. aespa" autocomplete="off">
+                                        </div>
+                                        <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
+                                            <button type="button" class="btn-save-profile" style="background:#00ffaa; color:#000; border-color:#00ffaa;" onclick="submitLiveStreamBroadcast()">▶ BROADCAST LIVE</button>
+                                            <button type="button" class="btn-cancel-profile" style="border-color:#ff4d4d; color:#ff4d4d;" onclick="clearLiveStreamBroadcast()">⏹ STOP STREAM</button>
+                                        </div>
+                                    </div>
+                                    <div class="profile-form-group" style="margin-top: 14px;">
+                                        <label class="profile-form-label">LAST.FM USERNAME (24/7 AUTO-SCROBBLE)</label>
+                                        <div style="display:flex; gap:8px;">
+                                            <input class="profile-input-field" id="loop-lastfm-user" value="${escapeHtml(currentProfileData.lastfmUser || '')}" placeholder="e.g. your_lastfm_user" autocomplete="off">
+                                            <button type="button" class="btn-save-profile" style="font-size:10px; padding:6px 12px;" onclick="saveLastFmUserFromLoop()">SAVE</button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <input type="hidden" id="live-stream-service" value="Spotify">
-                                <div class="profile-form-group">
-                                    <label class="profile-form-label" style="display:flex; justify-content:space-between; align-items:center;">
-                                        <span>CURRENT SONG TITLE</span>
-                                        <button type="button" class="inline-autofill-link" onclick="triggerAutofillCurrentTrack(false)">⚡ AUTOFILL</button>
-                                    </label>
-                                    <input class="profile-input-field" id="live-stream-title" placeholder="e.g. Supernova" autocomplete="off">
-                                </div>
-                                <div class="profile-form-group">
-                                    <label class="profile-form-label">ARTIST</label>
-                                    <input class="profile-input-field" id="live-stream-artist" placeholder="e.g. aespa" autocomplete="off">
-                                </div>
-                                <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
-                                    <button type="button" class="btn-save-profile" style="background:#00ffaa; color:#000; border-color:#00ffaa;" onclick="submitLiveStreamBroadcast()">▶ BROADCAST LIVE</button>
-                                    <button type="button" class="btn-cancel-profile" style="border-color:#ff4d4d; color:#ff4d4d;" onclick="clearLiveStreamBroadcast()">⏹ STOP STREAM</button>
-                                </div>
-                                <div style="margin-top:14px; padding-top:12px; border-top:1px dashed rgba(0,76,255,0.4); font-size:9px; color:#9ab7ff; line-height:1.8;">
-                                    💡 <b>AUTO-SYNC OPTIONS:</b><br>
-                                    • <b>Windows:</b> Double-click <code>scripts/run-now-playing-sync.bat</code> (or run <code>scripts/now-playing-sync.ps1</code>) to auto-sync any active playback.<br>
-                                    • <b>Web Browser:</b> Install <code>scripts/now-playing-sync.user.js</code> on Spotify, YouTube Music, or Apple Music Web.<br>
-                                    • <b>Last.fm:</b> Enter your username below to automatically scrobble mobile + desktop 24/7!
-                                </div>
-                            </div>
-
-                            <!-- 2. On Repeat Fallback & Last.fm Settings -->
-                            <form class="profile-edit-form" id="form-nowPlaying" onsubmit="event.preventDefault(); promptSaveProfile('nowPlaying');" style="margin-top:20px;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
-                                    <h3 style="font-size:12px; color:#ffd700; margin:0;">★ DEFAULT ON-REPEAT SONG & SETTINGS</h3>
-                                    <button type="button" class="inline-autofill-link" onclick="triggerAutofillCurrentTrack(true)">💾 AUTOFILL & SAVE CURRENT TRACK</button>
-                                </div>
-                                <div class="profile-form-group">
-                                    <label class="profile-form-label">SONG TITLE</label>
-                                    <input class="profile-input-field" name="title" value="${escapeHtml(currentVibe.title || '')}" placeholder="e.g. Supernova" required autocomplete="off">
-                                </div>
-                                <div class="profile-form-group">
-                                    <label class="profile-form-label">ARTIST</label>
-                                    <input class="profile-input-field" name="artist" value="${escapeHtml(currentVibe.artist || '')}" placeholder="e.g. aespa" required autocomplete="off">
-                                </div>
-                                <div class="profile-form-group">
-                                    <label class="profile-form-label">ALBUM</label>
-                                    <input class="profile-input-field" name="album" value="${escapeHtml(currentVibe.album || '')}" placeholder="e.g. Armageddon - The 1st Album" autocomplete="off">
-                                </div>
-                                <div class="profile-form-group">
-                                    <label class="profile-form-label">STREAMING SERVICE (WHERE IT'S STREAMED FROM)</label>
-                                    <input class="profile-input-field" name="source" value="${escapeHtml(currentVibe.source || 'Spotify')}" placeholder="e.g. Spotify, YouTube Music, Apple Music" autocomplete="off">
-                                </div>
-                                <div class="profile-form-group">
-                                    <label class="profile-form-label">SONG LINK (SPOTIFY, YOUTUBE, APPLE MUSIC, ETC.)</label>
-                                    <input class="profile-input-field" name="url" value="${escapeHtml(currentVibe.url || '')}" placeholder="https://open.spotify.com/track/..." autocomplete="off">
-                                </div>
-                                <div class="profile-form-group">
-                                    <label class="profile-form-label">ALBUM ARTWORK URL</label>
-                                    <input class="profile-input-field" name="artworkUrl" value="${escapeHtml(currentVibe.artworkUrl || '')}" placeholder="https://i.scdn.co/image/..." autocomplete="off">
-                                </div>
-                                <div class="profile-form-group">
-                                    <label class="profile-form-label">LAST.FM USERNAME (AUTO-SCROBBLES SPOTIFY, APPLE MUSIC & YOUTUBE MUSIC 24/7)</label>
-                                    <input class="profile-input-field" name="lastfmUser" value="${escapeHtml(currentProfileData.lastfmUser || '')}" placeholder="e.g. your_lastfm_user" autocomplete="off">
-                                </div>
-                                <div class="profile-edit-actions">
-                                    <button type="submit" class="btn-save-profile">SAVE ON REPEAT</button>
-                                    <button type="button" class="btn-cancel-profile" onclick="cancelEditProfile('nowPlaying')">CANCEL</button>
-                                </div>
-                            </form>
-                            <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style="display:none;" onload="if(typeof triggerAutofillCurrentTrack==='function') setTimeout(function(){ triggerAutofillCurrentTrack(false); }, 180);">
+                            </details>
                         </div>
                     </div>
                 `;
@@ -719,7 +1170,7 @@
                 <div class="panel-content now-playing-panel">
                     <div class="profile-header-row">
                         <h2>NOW PLAYING</h2>
-                        <button type="button" class="edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}" onclick="toggleEditNowPlaying()" title="${isAdminLoggedIn ? 'Set on-repeat song & music settings' : 'Owner access required'}">${isAdminLoggedIn ? '✎ EDIT VIBE' : '🔒 OWNER EDIT'}</button>
+                        <button type="button" class="edit-profile-btn" onclick="toggleEditNowPlaying()" title="View and manage What's in the loop">🔁 WHAT'S IN THE LOOP</button>
                     </div>
                     <div class="fact-box lanyard-box">
                         <div id="lanyard-music-list" class="lanyard-music-list">
@@ -4116,9 +4567,9 @@
                 // Update owner edit button without resetting audio stream or timers
                 const editBtn = document.querySelector('.now-playing-panel .edit-profile-btn');
                 if (editBtn) {
-                    editBtn.className = `edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}`;
-                    editBtn.textContent = isAdminLoggedIn ? '✎ EDIT VIBE' : '🔒 OWNER EDIT';
-                    editBtn.title = isAdminLoggedIn ? 'Set on-repeat song & music settings' : 'Owner access required';
+                    editBtn.className = 'edit-profile-btn';
+                    editBtn.textContent = "🔁 WHAT'S IN THE LOOP";
+                    editBtn.title = "View and manage What's in the loop";
                 }
                 return;
             }

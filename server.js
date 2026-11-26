@@ -1207,11 +1207,13 @@ app.get('/api/now-playing', async (req, res) => {
       // ignore
     }
 
-    // 5. Standby fallback with stored on-repeat vibe
+    // 5. Standby fallback with stored on-repeat vibe or loop tracks
     let onRepeatTrack = null;
     try {
       const profile = await loadStoredProfile();
-      if (profile && profile.onRepeat && profile.onRepeat.title) {
+      if (profile && Array.isArray(profile.inTheLoop) && profile.inTheLoop.length > 0 && profile.inTheLoop[0].title) {
+        onRepeatTrack = profile.inTheLoop[0];
+      } else if (profile && profile.onRepeat && profile.onRepeat.title) {
         onRepeatTrack = profile.onRepeat;
       }
     } catch { }
