@@ -1,4 +1,4 @@
-﻿# Windows Now Playing Broadcast Script for Whoami
+# Windows Now Playing Broadcast Script for Whoami
 # Automatically detects current audio playback from Spotify, YouTube Music, Apple Music, and any browser/desktop app
 # and syncs it in real-time to your Whoami website whenever a track changes or pauses, including streaming service & device location.
 
@@ -48,8 +48,19 @@ try {
     [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionMediaProperties, Windows.Media.Control, ContentType = WindowsRuntime] | Out-Null
     [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionTimelineProperties, Windows.Media.Control, ContentType = WindowsRuntime] | Out-Null
     [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionPlaybackInfo, Windows.Media.Control, ContentType = WindowsRuntime] | Out-Null
-    $op = [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync()
-    $manager = Await-WinRT $op ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager])
+    $manager = $null
+    for ($attempt = 1; $attempt -le 5; $attempt++) {
+        try {
+            $op = [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync()
+            $manager = Await-WinRT $op ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager])
+            if ($manager) { break }
+        } catch {
+            Start-Sleep -Milliseconds 600
+        }
+    }
+    if (-not $manager) {
+        throw "Could not acquire GlobalSystemMediaTransportControlsSessionManager after 5 attempts."
+    }
     Write-Host "[OK] Connected to Windows System Media Transport Controls." -ForegroundColor Green
 } catch {
     Write-Host "[ERROR] Unable to access Windows Media Session: $($_.Exception.Message)" -ForegroundColor Red

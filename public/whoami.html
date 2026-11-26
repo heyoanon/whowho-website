@@ -1618,11 +1618,11 @@
 
         function updateTrackProgress() {
             document.querySelectorAll('.lanyard-music-card').forEach(card => {
-                const timing = card.querySelector('.lanyard-track-timing');
-                if (!timing || !timing.dataset.start || !timing.dataset.end) return;
+                const timeRange = card.querySelector('.lanyard-track-time-range');
+                if (!timeRange || !timeRange.dataset.start || !timeRange.dataset.end) return;
 
-                const startedAt = Number(timing.dataset.start);
-                const endsAt = Number(timing.dataset.end);
+                const startedAt = Number(timeRange.dataset.start);
+                const endsAt = Number(timeRange.dataset.end);
 
                 if (!startedAt || !endsAt || endsAt <= startedAt) return;
 
@@ -1636,8 +1636,8 @@
                     elapsedSeconds = rawElapsedSeconds % durationSeconds;
 
                     const cycle = Math.floor(rawElapsedSeconds / durationSeconds);
-                    if (timing.dataset.lastCycle !== String(cycle)) {
-                        timing.dataset.lastCycle = String(cycle);
+                    if (timeRange.dataset.lastCycle !== String(cycle)) {
+                        timeRange.dataset.lastCycle = String(cycle);
                         // Trigger immediate fetches to capture track change or sync repeat timestamps
                         pollDirectNowPlaying();
                         fetchLanyardPresence();
@@ -1646,26 +1646,20 @@
                         setTimeout(pollDirectNowPlaying, 1800);
                     }
                 } else {
-                    if (timing.dataset.lastCycle) {
-                        delete timing.dataset.lastCycle;
+                    if (timeRange.dataset.lastCycle) {
+                        delete timeRange.dataset.lastCycle;
                     }
                 }
 
-                const progressPercent = durationSeconds > 0 ? (elapsedSeconds / durationSeconds) * 100 : 0;
                 const formattedElapsed = formatTrackTime(elapsedSeconds);
                 const formattedTotal = formatTrackTime(durationSeconds);
 
-                // Update timing progress bar
-                const elapsedTime = timing.querySelector('[data-elapsed-time]');
-                const totalTime = timing.querySelector('[data-total-time]');
-                const progress = timing.querySelector('[role="progressbar"]');
-                const progressFill = timing.querySelector('.lanyard-track-progress-fill');
+                const elapsedEl = timeRange.querySelector('[data-elapsed-time]');
+                const totalEl = timeRange.querySelector('[data-total-time]');
 
-                if (elapsedTime) elapsedTime.textContent = formattedElapsed;
-                if (totalTime) totalTime.textContent = formattedTotal;
-                if (progress) progress.setAttribute('aria-valuenow', String(Math.round(progressPercent)));
-                if (progressFill) progressFill.style.width = `${progressPercent}%`;
-                timing.hidden = false;
+                if (elapsedEl) elapsedEl.textContent = formattedElapsed;
+                if (totalEl) totalEl.textContent = formattedTotal;
+                timeRange.style.display = 'inline-flex';
             });
         }
 
@@ -2364,7 +2358,19 @@
                 trackDetails.appendChild(artist);
             }
 
-            // Construct album line with live start-to-finish track time
+            // Determine track timestamps and timing
+            if ((!track.timestamps || !track.timestamps.start || !track.timestamps.end) && track.durationMs > 0) {
+                const s = Date.now();
+                const e = s + Number(track.durationMs);
+                track.timestamps = { start: s, end: e };
+            }
+
+            const timestamps = track.timestamps || {};
+            const startedAt = Number(timestamps.start);
+            const endsAt = Number(timestamps.end);
+            const hasTiming = Number.isFinite(startedAt) && Number.isFinite(endsAt) && startedAt > 0 && endsAt > startedAt;
+
+            // Construct album line with live start-to-finish track time placed immediately after album name
             const albumContainer = document.createElement('div');
             albumContainer.className = 'lanyard-track-album-line';
 
@@ -2373,7 +2379,28 @@
             albumTitleSpan.textContent = track.album || '';
             albumContainer.appendChild(albumTitleSpan);
 
-            if (track.album) {
+            const timeRangeSpan = document.createElement('span');
+            timeRangeSpan.className = 'lanyard-track-time-range';
+
+            if (hasTiming) {
+                const durationSeconds = Math.floor((endsAt - startedAt) / 1000);
+                const adjustedNow = Date.now() - serverClockOffset;
+                const rawElapsedSeconds = Math.max(0, Math.floor((adjustedNow - startedAt) / 1000));
+                const elapsedSeconds = durationSeconds > 0 && rawElapsedSeconds >= durationSeconds
+                    ? (rawElapsedSeconds % durationSeconds)
+                    : rawElapsedSeconds;
+
+                timeRangeSpan.dataset.start = String(startedAt);
+                timeRangeSpan.dataset.end = String(endsAt);
+                const bullet = track.album ? `<span class="time-sep">•</span> ` : '';
+                timeRangeSpan.innerHTML = `${bullet}<span class="time-elapsed" data-elapsed-time>${formatTrackTime(elapsedSeconds)}</span> <span class="time-slash" style="margin: 0 4px; color: #ffd700;">/</span> <span class="time-total" data-total-time>${formatTrackTime(durationSeconds)}</span>`;
+                timeRangeSpan.style.display = 'inline-flex';
+            } else {
+                timeRangeSpan.style.display = 'none';
+            }
+            albumContainer.appendChild(timeRangeSpan);
+
+            if (track.album || hasTiming) {
                 trackDetails.appendChild(albumContainer);
             }
 
@@ -2394,6 +2421,13 @@
                         if (res.album && !track.album) {
                             track.album = res.album;
                             albumTitleSpan.textContent = res.album;
+                            if (timeRangeSpan && !timeRangeSpan.querySelector('.time-sep')) {
+                                const sep = document.createElement('span');
+                                sep.className = 'time-sep';
+                                sep.textContent = '•';
+                                sep.style.marginRight = '5px';
+                                timeRangeSpan.insertBefore(sep, timeRangeSpan.firstChild);
+                            }
                             if (!albumContainer.parentElement) {
                                 trackDetails.insertBefore(albumContainer, serviceBadge);
                             }
@@ -2403,13 +2437,15 @@
                             const e = s + Number(res.durationMs);
                             track.timestamps = { start: s, end: e };
                             track.durationMs = res.durationMs;
-                            let timing = card.querySelector('.lanyard-track-timing');
-                            if (!timing) {
-                                renderUnifiedMusic(true);
-                                return;
+                            const durSec = Math.floor(res.durationMs / 1000);
+                            timeRangeSpan.dataset.start = String(s);
+                            timeRangeSpan.dataset.end = String(e);
+                            const bullet = track.album ? `<span class="time-sep">•</span> ` : '';
+                            timeRangeSpan.innerHTML = `${bullet}<span class="time-elapsed" data-elapsed-time>00:00</span> <span class="time-slash" style="margin: 0 4px; color: #ffd700;">/</span> <span class="time-total" data-total-time>${formatTrackTime(durSec)}</span>`;
+                            timeRangeSpan.style.display = 'inline-flex';
+                            if (!albumContainer.parentElement) {
+                                trackDetails.insertBefore(albumContainer, serviceBadge);
                             }
-                            timing.dataset.start = String(s);
-                            timing.dataset.end = String(e);
                             if (!trackProgressTimer) {
                                 updateTrackProgress();
                                 trackProgressTimer = setInterval(updateTrackProgress, 1000);
@@ -2465,55 +2501,6 @@
                     </span>
                 `;
                 trackInfo.appendChild(devBadge);
-            }
-
-            if ((!track.timestamps || !track.timestamps.start || !track.timestamps.end) && track.durationMs > 0) {
-                const s = Date.now();
-                const e = s + Number(track.durationMs);
-                track.timestamps = { start: s, end: e };
-            }
-
-            const timestamps = track.timestamps || {};
-            const startedAt = Number(timestamps.start);
-            const endsAt = Number(timestamps.end);
-            const hasTiming = Number.isFinite(startedAt) && Number.isFinite(endsAt) && startedAt > 0 && endsAt > startedAt;
-            if (hasTiming) {
-                const timing = document.createElement('div');
-                timing.className = 'lanyard-track-timing';
-                timing.dataset.start = String(startedAt);
-                timing.dataset.end = String(endsAt);
-
-                const durationSeconds = Math.floor((endsAt - startedAt) / 1000);
-                const adjustedNow = Date.now() - serverClockOffset;
-                const rawElapsedSeconds = Math.max(0, Math.floor((adjustedNow - startedAt) / 1000));
-                const elapsedSeconds = durationSeconds > 0 && rawElapsedSeconds >= durationSeconds
-                    ? (rawElapsedSeconds % durationSeconds)
-                    : rawElapsedSeconds;
-                const progressPercent = durationSeconds > 0 ? (elapsedSeconds / durationSeconds) * 100 : 0;
-
-                const elapsedTime = document.createElement('span');
-                elapsedTime.dataset.elapsedTime = '';
-                elapsedTime.textContent = formatTrackTime(elapsedSeconds);
-
-                const progress = document.createElement('div');
-                progress.className = 'lanyard-track-progress';
-                progress.setAttribute('role', 'progressbar');
-                progress.setAttribute('aria-label', `${track.source} track progress`);
-                progress.setAttribute('aria-valuemin', '0');
-                progress.setAttribute('aria-valuemax', '100');
-                progress.setAttribute('aria-valuenow', String(Math.round(progressPercent)));
-
-                const progressFill = document.createElement('span');
-                progressFill.className = 'lanyard-track-progress-fill';
-                progressFill.style.width = `${progressPercent}%`;
-                progress.appendChild(progressFill);
-
-                const totalTime = document.createElement('span');
-                totalTime.dataset.totalTime = '';
-                totalTime.textContent = formatTrackTime(durationSeconds);
-
-                timing.append(elapsedTime, progress, totalTime);
-                trackInfo.appendChild(timing);
             }
 
             if (track.url) {
@@ -2657,13 +2644,13 @@
                     if (primaryTrack.timestamps && (primaryTrack.timestamps.start !== undefined || primaryTrack.timestamps.end !== undefined)) {
                         const newStart = String(primaryTrack.timestamps.start || 0);
                         const newEnd = String(primaryTrack.timestamps.end || 0);
-                        const timing = musicList.querySelector('.lanyard-track-timing');
-                        if (timing) {
-                            if (timing.dataset.start !== newStart || timing.dataset.end !== newEnd) {
-                                delete timing.dataset.lastCycle;
+                        const timeRange = musicList.querySelector('.lanyard-track-time-range');
+                        if (timeRange) {
+                            if (timeRange.dataset.start !== newStart || timeRange.dataset.end !== newEnd) {
+                                delete timeRange.dataset.lastCycle;
                             }
-                            timing.dataset.start = newStart;
-                            timing.dataset.end = newEnd;
+                            timeRange.dataset.start = newStart;
+                            timeRange.dataset.end = newEnd;
                         }
                         updateTrackProgress();
                     }
