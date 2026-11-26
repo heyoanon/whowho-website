@@ -752,6 +752,66 @@
         }
         window.saveLoopToServer = saveLoopToServer;
 
+        function addTrackObjectToLoop(track) {
+            playArcadeBeep();
+            if (!track || !track.title) {
+                showToast('NO ACTIVE TRACK TO ADD.');
+                return;
+            }
+
+            if (!Array.isArray(currentProfileData.inTheLoop)) {
+                currentProfileData.inTheLoop = [];
+            }
+
+            const title = String(track.title || '').trim();
+            const artist = String(track.artist || '').trim();
+
+            const existingIndex = currentProfileData.inTheLoop.findIndex(t => 
+                (t.title || '').trim().toLowerCase() === title.toLowerCase() &&
+                (t.artist || '').trim().toLowerCase() === artist.toLowerCase()
+            );
+
+            if (existingIndex !== -1) {
+                showToast(`"${title.toUpperCase()}" IS ALREADY IN WHAT'S IN THE LOOP!`);
+                return;
+            }
+
+            const newTrack = {
+                id: `loop-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+                title,
+                artist,
+                album: String(track.album || '').trim(),
+                source: String(track.source || 'Spotify').trim() || 'Spotify',
+                url: String(track.url || '').trim(),
+                artworkUrl: String(track.artworkUrl || '').trim()
+            };
+
+            currentProfileData.inTheLoop.push(newTrack);
+            currentProfileData.onRepeat = currentProfileData.inTheLoop[0];
+
+            try {
+                localStorage.setItem('whowho_profile_data', JSON.stringify(currentProfileData));
+            } catch {}
+
+            saveLoopToServer(currentProfileData.inTheLoop);
+            if (isAdminLoggedIn) {
+                saveProfileToServer(currentProfileData);
+            }
+
+            showToast(`SAVED "${title.toUpperCase()}" TO WHAT'S IN THE LOOP! VIEW WITH "🔁 WHAT'S IN THE LOOP"`);
+
+            const addBtns = document.querySelectorAll('.now-playing-add-loop-btn');
+            addBtns.forEach(btn => {
+                btn.innerHTML = `✔ ADDED TO THE LOOP`;
+                btn.classList.add('added');
+                setTimeout(() => {
+                    btn.innerHTML = `➕ ADD TO WHAT'S IN THE LOOP`;
+                    btn.classList.remove('added');
+                }, 2800);
+            });
+        }
+        window.addTrackObjectToLoop = addTrackObjectToLoop;
+
         function handleAddTrackToLoop() {
             playArcadeBeep();
             const titleEl = document.getElementById('loop-new-title');
@@ -2678,33 +2738,33 @@
                 sourceClass += ' source-spotify';
                 sourceLabelHtml = '<span class="live-pulse spotify-pulse"></span> 🟢 STREAMING ON SPOTIFY';
                 listenBtnClass += ' spotify';
-                listenBtnText = '▶ OPEN ON SPOTIFY';
+                listenBtnText = '▶ PLAY ON SPOTIFY';
             } else if (sourceLower.includes('youtube') || sourceLower.includes('ytm')) {
                 sourceClass += ' source-ytm';
                 sourceLabelHtml = '<span class="live-pulse ytm-pulse"></span> 🔴 STREAMING ON YOUTUBE MUSIC';
                 listenBtnClass += ' ytm';
-                listenBtnText = '▶ OPEN ON YOUTUBE MUSIC';
+                listenBtnText = '▶ PLAY ON YOUTUBE MUSIC';
             } else if (sourceLower.includes('apple') || sourceLower.includes('itunes')) {
                 sourceClass += ' source-apple';
                 sourceLabelHtml = '<span class="live-pulse apple-pulse"></span> 🍎 STREAMING ON APPLE MUSIC';
                 listenBtnClass += ' apple';
-                listenBtnText = '▶ OPEN ON APPLE MUSIC';
+                listenBtnText = '▶ PLAY ON APPLE MUSIC';
             } else if (sourceLower.includes('bitchord')) {
                 sourceClass += ' source-bitchord';
                 sourceLabelHtml = '<span class="live-pulse bitchord-pulse"></span> ⚡ STREAMING ON BITCHORD';
                 listenBtnClass += ' bitchord';
-                listenBtnText = '▶ OPEN ON BITCHORD';
+                listenBtnText = '▶ PLAY ON BITCHORD';
             } else if (sourceLower.includes('soundcloud')) {
                 sourceClass += ' source-soundcloud';
                 sourceLabelHtml = '<span class="live-pulse"></span> ☁️ STREAMING ON SOUNDCLOUD';
                 listenBtnClass += ' soundcloud';
-                listenBtnText = '▶ OPEN ON SOUNDCLOUD';
+                listenBtnText = '▶ PLAY ON SOUNDCLOUD';
             } else if (sourceLower.includes('tidal')) {
                 sourceLabelHtml = '<span class="live-pulse"></span> 🌊 STREAMING ON TIDAL';
-                listenBtnText = '▶ OPEN ON TIDAL';
+                listenBtnText = '▶ PLAY ON TIDAL';
             } else if (sourceLower.includes('deezer')) {
                 sourceLabelHtml = '<span class="live-pulse"></span> 🟣 STREAMING ON DEEZER';
-                listenBtnText = '▶ OPEN ON DEEZER';
+                listenBtnText = '▶ PLAY ON DEEZER';
             } else {
                 sourceLabelHtml = `<span class="live-pulse"></span> STREAMING LIVE • ${escapeHtml(sourceStr.toUpperCase())}`;
             }
@@ -2934,6 +2994,21 @@
                 listenBtn.rel = 'noopener noreferrer';
                 listenBtn.textContent = listenBtnText;
                 trackInfo.appendChild(listenBtn);
+            }
+
+            // Button under Play on Spotify to add the song to What's in the loop
+            if (track.title) {
+                const addToLoopBtn = document.createElement('button');
+                addToLoopBtn.type = 'button';
+                addToLoopBtn.className = 'now-playing-add-loop-btn';
+                addToLoopBtn.innerHTML = `➕ ADD TO WHAT'S IN THE LOOP`;
+                addToLoopBtn.title = "Save this track directly under What's in the loop";
+                addToLoopBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    addTrackObjectToLoop(track);
+                });
+                trackInfo.appendChild(addToLoopBtn);
             }
 
             card.appendChild(trackInfo);

@@ -624,6 +624,43 @@ h3 {
     box-shadow: 0 0 14px rgba(168, 85, 247, 0.8);
 }
 
+/* Button under Play on Spotify to add song to What's in the loop */
+.now-playing-add-loop-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    padding: 7px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 8px;
+    transition: all 0.2s ease;
+    border: 1px dashed #00ffaa;
+    color: #00ffaa;
+    background: rgba(0, 255, 170, 0.08);
+    width: fit-content;
+    text-decoration: none;
+    line-height: 1.4;
+}
+
+.now-playing-add-loop-btn:hover {
+    background: rgba(0, 255, 170, 0.24);
+    border-style: solid;
+    border-color: #00ffaa;
+    box-shadow: 0 0 12px rgba(0, 255, 170, 0.6);
+    transform: translateY(-1px);
+    color: #ffffff;
+}
+
+.now-playing-add-loop-btn.added {
+    border-color: #ffd700;
+    color: #ffd700;
+    background: rgba(255, 215, 0, 0.18);
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+}
+
 /* Device Location Pill ("Where It Plays") */
 .lanyard-device-pill {
     display: inline-flex;
