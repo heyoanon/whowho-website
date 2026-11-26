@@ -113,6 +113,13 @@ Function Detect-BrowserStreamingService {
                     $bestService = "SoundCloud"
                 }
             }
+            $bc = Get-ChildItem $p -Filter "*bitchord*" -ErrorAction SilentlyContinue
+            foreach ($d in $bc) {
+                if ($d.LastWriteTime -gt $latestTime) {
+                    $latestTime = $d.LastWriteTime
+                    $bestService = "BitChord"
+                }
+            }
         }
     }
     $script:cachedStreamingService = $bestService
@@ -428,7 +435,9 @@ while ($true) {
 
                 # If playing in any browser, accurately detect streaming platform
                 if ($isBrowser) {
-                    if ($titleLower -match "spotify" -or $sourceApp -match "spotify") {
+                    if ($titleLower -match "bitchord" -or $sourceApp -match "bitchord") {
+                        $source = "BitChord"
+                    } elseif ($titleLower -match "spotify" -or $sourceApp -match "spotify") {
                         $source = "Spotify"
                     } elseif ($titleLower -match "apple music|itunes" -or $sourceApp -match "apple") {
                         $source = "Apple Music"
@@ -452,7 +461,15 @@ while ($true) {
                 }
 
                 $bullet = [char]0x2022
-                $rawDev = "Desktop PC $bullet $deviceApp ($source)"
+                if ($deviceApp -match "bitchord" -or $source -eq "BitChord") {
+                    if ($isBrowser) {
+                        $rawDev = "Desktop PC $bullet $deviceApp (BitChord)"
+                    } else {
+                        $rawDev = "Desktop PC $bullet BitChord"
+                    }
+                } else {
+                    $rawDev = "Desktop PC $bullet $deviceApp ($source)"
+                }
                 $device = ($rawDev -replace '(?:\s*[\.\-\u2022\u00B7\u25CF\uFFFD\?]+\s*)+', " $bullet ").Trim()
 
                 $cacheKey = "$artist - $title - $album"

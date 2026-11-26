@@ -7,6 +7,12 @@
 // @match        https://music.youtube.com/*
 // @match        https://www.youtube.com/*
 // @match        https://music.apple.com/*
+// @match        https://*.bitchord.com/*
+// @match        https://bitchord.com/*
+// @match        https://*.bitchord.app/*
+// @match        https://bitchord.app/*
+// @match        https://*.bitchord.io/*
+// @match        https://bitchord.io/*
 // @grant        GM_xmlhttpRequest
 // @connect      *
 // @run-at       document-idle
@@ -26,6 +32,7 @@
 
     function detectStreamingPlatform() {
         const host = window.location.hostname.toLowerCase();
+        if (host.includes('bitchord')) return 'BitChord';
         if (host.includes('spotify.com')) return 'Spotify';
         if (host.includes('music.youtube.com') || host.includes('youtube.com')) return 'YouTube Music';
         if (host.includes('apple.com')) return 'Apple Music';
@@ -78,8 +85,10 @@
     function getDeviceLocation() {
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
         const browser = detectBrowserName();
+        const platform = detectStreamingPlatform();
+        const devName = platform === 'BitChord' ? `${browser} (BitChord)` : browser;
         return {
-            device: isMobile ? `Mobile Phone • ${browser}` : `Desktop PC • ${browser}`,
+            device: isMobile ? `Mobile Phone • ${devName}` : `Desktop PC • ${devName}`,
             deviceType: isMobile ? 'mobile' : 'desktop'
         };
     }

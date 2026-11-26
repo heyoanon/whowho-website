@@ -644,6 +644,7 @@
                                     <button type="button" class="streaming-service-pill spotify active" id="pill-spotify" onclick="selectStreamingService('Spotify')">🟢 SPOTIFY</button>
                                     <button type="button" class="streaming-service-pill ytm" id="pill-ytm" onclick="selectStreamingService('YouTube Music')">🔴 YOUTUBE MUSIC</button>
                                     <button type="button" class="streaming-service-pill apple" id="pill-apple" onclick="selectStreamingService('Apple Music')">🍎 APPLE MUSIC</button>
+                                    <button type="button" class="streaming-service-pill bitchord" id="pill-bitchord" onclick="selectStreamingService('BitChord')">⚡ BITCHORD</button>
                                 </div>
                                 <input type="hidden" id="live-stream-service" value="Spotify">
                                 <div class="profile-form-group">
@@ -1860,7 +1861,9 @@
                 artworkUrl,
                 fallbackArtworkUrl,
                 url,
-                timestamps: activity.timestamps || null
+                timestamps: activity.timestamps || null,
+                device: isBitChord ? 'Desktop PC • BitChord' : '',
+                deviceType: 'desktop'
             };
         }
 
@@ -1874,6 +1877,7 @@
             if (service === 'Spotify') document.getElementById('pill-spotify')?.classList.add('active');
             else if (service === 'YouTube Music') document.getElementById('pill-ytm')?.classList.add('active');
             else if (service === 'Apple Music') document.getElementById('pill-apple')?.classList.add('active');
+            else if (service === 'BitChord') document.getElementById('pill-bitchord')?.classList.add('active');
         }
         window.selectStreamingService = selectStreamingService;
 
@@ -2229,6 +2233,11 @@
                 sourceLabelHtml = '<span class="live-pulse apple-pulse"></span> 🍎 STREAMING ON APPLE MUSIC';
                 listenBtnClass += ' apple';
                 listenBtnText = '▶ OPEN ON APPLE MUSIC';
+            } else if (sourceLower.includes('bitchord')) {
+                sourceClass += ' source-bitchord';
+                sourceLabelHtml = '<span class="live-pulse bitchord-pulse"></span> ⚡ STREAMING ON BITCHORD';
+                listenBtnClass += ' bitchord';
+                listenBtnText = '▶ OPEN ON BITCHORD';
             } else if (sourceLower.includes('soundcloud')) {
                 sourceClass += ' source-soundcloud';
                 sourceLabelHtml = '<span class="live-pulse"></span> ☁️ STREAMING ON SOUNDCLOUD';
@@ -2355,7 +2364,7 @@
 
             // Explicit Streaming Service Origin Badge
             const serviceBadge = document.createElement('span');
-            serviceBadge.className = `streaming-service-badge ${sourceLower.includes('spotify') ? 'spotify' : sourceLower.includes('youtube') || sourceLower.includes('ytm') ? 'ytm' : sourceLower.includes('apple') ? 'apple' : ''}`;
+            serviceBadge.className = `streaming-service-badge ${sourceLower.includes('spotify') ? 'spotify' : sourceLower.includes('youtube') || sourceLower.includes('ytm') ? 'ytm' : sourceLower.includes('apple') ? 'apple' : sourceLower.includes('bitchord') ? 'bitchord' : ''}`;
             serviceBadge.innerHTML = `📡 <b>STREAMED FROM:</b> ${escapeHtml(sourceStr.toUpperCase())}`;
             trackDetails.appendChild(serviceBadge);
 
@@ -2501,7 +2510,7 @@
                     </div>
                     <p class="lanyard-activity" style="color:#ffffff; font-size:12px; margin-bottom:10px; letter-spacing:1px;">AUDIO STREAM ON STANDBY</p>
                     <p style="font-size:10px; color:#9ab7ff; line-height:1.8; max-width:440px; margin:0 auto 16px auto;">
-                        Start streaming any track in Spotify, YouTube Music, Apple Music, or your browser (Brave, Zen, Opera, LibreWolf) to broadcast live.
+                        Start streaming any track in Spotify, YouTube Music, Apple Music, BitChord, or your browser (Brave, Zen, Opera, LibreWolf) to broadcast live.
                     </p>
                     <button type="button" class="stream-check-btn" onclick="fetchLanyardPresence(true)">CHECK AUDIO ⟳</button>
                 </div>
@@ -2601,7 +2610,7 @@
                         String(t.title || '').toLowerCase() === String(parsed.title || '').toLowerCase()
                     );
                     if (!isDuplicate) {
-                        parsed.device = parsed.device || discordDevice;
+                        parsed.device = parsed.device || (String(parsed.source || '').toLowerCase().includes('bitchord') ? 'Desktop PC • BitChord' : discordDevice);
                         parsed.deviceType = parsed.deviceType || discordDeviceType;
                         tracks.push(parsed);
                     }

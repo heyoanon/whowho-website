@@ -554,6 +554,15 @@ h3 {
     box-shadow: 0 0 10px #fa2d48;
 }
 
+.lanyard-source-label.source-bitchord {
+    color: #c084fc;
+    text-shadow: 0 0 10px rgba(168, 85, 247, 0.7);
+}
+.live-pulse.bitchord-pulse {
+    background-color: #a855f7;
+    box-shadow: 0 0 10px #a855f7;
+}
+
 .streaming-listen-btn {
     font-family: 'Press Start 2P', monospace;
     font-size: 10px;
@@ -603,6 +612,16 @@ h3 {
     background: #fa2d48;
     color: #fff;
     box-shadow: 0 0 14px rgba(250, 45, 72, 0.8);
+}
+.streaming-listen-btn.bitchord {
+    border-color: #a855f7;
+    color: #c084fc;
+    background: rgba(168, 85, 247, 0.15);
+}
+.streaming-listen-btn.bitchord:hover {
+    background: #a855f7;
+    color: #fff;
+    box-shadow: 0 0 14px rgba(168, 85, 247, 0.8);
 }
 
 /* Device Location Pill ("Where It Plays") */
@@ -682,6 +701,12 @@ h3 {
     background: rgba(252, 60, 68, 0.12);
     color: #fc3c44;
     box-shadow: 0 0 6px rgba(252, 60, 68, 0.2);
+}
+.streaming-service-badge.bitchord {
+    border-color: rgba(168, 85, 247, 0.6);
+    background: rgba(168, 85, 247, 0.12);
+    color: #c084fc;
+    box-shadow: 0 0 6px rgba(168, 85, 247, 0.2);
 }
 
 /* Retro Animated Audio Equalizer Bars */
@@ -785,6 +810,12 @@ h3 {
     color: #ff6b8b;
     background: rgba(250, 45, 72, 0.2);
     box-shadow: 0 0 8px rgba(250, 45, 72, 0.5);
+}
+.streaming-service-pill.bitchord.active {
+    border-color: #a855f7;
+    color: #c084fc;
+    background: rgba(168, 85, 247, 0.2);
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
 }
 
 /* Autofill Device Playback Detector Box */
@@ -972,14 +1003,36 @@ h3 {
 }
 
 .lanyard-track-album-line {
-    display: block;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 6px;
     max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     color: #9ab7ff;
     font-size: 13px;
     line-height: 1.4;
+}
+
+.lanyard-album-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.lanyard-track-time-range {
+    display: inline-flex;
+    align-items: center;
+    color: #00ffcc;
+    font-family: 'Press Start 2P', monospace, monospace;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    vertical-align: baseline;
+}
+
+.lanyard-track-time-range .time-sep {
+    color: #ffd700;
+    margin-right: 5px;
 }
 
 .lanyard-track-link {

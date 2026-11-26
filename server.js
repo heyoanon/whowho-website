@@ -939,7 +939,7 @@ app.post('/api/now-playing', async (req, res) => {
       }
     }
 
-    // Normalize source name for Spotify, YouTube Music, and Apple Music
+    // Normalize source name for Spotify, YouTube Music, Apple Music, and BitChord
     const sourceLower = String(source).toLowerCase();
     let normalizedSource = String(source).trim() || 'Music';
     if (sourceLower.includes('spotify')) {
@@ -948,6 +948,8 @@ app.post('/api/now-playing', async (req, res) => {
       normalizedSource = 'YouTube Music';
     } else if (sourceLower.includes('apple') || sourceLower.includes('itunes')) {
       normalizedSource = 'Apple Music';
+    } else if (sourceLower.includes('bitchord')) {
+      normalizedSource = 'BitChord';
     }
 
     // Generate official streaming link if none provided
@@ -959,6 +961,8 @@ app.post('/api/now-playing', async (req, res) => {
         url = `https://music.youtube.com/search?q=${query}`;
       } else if (normalizedSource === 'Apple Music') {
         url = `https://music.apple.com/search?term=${query}`;
+      } else if (normalizedSource === 'BitChord') {
+        url = `https://music.youtube.com/search?q=${query}`;
       } else {
         url = `https://www.google.com/search?q=${query}`;
       }
@@ -1160,6 +1164,10 @@ app.get('/api/now-playing', async (req, res) => {
                   } catch { }
                 }
 
+                const isMobileDiscord = Boolean(presence.active_on_discord_mobile);
+                const bitDevice = isBitChord
+                  ? (isMobileDiscord ? 'Mobile Phone • BitChord' : 'Desktop PC • BitChord')
+                  : (isMobileDiscord ? 'Mobile Phone' : 'Desktop PC');
                 return res.json({
                   isPlaying: true,
                   provider: 'discord-lanyard',
@@ -1168,7 +1176,9 @@ app.get('/api/now-playing', async (req, res) => {
                   artist,
                   album: resolvedAlbum,
                   artworkUrl,
-                  url: act.details_url || '',
+                  url: act.details_url || (isBitChord ? `https://music.youtube.com/search?q=${encodeURIComponent(`${title} ${artist}`.trim())}` : ''),
+                  device: bitDevice,
+                  deviceType: isMobileDiscord ? 'mobile' : 'desktop',
                   timestamps: act.timestamps || null
                 });
               }
