@@ -8,6 +8,14 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+process.on('uncaughtException', (err) => {
+  console.error('Unhandled process exception:', err?.message || err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled promise rejection:', reason);
+});
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const RECIPIENT_EMAIL = process.env.EMAIL_TO || 'danyaellap@gmail.com';

@@ -232,20 +232,29 @@
         let arcadeKeyupHandler = null;
         let arcadeActiveInputs = { up: false, down: false, left: false, right: false, action: false };
         let arcadeDiscreteActionTriggered = false;
+        let arcadeButtonsBound = false;
 
         function getStoredAdminToken() {
-            return sessionStorage.getItem('whowho_admin_token') || localStorage.getItem('whowho_admin_token') || '';
+            try {
+                return sessionStorage.getItem('whowho_admin_token') || localStorage.getItem('whowho_admin_token') || '';
+            } catch {
+                return '';
+            }
         }
 
         function setStoredAdminToken(token) {
-            if (token) {
-                sessionStorage.setItem('whowho_admin_token', token);
-                localStorage.setItem('whowho_admin_token', token);
-                isAdminLoggedIn = true;
-            } else {
-                sessionStorage.removeItem('whowho_admin_token');
-                localStorage.removeItem('whowho_admin_token');
-                isAdminLoggedIn = false;
+            try {
+                if (token) {
+                    sessionStorage.setItem('whowho_admin_token', token);
+                    localStorage.setItem('whowho_admin_token', token);
+                    isAdminLoggedIn = true;
+                } else {
+                    sessionStorage.removeItem('whowho_admin_token');
+                    localStorage.removeItem('whowho_admin_token');
+                    isAdminLoggedIn = false;
+                }
+            } catch {
+                isAdminLoggedIn = Boolean(token);
             }
         }
 
@@ -1008,6 +1017,8 @@
                     currentProfileData.inTheLoop.splice(index, 1);
                     if (currentProfileData.inTheLoop.length > 0) {
                         currentProfileData.onRepeat = currentProfileData.inTheLoop[0];
+                    } else {
+                        currentProfileData.onRepeat = null;
                     }
                     editingLoopTrackIndex = null;
 
@@ -1327,7 +1338,7 @@
                             <button type="button" class="edit-profile-btn ${isAdminLoggedIn ? '' : 'locked'}" onclick="toggleEditProfile('knowMe')" title="${isAdminLoggedIn ? 'Edit profile' : 'Owner access required'}">${isAdminLoggedIn ? '✎ EDIT' : '🔒 OWNER EDIT'}</button>
                         </div>
                         <div class="fact-box know-me-box">
-                            <img class="blue-cat-cap-image" src="blue%20cat%20cap.jpg" alt="Blue cat cap" onerror="if (this.src.indexOf('blue-cat-cap.jpg') === -1) { this.src='blue-cat-cap.jpg'; }">
+                            <img class="blue-cat-cap-image" src="blue-cat-cap.jpg" alt="Blue cat cap" onerror="if (this.src.indexOf('blue%20cat%20cap.jpg') === -1) { this.src='blue%20cat%20cap.jpg'; }">
                             <div class="know-me-grid">
                                 <p>NAME: ${escapeHtml(currentProfileData.knowMe.name)}</p>
                                 <p>NICKNAME: ${escapeHtml(currentProfileData.knowMe.nickname)}</p>
@@ -1794,20 +1805,24 @@
                 if (arcadeAudioContext.state === 'suspended') {
                     arcadeAudioContext.resume().catch(() => {});
                 }
+                const startF = Math.max(10, Number(frequency) || 620);
+                const endF = Math.max(10, Number(endFreq) || 330);
+                const dur = Math.max(0.01, Number(duration) || 0.09);
+
                 const oscillator = arcadeAudioContext.createOscillator();
                 const gain = arcadeAudioContext.createGain();
                 const startTime = arcadeAudioContext.currentTime;
 
                 oscillator.type = type;
-                oscillator.frequency.setValueAtTime(frequency, startTime);
-                oscillator.frequency.exponentialRampToValueAtTime(Math.max(10, endFreq), startTime + duration * 0.85);
+                oscillator.frequency.setValueAtTime(startF, startTime);
+                oscillator.frequency.exponentialRampToValueAtTime(endF, startTime + dur * 0.85);
                 gain.gain.setValueAtTime(0.0001, startTime);
                 gain.gain.exponentialRampToValueAtTime(0.12, startTime + 0.01);
-                gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+                gain.gain.exponentialRampToValueAtTime(0.0001, startTime + dur);
                 oscillator.connect(gain);
                 gain.connect(arcadeAudioContext.destination);
                 oscillator.start(startTime);
-                oscillator.stop(startTime + duration + 0.01);
+                oscillator.stop(startTime + dur + 0.01);
             } catch {}
         }
 
@@ -3625,7 +3640,7 @@
         // ==========================================
         // BUILT-IN RETRO ARCADE PLAYER & MINI-GAMES
         // ==========================================
-        function stopArcadeGame() {
+        function stopArcadeGame(resetButtons = false) {
             if (arcadeAnimFrame) {
                 cancelAnimationFrame(arcadeAnimFrame);
                 arcadeAnimFrame = null;
@@ -3641,6 +3656,9 @@
             if (arcadeKeyupHandler) {
                 window.removeEventListener('keyup', arcadeKeyupHandler);
                 arcadeKeyupHandler = null;
+            }
+            if (resetButtons) {
+                arcadeButtonsBound = false;
             }
             arcadeActiveInputs = { up: false, down: false, left: false, right: false, action: false };
             arcadeDiscreteActionTriggered = false;
@@ -3670,7 +3688,7 @@
         }
 
         function openArcadePlayer(gameType = 'pacman') {
-            stopArcadeGame();
+            stopArcadeGame(true);
             currentArcadeGameType = gameType;
 
             const titleMap = {
@@ -3748,7 +3766,7 @@
             if (backBtn) {
                 backBtn.addEventListener('click', () => {
                     playArcadeBeep();
-                    stopArcadeGame();
+                    stopArcadeGame(true);
                     renderPage('randomGame', false);
                 });
             }
@@ -3786,37 +3804,48 @@
                 });
             });
 
-            bindArcadeControls();
             startSelectedArcadeGame(currentArcadeGameType);
         }
 
         function bindArcadeControls() {
-            function setupBtn(el, dir) {
-                if (!el) return;
-                const press = (e) => {
-                    if (e.cancelable) e.preventDefault();
-                    arcadeActiveInputs[dir] = true;
-                    el.classList.add('pressed');
-                    if (dir === 'action') arcadeDiscreteActionTriggered = true;
-                };
-                const release = (e) => {
-                    if (e.cancelable) e.preventDefault();
-                    arcadeActiveInputs[dir] = false;
-                    el.classList.remove('pressed');
-                };
+            if (!arcadeButtonsBound) {
+                arcadeButtonsBound = true;
+                function setupBtn(el, dir) {
+                    if (!el) return;
+                    const press = (e) => {
+                        if (e.cancelable) e.preventDefault();
+                        arcadeActiveInputs[dir] = true;
+                        el.classList.add('pressed');
+                        if (dir === 'action') arcadeDiscreteActionTriggered = true;
+                    };
+                    const release = (e) => {
+                        if (e.cancelable) e.preventDefault();
+                        arcadeActiveInputs[dir] = false;
+                        el.classList.remove('pressed');
+                    };
 
-                el.addEventListener('pointerdown', press);
-                el.addEventListener('pointerup', release);
-                el.addEventListener('pointercancel', release);
-                el.addEventListener('pointerleave', release);
-                el.addEventListener('touchstart', press, { passive: false });
-                el.addEventListener('touchend', release, { passive: false });
+                    el.addEventListener('pointerdown', press);
+                    el.addEventListener('pointerup', release);
+                    el.addEventListener('pointercancel', release);
+                    el.addEventListener('pointerleave', release);
+                    el.addEventListener('touchstart', press, { passive: false });
+                    el.addEventListener('touchend', release, { passive: false });
+                }
+
+                document.querySelectorAll('.dpad-btn').forEach(btn => {
+                    setupBtn(btn, btn.dataset.dir);
+                });
+                setupBtn(document.getElementById('arcade-action-btn'), 'action');
             }
 
-            document.querySelectorAll('.dpad-btn').forEach(btn => {
-                setupBtn(btn, btn.dataset.dir);
-            });
-            setupBtn(document.getElementById('arcade-action-btn'), 'action');
+            if (arcadeKeydownHandler) {
+                window.removeEventListener('keydown', arcadeKeydownHandler);
+                arcadeKeydownHandler = null;
+            }
+            if (arcadeKeyupHandler) {
+                window.removeEventListener('keyup', arcadeKeyupHandler);
+                arcadeKeyupHandler = null;
+            }
 
             arcadeKeydownHandler = (e) => {
                 const key = e.key;
@@ -4227,13 +4256,19 @@
 
                 if (stepDown) {
                     invDir = -invDir;
+                    let hasInvaded = false;
                     remaining.forEach(inv => {
                         inv.y += 12;
                         if (inv.y >= 245) {
-                            showArcadeOverlay('INVADED! SCORE: ' + score);
-                            lives = 0;
+                            hasInvaded = true;
                         }
                     });
+                    if (hasInvaded && lives > 0) {
+                        lives = 0;
+                        playArcadeBeep(150, 50, 0.4, 'sawtooth');
+                        showArcadeOverlay('INVADED! SCORE: ' + score);
+                        return;
+                    }
                 }
 
                 if (tick % 45 === 0 && remaining.length > 0) {

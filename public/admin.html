@@ -205,21 +205,27 @@
     }
 
     function getAdminToken() {
-      return sessionStorage.getItem('whowho_admin_token') || localStorage.getItem('whowho_admin_token') || '';
+      try {
+        return sessionStorage.getItem('whowho_admin_token') || localStorage.getItem('whowho_admin_token') || '';
+      } catch {
+        return '';
+      }
     }
 
     function setAdminToken(token) {
-      if (token) {
-        sessionStorage.setItem('whowho_admin_token', token);
-        localStorage.setItem('whowho_admin_token', token);
-        lockToggleBtn.textContent = '🔒 LOCK';
-        lockToggleBtn.title = 'Lock admin access';
-      } else {
-        sessionStorage.removeItem('whowho_admin_token');
-        localStorage.removeItem('whowho_admin_token');
-        lockToggleBtn.textContent = '🔑 UNLOCK';
-        lockToggleBtn.title = 'Unlock admin access';
-      }
+      try {
+        if (token) {
+          sessionStorage.setItem('whowho_admin_token', token);
+          localStorage.setItem('whowho_admin_token', token);
+          lockToggleBtn.textContent = '🔒 LOCK';
+          lockToggleBtn.title = 'Lock admin access';
+        } else {
+          sessionStorage.removeItem('whowho_admin_token');
+          localStorage.removeItem('whowho_admin_token');
+          lockToggleBtn.textContent = '🔑 UNLOCK';
+          lockToggleBtn.title = 'Unlock admin access';
+        }
+      } catch {}
     }
 
     function getAuthHeaders() {
