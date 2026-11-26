@@ -46,10 +46,12 @@ function hasPersistentMessageStorage() {
   return Boolean(database) || !process.env.VERCEL;
 }
 
+let dbInitialized = false;
 async function initializeDatabase() {
-  if (!database) {
+  if (!database || dbInitialized) {
     return;
   }
+  dbInitialized = true;
 
   await database.query(`
     CREATE TABLE IF NOT EXISTS messages (
@@ -1329,17 +1331,20 @@ app.get('*', (req, res, next) => {
   res.sendFile(path.join(__dirname, 'whoami.html'));
 });
 
-initializeDatabase()
-  .then(loadMessages)
-  .then(() => {
-    if (!process.env.VERCEL) {
+if (!process.env.VERCEL) {
+  initializeDatabase()
+    .then(loadMessages)
+    .then(() => {
       app.listen(PORT, () => {
         console.log(`Whoami backend running at http://localhost:${PORT}`);
       });
-    }
-  })
-  .catch(error => {
-    console.error('Unable to initialize message storage:', error.message);
-  });
+    })
+    .catch(error => {
+      console.error('Unable to initialize message storage:', error.message);
+    });
+} else {
+  // On Vercel, initialize asynchronously in background without blocking serverless function cold starts
+  initializeDatabase().catch(() => {});
+}
 
 module.exports = app;
