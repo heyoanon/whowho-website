@@ -971,7 +971,17 @@ app.post('/api/now-playing', async (req, res) => {
     const durationMs = Number(duration) > 0 ? Number(duration) * 1000 : (Number(req.body?.durationMs) || 0);
     const positionMs = Number(position) > 0 ? Number(position) * 1000 : (Number(req.body?.positionMs) || 0);
     const now = Date.now();
-    const start = now - positionMs;
+
+    // Compensate for network transit latency if client sent its local timestamp
+    let transitMs = 0;
+    if (req.body?.clientTimestamp && Number(req.body.clientTimestamp) > 0) {
+      const diff = now - Number(req.body.clientTimestamp);
+      if (diff > 0 && diff < 8000) {
+        transitMs = diff;
+      }
+    }
+    const adjustedPosMs = positionMs + transitMs;
+    const start = now - adjustedPosMs;
     const end = durationMs > 0 ? (start + durationMs) : 0;
     const sanitizedDevice = String(device || '')
       .replace(/â€¢/g, ' • ')
@@ -1063,6 +1073,7 @@ app.get('/api/now-playing', async (req, res) => {
       return res.json({
         isPlaying: true,
         provider: 'direct-broadcast',
+        serverTime: Date.now(),
         ...directTrack
       });
     }
@@ -1202,6 +1213,7 @@ app.get('/api/now-playing', async (req, res) => {
 
     return res.json({
       isPlaying: false,
+      serverTime: Date.now(),
       status: 'standby',
       message: 'No live stream actively broadcasting. Showing on-repeat rotation.',
       onRepeat: onRepeatTrack || null,

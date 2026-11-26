@@ -18,10 +18,10 @@
 // @run-at       document-idle
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
 
-    const API_ENDPOINT = window.location.origin.includes('localhost') 
+    const API_ENDPOINT = window.location.origin.includes('localhost')
         ? 'http://localhost:3000/api/now-playing'
         : 'https://whowho-website.vercel.app/api/now-playing';
 
@@ -95,11 +95,59 @@
         };
     }
 
+    function getLivePlaybackTime(platform) {
+        let position = 0;
+        let duration = 0;
+
+        // Try HTMLMediaElement first
+        const mediaElements = Array.from(document.querySelectorAll('audio, video'));
+        const activeMedia = mediaElements.find(el => !el.paused && !el.ended);
+        if (activeMedia) {
+            if (Number.isFinite(activeMedia.duration) && activeMedia.duration > 0) duration = Math.round(activeMedia.duration);
+            if (Number.isFinite(activeMedia.currentTime) && activeMedia.currentTime >= 0) position = Math.round(activeMedia.currentTime);
+        }
+
+        // DOM-specific time scrapers if audio element is virtual/worklet (Spotify Web, YTM, Apple Music, BitChord)
+        if (platform === 'Spotify') {
+            const posEl = document.querySelector('[data-testid="playback-position"]');
+            const durEl = document.querySelector('[data-testid="playback-duration"]');
+            if (posEl && posEl.textContent) {
+                const parts = posEl.textContent.trim().split(':').map(Number);
+                if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) position = parts[0] * 60 + parts[1];
+                else if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) position = parts[0] * 3600 + parts[1] * 60 + parts[2];
+            }
+            if (durEl && durEl.textContent) {
+                const parts = durEl.textContent.trim().split(':').map(Number);
+                if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) duration = parts[0] * 60 + parts[1];
+                else if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) duration = parts[0] * 3600 + parts[1] * 60 + parts[2];
+            }
+        } else if (platform === 'YouTube Music') {
+            const timeEl = document.querySelector('ytmusic-player-bar .time-info');
+            if (timeEl && timeEl.textContent) {
+                const [pStr, dStr] = timeEl.textContent.split('/').map(s => s.trim());
+                if (pStr) {
+                    const parts = pStr.split(':').map(Number);
+                    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) position = parts[0] * 60 + parts[1];
+                }
+                if (dStr) {
+                    const parts = dStr.split(':').map(Number);
+                    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) duration = parts[0] * 60 + parts[1];
+                }
+            }
+        }
+        return {
+            position,
+            duration,
+            isPlaying: Boolean(activeMedia || (navigator.mediaSession && navigator.mediaSession.playbackState === 'playing'))
+        };
+    }
+
     function sendTrackUpdate(trackData) {
         const devInfo = getDeviceLocation();
         const payload = JSON.stringify({
             ...devInfo,
             ...trackData,
+            clientTimestamp: Date.now(),
             secret: API_SECRET
         });
 
@@ -115,7 +163,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: payload
-            }).catch(() => {});
+            }).catch(() => { });
         }
     }
 
@@ -151,21 +199,20 @@
             if (isAdvertisement(title, artist, album)) return;
             const artworkUrl = meta.artwork && meta.artwork.length ? meta.artwork[meta.artwork.length - 1].src : '';
 
-            const mediaElements = Array.from(document.querySelectorAll('audio, video'));
-            const activeMedia = mediaElements.find(el => !el.paused && !el.ended);
-            const isPlaying = Boolean(activeMedia || (navigator.mediaSession.playbackState === 'playing'));
-            const duration = activeMedia && Number.isFinite(activeMedia.duration) ? Math.round(activeMedia.duration) : 0;
-            const position = activeMedia && Number.isFinite(activeMedia.currentTime) ? Math.round(activeMedia.currentTime) : 0;
+            const liveTime = getLivePlaybackTime(platform);
+            const isPlaying = liveTime.isPlaying;
+            const duration = liveTime.duration;
+            const position = liveTime.position;
 
             let isSeek = false;
             if (lastBroadcastPosition >= 0 && isPlaying) {
                 const elapsedSinceLastSend = (Date.now() - lastBroadcastTime) / 1000;
                 const expectedPos = lastBroadcastPosition + elapsedSinceLastSend;
-                if (Math.abs(position - expectedPos) >= 4) {
+                if (Math.abs(position - expectedPos) >= 2) {
                     isSeek = true;
                 }
             }
-            const isPeriodicSync = isPlaying && (Date.now() - lastBroadcastTime >= 30000);
+            const isPeriodicSync = isPlaying && (Date.now() - lastBroadcastTime >= 10000);
 
             const trackKey = `${platform}:${title}:${artist}:${album}:${isPlaying}`;
             if (title && (trackKey !== lastTrackKey || isSeek || isPeriodicSync)) {
@@ -192,22 +239,36 @@
         // 2. DOM Fallbacks
         if (platform === 'Spotify') {
             const titleEl = document.querySelector('[data-testid="now-playing-widget"] [data-testid="context-item-info-title"] a') ||
-                            document.querySelector('.now-playing-bar [data-testid="context-item-link"]') ||
-                            document.querySelector('[data-testid="now-playing-widget"] a');
+                document.querySelector('.now-playing-bar [data-testid="context-item-link"]') ||
+                document.querySelector('[data-testid="now-playing-widget"] a');
             const artistEl = document.querySelector('[data-testid="now-playing-widget"] [data-testid="context-item-info-subtitles"] a') ||
-                             document.querySelector('.now-playing-bar [data-testid="context-item-info-artist"]');
+                document.querySelector('.now-playing-bar [data-testid="context-item-info-artist"]');
             const imgEl = document.querySelector('[data-testid="now-playing-widget"] img') ||
-                          document.querySelector('.now-playing-bar img');
+                document.querySelector('.now-playing-bar img');
             const playBtn = document.querySelector('[data-testid="control-button-playpause"]');
 
             if (titleEl) {
                 const title = (titleEl.textContent || '').trim();
                 const artist = artistEl ? (artistEl.textContent || '').trim() : '';
                 const artworkUrl = imgEl ? (imgEl.src || '') : '';
-                const isPlaying = playBtn ? playBtn.getAttribute('aria-label') === 'Pause' : true;
+                const liveTime = getLivePlaybackTime('Spotify');
+                const isPlaying = playBtn ? playBtn.getAttribute('aria-label') === 'Pause' : liveTime.isPlaying;
                 const trackKey = `Spotify:${title}:${artist}:${isPlaying}`;
-                if (title && trackKey !== lastTrackKey) {
+                
+                let isSeek = false;
+                if (lastBroadcastPosition >= 0 && isPlaying) {
+                    const elapsedSinceLastSend = (Date.now() - lastBroadcastTime) / 1000;
+                    const expectedPos = lastBroadcastPosition + elapsedSinceLastSend;
+                    if (Math.abs(liveTime.position - expectedPos) >= 2) {
+                        isSeek = true;
+                    }
+                }
+                const isPeriodicSync = isPlaying && (Date.now() - lastBroadcastTime >= 10000);
+
+                if (title && (trackKey !== lastTrackKey || isSeek || isPeriodicSync)) {
                     lastTrackKey = trackKey;
+                    lastBroadcastPosition = liveTime.position;
+                    lastBroadcastTime = Date.now();
                     isCurrentlyPlaying = isPlaying;
                     sendTrackUpdate({
                         source: 'Spotify',
@@ -216,7 +277,8 @@
                         album: '',
                         artworkUrl,
                         url: titleEl.href || window.location.href,
-                        duration: 0,
+                        duration: liveTime.duration,
+                        position: liveTime.position,
                         isPlaying
                     });
                 }
@@ -250,13 +312,13 @@
             }
         } else if (platform === 'Apple Music') {
             const titleEl = document.querySelector('.playback-description__title') ||
-                            document.querySelector('amp-lcd .lcd-meta__title');
+                document.querySelector('amp-lcd .lcd-meta__title');
             const artistEl = document.querySelector('.playback-description__secondary') ||
-                             document.querySelector('amp-lcd .lcd-meta__secondary');
+                document.querySelector('amp-lcd .lcd-meta__secondary');
             const imgEl = document.querySelector('.playback-artwork img') ||
-                          document.querySelector('amp-lcd img');
+                document.querySelector('amp-lcd img');
             const playBtn = document.querySelector('.playback-play-controls button[data-testid="play-pause-button"]') ||
-                            document.querySelector('amp-playback-controls-item button');
+                document.querySelector('amp-playback-controls-item button');
 
             if (titleEl) {
                 const title = (titleEl.textContent || '').trim();
@@ -311,7 +373,7 @@
                 enumerable: true
             });
         }
-    } catch {}
+    } catch { }
 
     // 3. Instant media event triggers (0ms delay as soon as audio starts or unpauses)
     ['play', 'playing', 'loadeddata', 'loadedmetadata', 'ratechange'].forEach(evt => {
@@ -330,14 +392,14 @@
         });
         window.addEventListener('DOMContentLoaded', () => {
             const playerBar = document.querySelector('[data-testid="now-playing-widget"]') ||
-                              document.querySelector('ytmusic-player-bar') ||
-                              document.querySelector('.playback-description') ||
-                              document.body;
+                document.querySelector('ytmusic-player-bar') ||
+                document.querySelector('.playback-description') ||
+                document.body;
             if (playerBar) {
                 observer.observe(playerBar, { childList: true, subtree: true, characterData: true });
             }
         });
-    } catch {}
+    } catch { }
 
     // 5. Broadcast pause when tab is closed
     window.addEventListener('beforeunload', () => {

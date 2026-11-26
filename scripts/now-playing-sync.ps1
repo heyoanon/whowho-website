@@ -303,6 +303,7 @@ while ($true) {
 
         if ($session -and $mediaInfo -and $mediaInfo.Title) {
             $status = if ($playbackInfo) { $playbackInfo.PlaybackStatus } else { 0 }
+            $isPlaying = ($status -eq 4 -or $status -eq "Playing")
             $title = $mediaInfo.Title
             $artist = $mediaInfo.Artist
             $album = $mediaInfo.AlbumTitle
@@ -340,22 +341,29 @@ while ($true) {
                 }
             } catch {}
 
-            # PlaybackStatus: 4 = Playing, 5 = Paused, 3 = Stopped
-            $isPlaying = ($status -eq 4 -or $status -eq "Playing")
             $trackKey = "$title - $artist - $album - $isPlaying - $sourceApp"
-
             $isNewTrack = ($trackKey -ne $lastTrack)
+            if ($isNewTrack) {
+                # Schedule a fast follow-up sync 1.5s later to capture settled timeline properties from GSMTC
+                $script:fastResyncDue = [DateTime]::UtcNow.AddSeconds(1.5)
+            }
+
+            $isFastResync = ($script:fastResyncDue -and [DateTime]::UtcNow -ge $script:fastResyncDue)
+            if ($isFastResync) {
+                $script:fastResyncDue = $null
+            }
+
             $isSeek = $false
             if (-not $isNewTrack -and $isPlaying -and $lastBroadcastPosition -ge 0) {
                 $elapsedSinceLast = ([DateTime]::UtcNow - $lastBroadcastTime).TotalSeconds
                 $expectedPos = $lastBroadcastPosition + $elapsedSinceLast
-                if ([Math]::Abs($positionSec - $expectedPos) -ge 4) {
+                if ([Math]::Abs($positionSec - $expectedPos) -ge 2) {
                     $isSeek = $true
                 }
             }
-            $isPeriodicSync = ($isPlaying -and ([DateTime]::UtcNow - $lastBroadcastTime).TotalSeconds -ge 30)
+            $isPeriodicSync = ($isPlaying -and ([DateTime]::UtcNow - $lastBroadcastTime).TotalSeconds -ge 10)
 
-            $shouldBroadcast = $isNewTrack -or $isSeek -or $isPeriodicSync
+            $shouldBroadcast = $isNewTrack -or $isFastResync -or $isSeek -or $isPeriodicSync
 
             if ($title -and $shouldBroadcast) {
                 $lastTrack = $trackKey
@@ -525,6 +533,7 @@ while ($true) {
                     deviceType = "desktop"
                     duration = $durationSec
                     position = $positionSec
+                    clientTimestamp = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
                 }
                 if ($Secret) {
                     $payload["secret"] = $Secret
