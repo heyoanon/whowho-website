@@ -25,12 +25,12 @@ const messagesFile = path.join(__dirname, 'messages.json');
 const profileFile = path.join(__dirname, 'profile.json');
 const database = process.env.DATABASE_URL
   ? new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
-      connectionTimeoutMillis: 3500,
-      idleTimeoutMillis: 10000,
-      max: 5
-    })
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 3500,
+    idleTimeoutMillis: 10000,
+    max: 5
+  })
   : null;
 let messages = [];
 let memoryProfileData = null;
@@ -925,7 +925,7 @@ async function searchSpotifyTrackArtwork(artist, title) {
         }
       }
     }
-  } catch {}
+  } catch { }
   return null;
 }
 
@@ -1278,7 +1278,7 @@ app.post('/api/now-playing', async (req, res) => {
           }
           if (resolved.url && !trackData.url && normalizedSource === 'Apple Music') trackData.url = resolved.url;
         }
-      } catch {}
+      } catch { }
     }
 
     // Persist immediately (with timeout guarantee) to ensure PostgreSQL save completes on Vercel
@@ -1298,7 +1298,7 @@ app.delete('/api/now-playing', async (req, res) => {
     return res.status(401).json({ error: 'Unauthorized.' });
   }
 
-  saveNowPlaying({ isPlaying: false, title: '', updatedAtMs: Date.now() }).catch(() => {});
+  saveNowPlaying({ isPlaying: false, title: '', updatedAtMs: Date.now() }).catch(() => { });
   return res.json({ success: true, message: 'Now playing cleared.' });
 });
 
@@ -1687,7 +1687,7 @@ if (!process.env.VERCEL) {
     });
 } else {
   // On Vercel, initialize asynchronously in background without blocking serverless function cold starts
-  initializeDatabase().catch(() => {});
+  initializeDatabase().catch(() => { });
 }
 
 module.exports = app;
